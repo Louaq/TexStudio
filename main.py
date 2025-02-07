@@ -8,11 +8,12 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout
                             QWidget, QTextEdit, QRubberBand, QShortcut, QHBoxLayout, 
                             QLabel, QLineEdit, QToolTip, QMenuBar, QMenu, QDialog,
                             QFormLayout, QDialogButtonBox, QFileDialog, QSplitter,
-                            QScrollArea, QFrame, QMessageBox)
-from PyQt5.QtCore import Qt, QRect, QSize, QTimer, QPoint, QThread, pyqtSignal
+                            QScrollArea, QFrame, QMessageBox, QKeySequenceEdit)
+from PyQt5.QtCore import Qt, QRect, QSize, QTimer, QPoint, QThread, pyqtSignal, QSettings
 from PyQt5.QtGui import QKeySequence, QPainter, QPen, QScreen, QColor, QPixmap, QImage
 import tempfile
 import os
+import keyboard  # 需要先安装: pip install keyboard
 
 SIMPLETEX_APP_ID = "vXSU9RyPMfUW4EQbgMWhzhQu"
 SIMPLETEX_APP_SECRET = "GZiaGYq24U5evF9OXlcYIbZ2mwsuPbVu"
@@ -124,7 +125,7 @@ class AboutDialog(QDialog):
         title_label.setAlignment(Qt.AlignCenter)
         
         # 版本信息
-        version_label = QLabel('版本 1.0.0')
+        version_label = QLabel('版本 1.0.3')
         version_label.setStyleSheet("""
             QLabel {
                 font-size: 10pt;
@@ -450,14 +451,57 @@ class HistoryDialog(QDialog):
             else:
                 QMessageBox.information(self, '提示', '已删除所有历史记录')
 
+class ShortcutSettingsDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.parent = parent
+        self.initUI()
+        self.setStyleSheet("""
+            * {
+                font-family: "Microsoft YaHei";
+                font-size: 10pt;
+            }
+            QKeySequenceEdit {
+                padding: 5px;
+                min-width: 150px;
+            }
+        """)
+        
+    def initUI(self):
+        self.setWindowTitle('快捷键设置')
+        self.setModal(True)
+        layout = QFormLayout(self)
+        
+        # 创建快捷键编辑器
+        self.capture_shortcut = QKeySequenceEdit(self)
+        self.upload_shortcut = QKeySequenceEdit(self)
+        
+        # 设置当前值，修改默认快捷键为 Alt+C 和 Alt+V
+        settings = QSettings('LaTeXOCR', 'Shortcuts')
+        self.capture_shortcut.setKeySequence(settings.value('capture', 'Alt+C'))
+        self.upload_shortcut.setKeySequence(settings.value('upload', 'Alt+V'))
+        
+        # 添加到布局
+        layout.addRow('截图快捷键:', self.capture_shortcut)
+        layout.addRow('上传图片快捷键:', self.upload_shortcut)
+        
+        # 添加按钮
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
+            Qt.Horizontal, self)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addRow(buttons)
+
 class ScreenshotWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.overlay = None
-        self.history = []  # 初始化 history 属性
-        self.current_image_path = None  # 添加新属性来保存当前图片路径
-        self.load_history()  # 加载历史记录
+        self.history = []
+        self.current_image_path = None
+        self.load_history()
         self.load_settings()
+        self.setup_global_shortcuts()
         self.initUI()
         # 设置全局字体
         self.setStyleSheet("""
@@ -499,6 +543,8 @@ class ScreenshotWindow(QMainWindow):
         settingsMenu = menubar.addMenu('设置')
         apiAction = settingsMenu.addAction('API设置')
         apiAction.triggered.connect(self.show_api_settings)
+        shortcutAction = settingsMenu.addAction('快捷键设置')
+        shortcutAction.triggered.connect(self.show_shortcut_settings)
         
         # 添加历史记录菜单
         historyMenu = menubar.addMenu('历史记录')
@@ -845,6 +891,9 @@ class ScreenshotWindow(QMainWindow):
     def closeEvent(self, event):
         """窗口关闭事件处理"""
         try:
+            # 取消注册全局快捷键
+            keyboard.unhook_all()
+            
             # 删除当前临时图片文件
             if self.current_image_path and os.path.exists(self.current_image_path):
                 try:
@@ -863,8 +912,61 @@ class ScreenshotWindow(QMainWindow):
             event.accept()
             
         except Exception as e:
-            print(f"清理历史记录失败: {e}")
-            event.accept()  # 即使清理失败也允许关闭
+            print(f"清理失败: {e}")
+            event.accept()
+
+    def setup_global_shortcuts(self):
+        """设置全局快捷键"""
+        settings = QSettings('LaTeXOCR', 'Shortcuts')
+        capture_seq = settings.value('capture', 'Alt+C')
+        upload_seq = settings.value('upload', 'Alt+V')
+        
+        # 注册全局快捷键
+        try:
+            # 先清除可能存在的旧快捷键
+            keyboard.unhook_all()
+            
+            # 注册新的快捷键，使用 QTimer 确保在主线程中执行
+            keyboard.add_hotkey(capture_seq.lower(), lambda: QTimer.singleShot(0, self.safe_start_capture))
+            keyboard.add_hotkey(upload_seq.lower(), lambda: QTimer.singleShot(0, self.safe_upload_image))
+            
+        except Exception as e:
+            QMessageBox.warning(self, '警告', f'注册全局快捷键失败: {str(e)}\n请以管理员权限运行程序。')
+    
+    def safe_start_capture(self):
+        """安全的截图启动方法"""
+        try:
+            if not self.isHidden():
+                self.hide()
+            if self.overlay is None:
+                self.overlay = OverlayWidget(self)
+            self.overlay.showFullScreen()
+        except Exception as e:
+            print(f"截图启动失败: {e}")
+    
+    def safe_upload_image(self):
+        """安全的图片上传方法"""
+        try:
+            if self.isHidden():
+                self.show()
+            self.upload_image()
+        except Exception as e:
+            print(f"图片上传失败: {e}")
+
+    def show_shortcut_settings(self):
+        """显示快捷键设置对话框"""
+        dialog = ShortcutSettingsDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            # 保存新的快捷键设置
+            settings = QSettings('LaTeXOCR', 'Shortcuts')
+            settings.setValue('capture', dialog.capture_shortcut.keySequence().toString())
+            settings.setValue('upload', dialog.upload_shortcut.keySequence().toString())
+            
+            # 更新全局快捷键
+            self.setup_global_shortcuts()
+            
+            # 显示提示
+            QMessageBox.information(self, '提示', '快捷键设置已更新')
 
 class OverlayWidget(QWidget):
     def __init__(self, parent=None):
