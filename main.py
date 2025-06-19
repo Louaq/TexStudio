@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout
                             QFormLayout, QDialogButtonBox, QFileDialog, QSplitter,
                             QScrollArea, QFrame, QMessageBox, QKeySequenceEdit)
 from PyQt5.QtCore import Qt, QRect, QSize, QTimer, QPoint, QThread, pyqtSignal, QSettings
-from PyQt5.QtGui import QKeySequence, QPainter, QPen, QScreen, QColor, QPixmap, QImage, QIcon
+from PyQt5.QtGui import QKeySequence, QPainter, QPen, QScreen, QColor, QPixmap, QImage, QIcon, QBrush, QFont
 import tempfile
 import os
 import keyboard  # 需要先安装: pip install keyboard
@@ -109,8 +109,11 @@ class APISettingsDialog(QDialog):
         """)
         
     def initUI(self):
-        self.setWindowTitle('🔑 API设置')
+        self.setWindowTitle('API设置')
         self.setModal(True)
+        # 设置图标
+        if self.parent:
+            self.setWindowIcon(self.parent.create_custom_icon())
         layout = QFormLayout(self)
         
         # 创建输入框
@@ -139,13 +142,16 @@ class AboutDialog(QDialog):
         self.initUI()
         
     def initUI(self):
-        self.setWindowTitle('ℹ️ 关于')
+        self.setWindowTitle('关于')
         self.setMinimumWidth(500)  # 增加最小宽度
+        # 设置图标
+        if self.parent():
+            self.setWindowIcon(self.parent().create_custom_icon())
         layout = QVBoxLayout(self)
         layout.setSpacing(15)  # 增加组件之间的间距
         
         # 软件名称
-        title_label = QLabel('📊 LaTeX公式识别工具')
+        title_label = QLabel('LaTeX公式识别工具')
         title_label.setStyleSheet("""
             QLabel {
                 font-size: 22pt;
@@ -185,6 +191,9 @@ class AboutDialog(QDialog):
             <p style='margin-bottom: 10px;'>使用 SimpleTex API 提供识别服务</p>
             <p style='color: #666;'>© 2025 All Rights Reserved</p>
         """)
+        # 去掉滚动条
+        desc_text.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        desc_text.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         desc_text.setStyleSheet("""
             QTextEdit {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -271,8 +280,11 @@ class HistoryDialog(QDialog):
         self.initUI()
         
     def initUI(self):
-        self.setWindowTitle('📚 历史记录')
+        self.setWindowTitle('历史记录')
         self.setMinimumWidth(500)
+        # 设置图标
+        if self.parent():
+            self.setWindowIcon(self.parent().create_custom_icon())
         layout = QVBoxLayout(self)
         
         # 添加清空按钮
@@ -572,8 +584,11 @@ class ShortcutSettingsDialog(QDialog):
         """)
         
     def initUI(self):
-        self.setWindowTitle('⌨️ 快捷键设置')
+        self.setWindowTitle('快捷键设置')
         self.setModal(True)
+        # 设置图标
+        if self.parent:
+            self.setWindowIcon(self.parent.create_custom_icon())
         layout = QFormLayout(self)
         
         # 创建快捷键编辑器
@@ -697,11 +712,10 @@ class ScreenshotWindow(QMainWindow):
         """)
         
     def initUI(self):
-        self.setWindowTitle('📊 LaTeX公式识别工具')
+        self.setWindowTitle('LaTeX公式识别工具')
         self.setGeometry(100, 100, 850, 650)
-        # 去掉左上角的窗口图标
-        self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowSystemMenuHint)
+        # 设置自定义图标
+        self.setWindowIcon(self.create_custom_icon())
         
         # 创建菜单栏
         menubar = self.menuBar()
@@ -1175,6 +1189,29 @@ class ScreenshotWindow(QMainWindow):
         except Exception as e:
             print(f"清理失败: {e}")
             event.accept()
+
+    def create_custom_icon(self):
+        """创建自定义应用图标"""
+        # 创建32x32像素的图标
+        pixmap = QPixmap(32, 32)
+        pixmap.fill(Qt.transparent)
+        
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        
+        # 绘制背景圆形
+        painter.setBrush(QBrush(QColor(74, 144, 226)))  # 蓝色背景
+        painter.setPen(QPen(QColor(74, 144, 226), 0))
+        painter.drawEllipse(2, 2, 28, 28)
+        
+        # 绘制数学符号 ∑ (Sigma)
+        painter.setPen(QPen(QColor(255, 255, 255), 2))
+        font = QFont("Arial", 16, QFont.Bold)
+        painter.setFont(font)
+        painter.drawText(QRect(0, 0, 32, 32), Qt.AlignCenter, "∑")
+        
+        painter.end()
+        return QIcon(pixmap)
 
     def setup_global_shortcuts(self):
         """设置全局快捷键"""
