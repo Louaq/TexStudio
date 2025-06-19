@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout
                             QFormLayout, QDialogButtonBox, QFileDialog, QSplitter,
                             QScrollArea, QFrame, QMessageBox, QKeySequenceEdit)
 from PyQt5.QtCore import Qt, QRect, QSize, QTimer, QPoint, QThread, pyqtSignal, QSettings
-from PyQt5.QtGui import QKeySequence, QPainter, QPen, QScreen, QColor, QPixmap, QImage
+from PyQt5.QtGui import QKeySequence, QPainter, QPen, QScreen, QColor, QPixmap, QImage, QIcon
 import tempfile
 import os
 import keyboard  # 需要先安装: pip install keyboard
@@ -61,23 +61,55 @@ class APISettingsDialog(QDialog):
         super().__init__(parent)
         self.parent = parent
         self.initUI()
-        # 设置对话框字体
+        # 设置对话框样式
         self.setStyleSheet("""
-            * {
-                font-family: "Microsoft YaHei";
+            QDialog {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #f8f9fa, stop:1 #e9ecef);
+                border-radius: 10px;
+            }
+            QWidget {
+                font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
                 font-size: 10pt;
+                color: #2c3e50;
+            }
+            QLabel {
+                font-weight: 500;
+                color: #34495e;
             }
             QLineEdit {
-                padding: 3px 5px;
-                min-width: 250px;
+                padding: 10px 12px;
+                min-width: 280px;
+                border: 2px solid #e1e8ed;
+                border-radius: 6px;
+                background: white;
+                font-size: 10pt;
+            }
+            QLineEdit:focus {
+                border: 2px solid #4a90e2;
+                outline: none;
+            }
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #4a90e2, stop:1 #357abd);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-weight: 500;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #5ba0f2, stop:1 #458bcd);
             }
             QDialogButtonBox {
-                margin-top: 15px;
+                margin-top: 20px;
             }
         """)
         
     def initUI(self):
-        self.setWindowTitle('API设置')
+        self.setWindowTitle('🔑 API设置')
         self.setModal(True)
         layout = QFormLayout(self)
         
@@ -107,29 +139,34 @@ class AboutDialog(QDialog):
         self.initUI()
         
     def initUI(self):
-        self.setWindowTitle('关于')
+        self.setWindowTitle('ℹ️ 关于')
         self.setMinimumWidth(500)  # 增加最小宽度
         layout = QVBoxLayout(self)
         layout.setSpacing(15)  # 增加组件之间的间距
         
         # 软件名称
-        title_label = QLabel('LaTeX公式识别工具')
+        title_label = QLabel('📊 LaTeX公式识别工具')
         title_label.setStyleSheet("""
             QLabel {
-                font-size: 18pt;
+                font-size: 22pt;
                 font-weight: bold;
-                color: #333;
-                margin: 10px 0;
+                color: #2c3e50;
+                margin: 15px 0;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #4a90e2, stop:1 #7b68ee);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
             }
         """)
         title_label.setAlignment(Qt.AlignCenter)
         
         # 版本信息
-        version_label = QLabel('版本 1.0.3')
+        version_label = QLabel('✨ 版本 1.0.3')
         version_label.setStyleSheet("""
             QLabel {
-                font-size: 10pt;
-                color: #666;
+                font-size: 11pt;
+                color: #7f8c8d;
+                font-weight: 500;
             }
         """)
         version_label.setAlignment(Qt.AlignCenter)
@@ -146,14 +183,17 @@ class AboutDialog(QDialog):
                 <li>历史记录保存</li>
             </ul>
             <p style='margin-bottom: 10px;'>使用 SimpleTex API 提供识别服务</p>
-            <p style='color: #666;'>© 2024 All Rights Reserved</p>
+            <p style='color: #666;'>© 2025 All Rights Reserved</p>
         """)
         desc_text.setStyleSheet("""
             QTextEdit {
-                background-color: transparent;
-                border: none;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #ffffff, stop:1 #f8f9fa);
+                border: 1px solid #e1e8ed;
+                border-radius: 8px;
                 font-size: 10pt;
-                color: #444;
+                color: #495057;
+                padding: 15px;
             }
         """)
         # 设置固定高度以显示所有内容
@@ -178,10 +218,12 @@ class AboutDialog(QDialog):
         # 设置对话框样式
         self.setStyleSheet("""
             QDialog {
-                background-color: white;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #f8f9fa, stop:1 #e9ecef);
+                border-radius: 12px;
             }
             * {
-                font-family: "Microsoft YaHei";
+                font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
             }
         """)
 
@@ -229,24 +271,28 @@ class HistoryDialog(QDialog):
         self.initUI()
         
     def initUI(self):
-        self.setWindowTitle('历史记录')
+        self.setWindowTitle('📚 历史记录')
         self.setMinimumWidth(500)
         layout = QVBoxLayout(self)
         
         # 添加清空按钮
-        clear_btn = QPushButton('清空历史记录')
+        clear_btn = QPushButton('🗑️ 清空历史记录')
         clear_btn.clicked.connect(self.clear_history)
         clear_btn.setStyleSheet("""
             QPushButton {
-                background-color: #ff4d4d;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #e74c3c, stop:1 #c0392b);
                 color: white;
                 border: none;
-                padding: 5px 15px;
-                border-radius: 3px;
-                margin-bottom: 10px;
+                padding: 8px 16px;
+                border-radius: 6px;
+                margin-bottom: 15px;
+                font-weight: 500;
             }
             QPushButton:hover {
-                background-color: #ff3333;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #e55347, stop:1 #d2433a);
+                transform: translateY(-1px);
             }
         """)
         layout.addWidget(clear_btn, alignment=Qt.AlignRight)
@@ -271,10 +317,13 @@ class HistoryDialog(QDialog):
             latex_text.setMaximumHeight(80)
             latex_text.setStyleSheet("""
                 QTextEdit {
-                    background-color: #f5f5f5;
-                    border: 1px solid #ddd;
-                    border-radius: 3px;
-                    padding: 5px;
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #ffffff, stop:1 #f8f9fa);
+                    border: 2px solid #e1e8ed;
+                    border-radius: 8px;
+                    padding: 10px;
+                    font-family: "Cascadia Code", "Consolas", monospace;
+                    color: #2c3e50;
                 }
             """)
             
@@ -282,24 +331,29 @@ class HistoryDialog(QDialog):
             buttons_layout = QHBoxLayout()
             
             # 添加删除按钮
-            delete_btn = QPushButton('删除')
+            delete_btn = QPushButton('🗑️ 删除')
             delete_btn.setProperty('latex', item['latex'])
             delete_btn.clicked.connect(self.delete_item)
             delete_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #ff4d4d;
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #e74c3c, stop:1 #c0392b);
                     color: white;
                     border: none;
-                    padding: 5px 15px;
-                    border-radius: 3px;
+                    padding: 6px 12px;
+                    border-radius: 5px;
+                    font-weight: 500;
+                    font-size: 9pt;
                 }
                 QPushButton:hover {
-                    background-color: #ff3333;
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #e55347, stop:1 #d2433a);
+                    transform: translateY(-1px);
                 }
             """)
             
             # 创建使用按钮和菜单
-            use_btn = QPushButton('使用此公式')
+            use_btn = QPushButton('✨ 使用此公式')
             use_menu = QMenu(self)
             
             # 添加复制选项
@@ -324,14 +378,19 @@ class HistoryDialog(QDialog):
             
             use_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #1E90FF;
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #4a90e2, stop:1 #357abd);
                     color: white;
                     border: none;
-                    padding: 5px 15px;
-                    border-radius: 3px;
+                    padding: 6px 12px;
+                    border-radius: 5px;
+                    font-weight: 500;
+                    font-size: 9pt;
                 }
                 QPushButton:hover {
-                    background-color: #1873CC;
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 #5ba0f2, stop:1 #458bcd);
+                    transform: translateY(-1px);
                 }
                 QPushButton::menu-indicator {
                     image: none;
@@ -382,11 +441,24 @@ class HistoryDialog(QDialog):
         # 设置对话框样式
         self.setStyleSheet("""
             QDialog {
-                background-color: white;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #f8f9fa, stop:1 #e9ecef);
+                border-radius: 12px;
             }
             * {
-                font-family: "Microsoft YaHei";
+                font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
                 font-size: 10pt;
+                color: #2c3e50;
+            }
+            QFrame[frameShape="4"] {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #e1e8ed, stop:0.5 #4a90e2, stop:1 #e1e8ed);
+                height: 2px;
+                border: none;
+            }
+            QScrollArea {
+                border: none;
+                background: transparent;
             }
         """)
     
@@ -457,18 +529,50 @@ class ShortcutSettingsDialog(QDialog):
         self.parent = parent
         self.initUI()
         self.setStyleSheet("""
+            QDialog {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #f8f9fa, stop:1 #e9ecef);
+                border-radius: 10px;
+            }
             * {
-                font-family: "Microsoft YaHei";
+                font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
                 font-size: 10pt;
+                color: #2c3e50;
+            }
+            QLabel {
+                font-weight: 500;
+                color: #34495e;
             }
             QKeySequenceEdit {
-                padding: 5px;
-                min-width: 150px;
+                padding: 10px;
+                min-width: 200px;
+                border: 2px solid #e1e8ed;
+                border-radius: 6px;
+                background: white;
+                font-size: 10pt;
+            }
+            QKeySequenceEdit:focus {
+                border: 2px solid #4a90e2;
+                outline: none;
+            }
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #4a90e2, stop:1 #357abd);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-weight: 500;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #5ba0f2, stop:1 #458bcd);
             }
         """)
         
     def initUI(self):
-        self.setWindowTitle('快捷键设置')
+        self.setWindowTitle('⌨️ 快捷键设置')
         self.setModal(True)
         layout = QFormLayout(self)
         
@@ -503,26 +607,101 @@ class ScreenshotWindow(QMainWindow):
         self.load_settings()
         self.setup_global_shortcuts()
         self.initUI()
-        # 设置全局字体
+        # 设置全局样式
         self.setStyleSheet("""
-            * {
-                font-family: "Microsoft YaHei";
+            QMainWindow {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #f8f9fa, stop:1 #e9ecef);
+            }
+            QWidget {
+                font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
                 font-size: 10pt;
+                color: #2c3e50;
             }
             QPushButton {
-                padding: 5px 10px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #4a90e2, stop:1 #357abd);
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+                font-weight: 500;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #5ba0f2, stop:1 #458bcd);
+                transform: translateY(-1px);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #3a7bc8, stop:1 #2d6ba3);
             }
             QLineEdit {
-                padding: 3px 5px;
+                padding: 8px 12px;
+                border: 2px solid #e1e8ed;
+                border-radius: 6px;
+                background: white;
+                font-size: 10pt;
+            }
+            QLineEdit:focus {
+                border: 2px solid #4a90e2;
+                outline: none;
             }
             QTextEdit {
-                padding: 5px;
+                padding: 10px;
+                border: 2px solid #e1e8ed;
+                border-radius: 8px;
+                background: white;
+                font-size: 10pt;
+                line-height: 1.4;
+            }
+            QTextEdit:focus {
+                border: 2px solid #4a90e2;
+                outline: none;
+            }
+            QMenuBar {
+                background: white;
+                border-bottom: 1px solid #e1e8ed;
+                padding: 4px;
+            }
+            QMenuBar::item {
+                background: transparent;
+                padding: 8px 12px;
+                border-radius: 4px;
+            }
+            QMenuBar::item:selected {
+                background: #f1f3f4;
+            }
+            QMenu {
+                background: white;
+                border: 1px solid #e1e8ed;
+                border-radius: 6px;
+                padding: 4px;
+            }
+            QMenu::item {
+                padding: 8px 16px;
+                border-radius: 4px;
+            }
+            QMenu::item:selected {
+                background: #4a90e2;
+                color: white;
+            }
+            QSplitter::handle {
+                background: #e1e8ed;
+                height: 2px;
+            }
+            QSplitter::handle:hover {
+                background: #4a90e2;
             }
         """)
         
     def initUI(self):
-        self.setWindowTitle('公式识别工具')
-        self.setGeometry(100, 100, 800, 600)
+        self.setWindowTitle('📊 LaTeX公式识别工具')
+        self.setGeometry(100, 100, 850, 650)
+        # 去掉左上角的窗口图标
+        self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowSystemMenuHint)
         
         # 创建菜单栏
         menubar = self.menuBar()
@@ -531,28 +710,28 @@ class ScreenshotWindow(QMainWindow):
         operationMenu = menubar.addMenu('操作')
         
         # 添加截图选项
-        captureAction = operationMenu.addAction('截图 (Alt+C)')
+        captureAction = operationMenu.addAction('📸 截图 (Alt+C)')
         captureAction.triggered.connect(self.start_capture)
         
         # 添加本地上传选项
-        uploadAction = operationMenu.addAction('上传图片 (Alt+U)')
+        uploadAction = operationMenu.addAction('📁 上传图片 (Alt+U)')
         uploadAction.triggered.connect(self.upload_image)
         uploadAction.setShortcut('Alt+U')
         
         # 添加设置菜单
-        settingsMenu = menubar.addMenu('设置')
-        apiAction = settingsMenu.addAction('API设置')
+        settingsMenu = menubar.addMenu('⚙️ 设置')
+        apiAction = settingsMenu.addAction('🔑 API设置')
         apiAction.triggered.connect(self.show_api_settings)
-        shortcutAction = settingsMenu.addAction('快捷键设置')
+        shortcutAction = settingsMenu.addAction('⌨️ 快捷键设置')
         shortcutAction.triggered.connect(self.show_shortcut_settings)
         
         # 添加历史记录菜单
-        historyMenu = menubar.addMenu('历史记录')
+        historyMenu = menubar.addMenu('📚 历史记录')
         self.update_history_menu(historyMenu)
         
         # 添加关于菜单
-        helpMenu = menubar.addMenu('帮助')
-        aboutAction = helpMenu.addAction('关于')
+        helpMenu = menubar.addMenu('❓ 帮助')
+        aboutAction = helpMenu.addAction('ℹ️ 关于')
         aboutAction.triggered.connect(self.show_about_dialog)
         
         # 创建中心部件
@@ -569,17 +748,30 @@ class ScreenshotWindow(QMainWindow):
         top_layout = QVBoxLayout(top_widget)
         
         # 图片标签
-        image_label = QLabel("识别图片：")
+        image_label = QLabel("🖼️ 识别图片：")
+        image_label.setStyleSheet("""
+            QLabel {
+                font-size: 12pt;
+                font-weight: 600;
+                color: #2c3e50;
+                margin: 10px 0;
+            }
+        """)
         self.image_display = QLabel()
         self.image_display.setStyleSheet("""
             QLabel {
-                border: 1px solid #ccc;
-                background-color: white;
-                min-width: 400px;
-                min-height: 200px;
+                border: 3px dashed #4a90e2;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #ffffff, stop:1 #f8f9fa);
+                min-width: 450px;
+                min-height: 250px;
+                border-radius: 12px;
+                color: #7f8c8d;
+                font-size: 11pt;
             }
         """)
         self.image_display.setAlignment(Qt.AlignCenter)
+        self.image_display.setText("📷 将在此处显示识别的图片")
         
         top_layout.addWidget(image_label)
         top_layout.addWidget(self.image_display)
@@ -588,21 +780,34 @@ class ScreenshotWindow(QMainWindow):
         bottom_widget = QWidget()
         bottom_layout = QVBoxLayout(bottom_widget)
         
-        latex_label = QLabel("LaTeX代码：")
+        latex_label = QLabel("📝 LaTeX代码：")
+        latex_label.setStyleSheet("""
+            QLabel {
+                font-size: 12pt;
+                font-weight: 600;
+                color: #2c3e50;
+                margin: 10px 0;
+            }
+        """)
         self.latex_text = QTextEdit()
         self.latex_text.setReadOnly(False)
-        self.latex_text.setMinimumHeight(100)
+        self.latex_text.setMinimumHeight(120)
+        self.latex_text.setPlaceholderText("LaTeX代码将在此处显示...")
         self.latex_text.setStyleSheet("""
             QTextEdit {
-                font-family: "Microsoft YaHei";
-                font-size: 10pt;
-                padding: 5px;
-                border: 1px solid #ccc;
-                border-radius: 3px;
-                background-color: white;
+                font-family: "Cascadia Code", "Consolas", "Monaco", monospace;
+                font-size: 11pt;
+                padding: 15px;
+                border: 2px solid #e1e8ed;
+                border-radius: 10px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #ffffff, stop:1 #f8f9fa);
+                color: #2c3e50;
+                line-height: 1.5;
             }
             QTextEdit:focus {
-                border: 1px solid #1E90FF;
+                border: 2px solid #4a90e2;
+                background: white;
             }
         """)
         
@@ -610,8 +815,50 @@ class ScreenshotWindow(QMainWindow):
         button_layout = QHBoxLayout()
         
         # 创建复制按钮和菜单
-        self.copy_btn = QPushButton("复制Latex")
+        self.copy_btn = QPushButton("📋 复制LaTeX")
+        self.copy_btn.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #27ae60, stop:1 #229954);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 11pt;
+                min-width: 120px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #2ecc71, stop:1 #27ae60);
+                transform: translateY(-1px);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #229954, stop:1 #1e8449);
+            }
+            QPushButton::menu-indicator {
+                image: none;
+            }
+        """)
         copy_menu = QMenu(self)
+        copy_menu.setStyleSheet("""
+            QMenu {
+                background: white;
+                border: 2px solid #e1e8ed;
+                border-radius: 8px;
+                padding: 8px;
+            }
+            QMenu::item {
+                padding: 8px 16px;
+                border-radius: 6px;
+                color: #2c3e50;
+            }
+            QMenu::item:selected {
+                background: #4a90e2;
+                color: white;
+            }
+        """)
         
         # 添加复制选项
         normal_action = copy_menu.addAction("复制原始代码")
@@ -625,17 +872,23 @@ class ScreenshotWindow(QMainWindow):
         
         # 设置默认动作和菜单
         self.copy_btn.setMenu(copy_menu)
-        self.copy_btn.clicked.connect(lambda: self.copy_latex('normal'))  # 点击按钮时的默认动作
+        self.copy_btn.clicked.connect(lambda: self.copy_latex('normal'))
         
         button_layout.addStretch()
         button_layout.addWidget(self.copy_btn)
         
         # 添加状态标签
-        self.status_label = QLabel()
+        self.status_label = QLabel("⚡ 准备就绪")
         self.status_label.setStyleSheet("""
             QLabel {
-                color: #666;
-                padding: 5px;
+                color: #7f8c8d;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #ecf0f1, stop:1 #d5dbdb);
+                padding: 8px 15px;
+                border-radius: 6px;
+                font-size: 10pt;
+                font-weight: 500;
+                margin: 5px 0;
             }
         """)
         bottom_layout.addWidget(self.status_label)
@@ -714,7 +967,7 @@ class ScreenshotWindow(QMainWindow):
         
         # 清空之前的结果
         self.latex_text.clear()
-        self.status_label.setText("准备识别...")
+        self.status_label.setText("🔄 准备识别...")
         
         # 创建并启动识别线程
         self.recognize_thread = RecognizeThread(image_path, SIMPLETEX_APP_ID, SIMPLETEX_APP_SECRET)
@@ -724,30 +977,38 @@ class ScreenshotWindow(QMainWindow):
     
     def update_progress(self, message):
         """更新进度信息"""
-        self.status_label.setText(message)
+        # 为不同的进度添加表情符号
+        if "准备" in message:
+            self.status_label.setText(f"🔄 {message}")
+        elif "识别" in message:
+            self.status_label.setText(f"🤖 {message}")
+        elif "解析" in message:
+            self.status_label.setText(f"⚙️ {message}")
+        else:
+            self.status_label.setText(f"📊 {message}")
     
     def handle_recognition_result(self, result):
         """处理识别结果"""
         if "error" in result:
-            self.latex_text.setText(f"识别出错：{result['error']}")
-            self.status_label.setText("识别失败")
+            self.latex_text.setText(f"❌ 识别出错：{result['error']}")
+            self.status_label.setText("❌ 识别失败")
             return
             
         if result.get('status') is True:
             latex = result.get('res', {}).get('latex', '')
             if latex:
                 self.latex_text.setText(latex)
-                self.status_label.setText("识别完成")
+                self.status_label.setText("✅ 识别完成！")
                 # 添加到历史记录（确保latex不为空）
                 if latex.strip():  # 确保不是空字符串
                     self.add_to_history(latex)
             else:
-                self.latex_text.setText("识别结果为空")
-                self.status_label.setText("识别失败")
+                self.latex_text.setText("⚠️ 识别结果为空")
+                self.status_label.setText("⚠️ 识别结果为空")
         else:
             error_msg = result.get('message', '未知错误')
-            self.latex_text.setText(f"识别失败：{error_msg}")
-            self.status_label.setText("识别失败")
+            self.latex_text.setText(f"❌ 识别失败：{error_msg}")
+            self.status_label.setText("❌ 识别失败")
 
     def show_api_settings(self):
         dialog = APISettingsDialog(self)
@@ -804,7 +1065,7 @@ class ScreenshotWindow(QMainWindow):
         
         menu.clear()
         # 添加"显示历史记录"选项
-        show_history_action = menu.addAction('显示历史记录...')
+        show_history_action = menu.addAction('📋 显示历史记录...')
         show_history_action.triggered.connect(self.show_history_dialog)
         
         if self.history:
@@ -975,15 +1236,16 @@ class OverlayWidget(QWidget):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setStyleSheet("""
             * {
-                font-family: "Microsoft YaHei";
-                font-size: 10pt;
+                font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+                font-size: 11pt;
             }
             QWidget {
-                background-color: rgba(0, 0, 0, 100);
+                background-color: rgba(0, 0, 0, 120);
             }
             QRubberBand {
-                border: 2px solid #1E90FF;
-                background-color: rgba(30, 144, 255, 30);
+                border: 3px solid #4a90e2;
+                background-color: rgba(74, 144, 226, 40);
+                border-radius: 4px;
             }
         """)
         self.setAttribute(Qt.WA_TranslucentBackground)
