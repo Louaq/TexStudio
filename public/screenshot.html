@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>截图选择</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            cursor: crosshair;
+            overflow: hidden;
+            user-select: none;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+        
+        .selection-box {
+            position: absolute;
+            border: 2px solid #0078d4;
+            background: rgba(0, 120, 212, 0.1);
+            display: none;
+            z-index: 1001;
+        }
+        
+        .selection-info {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            border-radius: 3px;
+            z-index: 1002;
+            display: none;
+            pointer-events: none;
+        }
+        
+        .instruction {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 14px;
+            text-align: center;
+            z-index: 1003;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .instruction h3 {
+            margin-bottom: 10px;
+            color: #0078d4;
+        }
+        
+        .instruction p {
+            margin: 5px 0;
+            line-height: 1.5;
+        }
+        
+        .instruction .key {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="selection-box" id="selectionBox"></div>
+    <div class="selection-info" id="selectionInfo"></div>
+    
+    <div class="instruction" id="instruction">
+        <h3>📸 截图选择</h3>
+        <p>拖拽鼠标选择要截图的区域</p>
+        <p><span class="key">Enter</span> 确认截图</p>
+        <p><span class="key">Esc</span> 取消截图</p>
+    </div>
+
+    <script>
+        let isSelecting = false;
+        let startX = 0;
+        let startY = 0;
+        let currentX = 0;
+        let currentY = 0;
+        
+        const selectionBox = document.getElementById('selectionBox');
+        const selectionInfo = document.getElementById('selectionInfo');
+        const instruction = document.getElementById('instruction');
+        
+        // 隐藏说明文字的定时器
+        setTimeout(() => {
+            instruction.style.display = 'none';
+        }, 3000);
+        
+        // 鼠标按下开始选择
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // 左键
+                isSelecting = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                currentX = e.clientX;
+                currentY = e.clientY;
+                
+                selectionBox.style.display = 'block';
+                selectionBox.style.left = startX + 'px';
+                selectionBox.style.top = startY + 'px';
+                selectionBox.style.width = '0px';
+                selectionBox.style.height = '0px';
+                
+                instruction.style.display = 'none';
+            }
+        });
+        
+        // 鼠标移动更新选择框
+        document.addEventListener('mousemove', (e) => {
+            if (isSelecting) {
+                currentX = e.clientX;
+                currentY = e.clientY;
+                
+                const left = Math.min(startX, currentX);
+                const top = Math.min(startY, currentY);
+                const width = Math.abs(currentX - startX);
+                const height = Math.abs(currentY - startY);
+                
+                selectionBox.style.left = left + 'px';
+                selectionBox.style.top = top + 'px';
+                selectionBox.style.width = width + 'px';
+                selectionBox.style.height = height + 'px';
+                
+                // 显示选择信息
+                if (width > 10 && height > 10) {
+                    selectionInfo.style.display = 'block';
+                    selectionInfo.style.left = (left + width + 10) + 'px';
+                    selectionInfo.style.top = top + 'px';
+                    selectionInfo.textContent = `${width} × ${height}`;
+                    
+                    // 如果信息框超出屏幕右边界，调整位置
+                    if (left + width + 150 > window.innerWidth) {
+                        selectionInfo.style.left = (left - 80) + 'px';
+                    }
+                }
+            }
+        });
+        
+        // 鼠标抬起完成选择
+        document.addEventListener('mouseup', (e) => {
+            if (isSelecting && e.button === 0) {
+                isSelecting = false;
+                
+                const width = Math.abs(currentX - startX);
+                const height = Math.abs(currentY - startY);
+                
+                // 如果选择区域太小，取消选择
+                if (width < 10 || height < 10) {
+                    cancelSelection();
+                    return;
+                }
+                
+                // 自动确认截图
+                confirmSelection();
+            }
+        });
+        
+        // 键盘事件
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                cancelSelection();
+            } else if (e.key === 'Enter') {
+                confirmSelection();
+            }
+        });
+        
+        // 确认选择
+        function confirmSelection() {
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+            
+            if (width < 10 || height < 10) {
+                console.log('选择区域太小，取消截图');
+                cancelSelection();
+                return;
+            }
+            
+            const left = Math.min(startX, currentX);
+            const top = Math.min(startY, currentY);
+            
+            const area = {
+                x: left,
+                y: top,
+                width: width,
+                height: height
+            };
+            
+            console.log('=== 确认截图选择 ===');
+            console.log('选择的截图区域:', area);
+            console.log('窗口显示器信息:', displayInfo);
+            console.log('窗口尺寸:', { 
+                inner: { width: window.innerWidth, height: window.innerHeight },
+                screen: { width: window.screen.width, height: window.screen.height }
+            });
+            
+            // 调用Electron API进行截图
+            if (window.screenshotAPI) {
+                console.log('开始调用截图API...');
+                window.screenshotAPI.takeScreenshot(area)
+                    .then(imagePath => {
+                        console.log('✓ 截图API调用成功:', imagePath);
+                        return window.screenshotAPI.screenshotComplete(imagePath);
+                    })
+                    .then(() => {
+                        console.log('✓ 截图完成事件已发送');
+                    })
+                    .catch(error => {
+                        console.error('❌ 截图失败:', error);
+                        console.error('错误详情:', {
+                            name: error.name,
+                            message: error.message,
+                            stack: error.stack
+                        });
+                        window.screenshotAPI.closeScreenshotWindow();
+                    });
+            } else {
+                console.error('❌ screenshotAPI不可用');
+                cancelSelection();
+            }
+        }
+        
+        // 取消选择
+        function cancelSelection() {
+            console.log('取消截图');
+            if (window.screenshotAPI) {
+                window.screenshotAPI.closeScreenshotWindow();
+            } else {
+                window.close();
+            }
+        }
+        
+        // 右键取消
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            cancelSelection();
+        });
+        
+        // 窗口失去焦点时取消选择
+        window.addEventListener('blur', () => {
+            setTimeout(() => {
+                cancelSelection();
+            }, 100);
+        });
+        
+        // 防止选择文本
+        document.addEventListener('selectstart', (e) => {
+            e.preventDefault();
+        });
+        
+        // 获取当前窗口的显示器信息
+        let displayInfo = null;
+        if (window.screenshotAPI && window.screenshotAPI.getDisplayInfo) {
+            displayInfo = window.screenshotAPI.getDisplayInfo();
+            console.log('当前窗口显示器信息:', displayInfo);
+        }
+        
+        console.log('截图选择界面已初始化');
+        console.log('窗口尺寸:', { width: window.innerWidth, height: window.innerHeight });
+        console.log('屏幕尺寸:', { width: window.screen.width, height: window.screen.height });
+    </script>
+</body>
+</html> 
