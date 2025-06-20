@@ -238,8 +238,26 @@ async function createMainWindow(): Promise<void> {
     mainWindow?.show();
   });
 
+  // 监听窗口关闭事件
   mainWindow.on('closed', () => {
     mainWindow = null;
+    
+    // 在非开发模式下，窗口关闭时强制退出应用
+    if (!isDev && process.platform === 'win32') {
+      console.log('主窗口关闭，强制退出应用');
+      forceQuitApp();
+    }
+  });
+  
+  // 监听窗口关闭请求
+  mainWindow.on('close', (event) => {
+    console.log('收到窗口关闭请求');
+    
+    // 在非开发模式下，确保应用完全退出
+    if (!isDev && process.platform === 'win32') {
+      event.preventDefault(); // 阻止默认关闭行为
+      forceQuitApp();
+    }
   });
 }
 
@@ -467,34 +485,67 @@ function createScreenshotWindows(): void {
 // 禁用硬件加速以解决GPU问题
 if (process.platform === 'win32') {
   app.disableHardwareAcceleration();
+  
+  // 禁用GPU进程
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-gpu-compositing');
+  
+  // 禁用持久化缓存，避免后台进程
+  app.commandLine.appendSwitch('disable-http-cache');
+  app.commandLine.appendSwitch('disable-background-networking');
+  app.commandLine.appendSwitch('disable-background-timer-throttling');
 }
 
 // 设置用户数据目录以解决权限问题
 app.setPath('userData', path.join(app.getPath('appData'), 'SimpleTex-OCR'));
 
-// 应用程序就绪时
-app.whenReady().then(async () => {
-  await createMainWindow();
-  registerGlobalShortcuts();
-  
-  // 启动时清理旧的临时文件
-  console.log('Application started, cleaning old temporary files...');
-  cleanupAllTempFiles();
-  
-  // 启动定期清理
-  startPeriodicCleanup();
+// 确保只有一个实例在运行
+const gotTheLock = app.requestSingleInstanceLock();
 
-  app.on('activate', async () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      await createMainWindow();
+if (!gotTheLock) {
+  console.log('另一个实例已经在运行，退出当前实例');
+  app.exit(0);
+} else {
+  // 当第二个实例启动时，聚焦到第一个实例的窗口
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    console.log('检测到第二个实例启动，聚焦到当前窗口');
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.show();
+      mainWindow.focus();
     }
   });
-});
+  
+  // 应用程序就绪时
+  app.whenReady().then(async () => {
+    // 检测和终止可能的僵尸进程
+    killZombieProcesses();
+    
+    await createMainWindow();
+    registerGlobalShortcuts();
+    
+    // 启动时清理旧的临时文件
+    console.log('Application started, cleaning old temporary files...');
+    cleanupAllTempFiles();
+    
+    // 启动定期清理
+    startPeriodicCleanup();
+
+    app.on('activate', async () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        await createMainWindow();
+      }
+    });
+  });
+}
 
 // 所有窗口关闭时
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit();
+    // 在Windows平台上强制退出应用
+    forceQuitApp();
   }
 });
 
@@ -522,6 +573,11 @@ app.on('before-quit', () => {
   
   // 清理所有临时文件
   cleanupAllTempFiles();
+  
+  // 确保所有后台任务都被终止
+  setTimeout(() => {
+    process.exit(0);
+  }, 500);
 });
 
 // 应用退出时的最终清理
@@ -539,6 +595,15 @@ app.on('will-quit', (event) => {
     mainWindow.removeAllListeners();
     mainWindow = null;
   }
+  
+  // 确保应用完全退出
+  setTimeout(() => {
+    if (process.platform === 'win32') {
+      terminateAllProcesses();
+    } else {
+      process.exit(0);
+    }
+  }, 100);
 });
 
 // 注册全局快捷键
@@ -1040,7 +1105,9 @@ ipcMain.handle('minimize-window', () => {
 });
 
 ipcMain.handle('close-window', () => {
-  app.quit();
+  // 使用强制退出函数确保应用完全退出
+  forceQuitApp();
+  return true;
 });
 
 // 关闭截图窗口
@@ -1258,3 +1325,152 @@ ipcMain.handle('test-all-displays', async () => {
     throw error;
   }
 });
+
+// 在Windows平台上强制终止所有相关进程
+function terminateAllProcesses(): void {
+  if (process.platform === 'win32') {
+    try {
+      // 在Windows上使用taskkill命令强制终止所有相关进程
+      const { execSync } = require('child_process');
+      
+      // 可能的进程名称列表
+      const possibleProcessNames = [
+        'LaTeX公式识别工具.exe',
+        'electron.exe',
+        'SimpleTex-OCR.exe',
+        'node.exe'
+      ];
+      
+      console.log('尝试终止所有相关进程...');
+      
+      // 尝试终止每个可能的进程
+      for (const processName of possibleProcessNames) {
+        try {
+          console.log(`尝试终止进程: ${processName}`);
+          // /F 强制终止 /IM 按进程名称 /T 终止指定的进程和由它启动的子进程
+          execSync(`taskkill /F /IM "${processName}" /T`, { windowsHide: true });
+          console.log(`成功发送终止命令: ${processName}`);
+        } catch (err) {
+          // 忽略错误，可能是进程已经不存在
+          console.log(`终止进程 ${processName} 时出现错误，可能进程已不存在`);
+        }
+      }
+      
+      // 终止当前进程
+      process.exit(0);
+    } catch (error) {
+      console.error('终止进程失败:', error);
+      // 确保最终退出
+      process.exit(0);
+    }
+  }
+}
+
+// 检测和终止可能的僵尸进程
+function killZombieProcesses(): void {
+  if (process.platform === 'win32') {
+    try {
+      console.log('检测和终止可能的僵尸进程...');
+      const { execSync } = require('child_process');
+      
+      // 可能的进程名称列表
+      const possibleProcessNames = [
+        'LaTeX公式识别工具.exe',
+        'electron.exe',
+        'SimpleTex-OCR.exe'
+      ];
+      
+      // 获取当前进程ID
+      const currentPid = process.pid;
+      console.log(`当前进程ID: ${currentPid}`);
+      
+      // 尝试终止除当前进程外的所有相关进程
+      for (const processName of possibleProcessNames) {
+        try {
+          // 获取所有匹配的进程ID
+          const output = execSync(`wmic process where "name='${processName}'" get processid`, { encoding: 'utf8' });
+          const lines = output.split('\n').filter((line: string) => line.trim() !== '' && line.trim().toLowerCase() !== 'processid');
+          
+          for (const line of lines) {
+            const pid = line.trim();
+            if (pid && pid !== String(currentPid)) {
+              console.log(`发现可能的僵尸进程: ${processName} (PID: ${pid}), 尝试终止...`);
+              try {
+                execSync(`taskkill /F /PID ${pid}`, { windowsHide: true });
+                console.log(`成功终止进程 PID: ${pid}`);
+              } catch (killErr) {
+                console.log(`终止进程 PID: ${pid} 失败`);
+              }
+            }
+          }
+        } catch (err) {
+          // 忽略错误
+          console.log(`查找进程 ${processName} 时出错`);
+        }
+      }
+      
+      console.log('僵尸进程检查完成');
+    } catch (error) {
+      console.error('检测僵尸进程时出错:', error);
+    }
+  }
+}
+
+// 强制退出应用
+function forceQuitApp(): void {
+  console.log('强制退出应用...');
+  
+  // 清理资源
+  globalShortcut.unregisterAll();
+  
+  if (cleanupIntervalId) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = null;
+  }
+  
+  // 关闭所有窗口
+  BrowserWindow.getAllWindows().forEach(window => {
+    if (!window.isDestroyed()) {
+      try {
+        window.removeAllListeners();
+        window.webContents.removeAllListeners();
+        if (window.webContents.isDevToolsOpened()) {
+          window.webContents.closeDevTools();
+        }
+        window.close();
+      } catch (e) {
+        console.error('关闭窗口时出错');
+      }
+    }
+  });
+  
+  // 清理临时文件
+  cleanupAllTempFiles();
+  
+  // 释放其他资源
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try {
+      mainWindow.webContents.session.clearCache();
+      mainWindow.webContents.session.clearStorageData();
+    } catch (e) {
+      console.error('清理缓存时出错');
+    }
+  }
+  
+  // 强制退出
+  console.log('执行强制退出...');
+  app.removeAllListeners();
+  app.releaseSingleInstanceLock();  // 释放单例锁
+  
+  // 在Windows平台上，直接使用终止进程函数
+  if (process.platform === 'win32') {
+    console.log('Windows平台，使用terminateAllProcesses终止所有进程');
+    terminateAllProcesses();
+  } else {
+    // 非Windows平台，使用常规方法退出
+    console.log('非Windows平台，使用常规方法退出');
+    app.quit();
+    app.exit(0);
+    process.exit(0);
+  }
+}
