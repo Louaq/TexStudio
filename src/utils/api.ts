@@ -3,8 +3,8 @@ import { ApiConfig, SimpletexResponse } from '../types';
 
 // SimpleTex API默认配置
 export const DEFAULT_API_CONFIG: ApiConfig = {
-  appId: 'vXSU9RyPMfUW4EQbgMWhzhQu',
-  appSecret: 'GZiaGYq24U5evF9OXlcYIbZ2mwsuPbVu'
+  appId: '',
+  appSecret: ''
 };
 
 /**
@@ -83,7 +83,8 @@ export function formatLatex(latex: string, mode: 'normal' | 'inline' | 'display'
  * @returns 是否有效
  */
 export function validateApiConfig(config: ApiConfig): boolean {
-  return !!(config.appId && config.appSecret);
+  // 允许空的API配置
+  return true;
 }
 
 /**

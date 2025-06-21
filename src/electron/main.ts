@@ -8,6 +8,36 @@ import { ScreenshotArea } from '../types';
 import { getCurrentTimestamp } from '../utils/api';
 import * as crypto from 'crypto';
 
+// 定义API配置读取函数
+function loadApiConfigFromSettings(): { appId: string; appSecret: string } {
+  const config = {
+    appId: '',
+    appSecret: ''
+  };
+  
+  try {
+    // 尝试读取settings.json文件
+    const settingsPath = path.join(app.getAppPath(), 'settings.json');
+    if (fs.existsSync(settingsPath)) {
+      const settingsContent = fs.readFileSync(settingsPath, 'utf8');
+      const settings = JSON.parse(settingsContent);
+      if (settings.app_id && settings.app_secret) {
+        config.appId = settings.app_id;
+        config.appSecret = settings.app_secret;
+        console.log('成功从settings.json加载API配置');
+      } else {
+        console.log('settings.json中未找到有效的API配置');
+      }
+    } else {
+      console.log('未找到settings.json文件，将使用空的API配置');
+    }
+  } catch (error) {
+    console.error('读取settings.json文件失败:', error);
+  }
+  
+  return config;
+}
+
 // 定义应用设置类型
 interface AppSettings {
   apiConfig: ApiConfig;
@@ -39,12 +69,13 @@ interface SimpletexResponse {
     conf: number;
   };
   request_id: string;
+  message?: string;
 }
 
-// 默认API配置
-const DEFAULT_API_CONFIG: ApiConfig = {
-  appId: 'xxxxxxxxxxxxxxxxxxxxx',
-  appSecret: 'xxxxxxxxxxxxxxxxxxxxxxxxx',
+// 初始默认API配置
+let DEFAULT_API_CONFIG: ApiConfig = {
+  appId: '',
+  appSecret: '',
   endpoint: 'https://server.simpletex.cn/api/latex_ocr'
 };
 
@@ -508,6 +539,38 @@ if (!gotTheLock) {
   
   // 应用程序就绪时
   app.whenReady().then(async () => {
+    // 检查并创建默认的settings.json文件
+    const settingsPath = path.join(app.getAppPath(), 'settings.json');
+    if (!fs.existsSync(settingsPath)) {
+      try {
+        // 创建默认的settings.json文件
+        const defaultSettings = {
+          app_id: '',
+          app_secret: ''
+        };
+        fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2), 'utf8');
+        console.log('已创建默认的settings.json文件');
+      } catch (error) {
+        console.error('创建默认settings.json文件失败:', error);
+      }
+    }
+    
+    // 加载API配置
+    const apiConfig = loadApiConfigFromSettings();
+    console.log('从settings.json加载的API配置:', apiConfig);
+    
+    // 如果配置有效，则更新默认配置
+    if (apiConfig.appId && apiConfig.appSecret) {
+      DEFAULT_API_CONFIG.appId = apiConfig.appId;
+      DEFAULT_API_CONFIG.appSecret = apiConfig.appSecret;
+      console.log('已更新默认API配置');
+    } else {
+      console.log('settings.json中的API配置无效或为空，使用默认配置');
+    }
+    
+    // 初始化存储
+    store.set('apiConfig', DEFAULT_API_CONFIG);
+    
     killZombieProcesses();
     await createMainWindow();
     registerGlobalShortcuts();
@@ -894,16 +957,25 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
     // 关闭截图窗口
     closeScreenshotWindow();
     
-    // 发送完成事件
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.show();
-      mainWindow.focus();
-      
-      // 立即发送截图完成事件，不再等待
-      mainWindow.webContents.send('screenshot-complete', tempPath);
-    }
+    // 确保文件已经完全写入并可访问后再发送完成事件
+    // 添加短暂延迟确保文件系统操作完成
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    return tempPath;
+    // 验证文件是否存在且可访问
+    if (fs.existsSync(tempPath)) {
+      // 发送完成事件
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show();
+        mainWindow.focus();
+        
+        // 发送截图完成事件
+        mainWindow.webContents.send('screenshot-complete', tempPath);
+      }
+      
+      return tempPath;
+    } else {
+      throw new Error('截图文件未能正确保存');
+    }
     
   } catch (error) {
     closeScreenshotWindow();
@@ -960,54 +1032,118 @@ ipcMain.handle('save-settings', (event, settings: Partial<AppSettings>) => {
 
 // 公式识别
 ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: ApiConfig): Promise<SimpletexResponse> => {
-  try {
+  // 最大重试次数，特别是对于429错误
+  const MAX_RETRIES = 2;
+  let retryCount = 0;
+  let lastError: any = null;
+  
+  // 重试函数
+  const tryRecognize = async (): Promise<SimpletexResponse> => {
+    try {
+      // 检查API配置是否为空
+      if (!apiConfig.appId || !apiConfig.appSecret) {
+        // 尝试从settings.json加载API配置
+        const settingsConfig = loadApiConfigFromSettings();
+        if (settingsConfig.appId && settingsConfig.appSecret) {
+          console.log('使用settings.json中的API配置');
+          apiConfig.appId = settingsConfig.appId;
+          apiConfig.appSecret = settingsConfig.appSecret;
+        } else {
+          // 使用默认的API配置
+          console.log('使用默认的API配置');
+        }
+      }
+      
+      // 验证文件是否存在
+      if (!fs.existsSync(imagePath)) {
+        console.error('图片文件不存在:', imagePath);
+        return {
+          status: false,
+          res: { latex: '', conf: 0 },
+          request_id: '',
+          message: '图片文件不存在'
+        };
+      }
+      
+      // 读取图片文件
+      const imageBuffer = fs.readFileSync(imagePath);
+      if (!imageBuffer || imageBuffer.length === 0) {
+        console.error('图片文件为空:', imagePath);
+        return {
+          status: false,
+          res: { latex: '', conf: 0 },
+          request_id: '',
+          message: '图片文件为空'
+        };
+      }
+      
+      // 准备API请求 - 每次重试都重新生成签名
+      const { header, reqData } = getReqData({}, apiConfig);
+      
+      // 使用 form-data 包创建表单数据
+      const formData = new FormData();
+      formData.append('file', imageBuffer, {
+        filename: path.basename(imagePath),
+        contentType: 'image/png'
+      });
+      
+      // 添加普通数据字段（如果有的话）
+      for (const [key, value] of Object.entries(reqData)) {
+        formData.append(key, value);
+      }
+      
+      console.log(`API请求准备完成，使用的API配置: appId=${apiConfig.appId.substring(0, 4)}...，重试次数: ${retryCount}`);
+      
+      // 发送API请求
+      const response = await axios.post('https://server.simpletex.cn/api/latex_ocr', formData, {
+        headers: {
+          ...formData.getHeaders(),
+          ...header
+        },
+        timeout: 30000
+      });
 
-    
-    const imageBuffer = fs.readFileSync(imagePath);
-    const { header, reqData } = getReqData({}, apiConfig);
-    
-    
-    // 构建签名字符串来验证
-    const params: string[] = [];
-    for (const key of Object.keys(reqData).sort()) {
-      params.push(`${key}=${reqData[key]}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Formula recognition failed (attempt ${retryCount + 1}):`, error);
+      lastError = error;
+      
+      if (axios.isAxiosError(error)) {
+        console.error('Response status:', error.response?.status);
+        console.error('Response data:', error.response?.data);
+        
+        // 检查是否是429错误（请求过多）
+        if (error.response?.status === 429) {
+          if (retryCount < MAX_RETRIES) {
+            retryCount++;
+            console.log(`遇到429错误，等待后重试 (${retryCount}/${MAX_RETRIES})...`);
+            // 等待一段时间后重试
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return tryRecognize();
+          }
+        }
+        
+        // 返回格式化的错误响应
+        return {
+          status: false,
+          res: { latex: '', conf: 0 },
+          request_id: '',
+          message: error.response?.data?.message || error.message || '网络请求失败'
+        };
+      }
+      
+      // 返回通用错误响应
+      return {
+        status: false,
+        res: { latex: '', conf: 0 },
+        request_id: '',
+        message: error instanceof Error ? error.message : '未知错误'
+      };
     }
-    for (const key of ['app-id', 'random-str', 'timestamp']) {
-      params.push(`${key}=${header[key]}`);
-    }
-    params.push(`secret=${apiConfig.appSecret}`);
-    const preSignString = params.join('&');
-    
-    // 使用 form-data 包创建表单数据，只包含文件和普通数据
-    const formData = new FormData();
-    formData.append('file', imageBuffer, {
-      filename: path.basename(imagePath),
-      contentType: 'image/png'
-    });
-    
-    // 添加普通数据字段（如果有的话）
-    for (const [key, value] of Object.entries(reqData)) {
-      formData.append(key, value);
-    }
-    
-    const response = await axios.post('https://server.simpletex.cn/api/latex_ocr', formData, {
-      headers: {
-        ...formData.getHeaders(),
-        ...header
-      },
-      timeout: 30000
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error('Formula recognition failed:', error);
-    if (axios.isAxiosError(error)) {
-      console.error('Response status:', error.response?.status);
-      console.error('Response data:', error.response?.data);
-      console.error('Request config:', error.config);
-    }
-    throw error;
-  }
+  };
+  
+  // 开始识别流程
+  return tryRecognize();
 });
 
 // 注册全局快捷键
@@ -1155,7 +1291,22 @@ ipcMain.handle('test-display-screenshot', async (event, displayIndex: number) =>
   return { message: '简化截图系统已启用，复杂测试功能已禁用' };
 });
 
-
+// 保存API设置到settings.json文件
+ipcMain.handle('save-api-to-settings-file', async (event, apiConfig: ApiConfig) => {
+  try {
+    const settingsPath = path.join(app.getAppPath(), 'settings.json');
+    const settings = {
+      app_id: apiConfig.appId,
+      app_secret: apiConfig.appSecret
+    };
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+    console.log('已保存API配置到settings.json文件');
+    return true;
+  } catch (error) {
+    console.error('保存API配置到settings.json文件失败:', error);
+    return false;
+  }
+});
 
 // 在Windows平台上强制终止所有相关进程
 function terminateAllProcesses(): void {

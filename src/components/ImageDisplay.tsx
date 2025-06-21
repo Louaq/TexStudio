@@ -34,6 +34,7 @@ const ImageContainer = styled.div<{ isDragActive: boolean }>`
   overflow: hidden;
   /* 确保虚线边框完全可见 */
   box-sizing: border-box;
+  cursor: pointer;
 
   &:hover {
     border-color: #4a90e2;
@@ -85,15 +86,23 @@ const DragText = styled.div`
 interface ImageDisplayProps {
   imageUrl: string | null;
   isDragActive: boolean;
+  onUpload?: () => void;
 }
 
-const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageUrl, isDragActive }) => {
+const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageUrl, isDragActive, onUpload }) => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onUpload) {
+      onUpload();
+    }
+  };
+
   return (
     <Container>
       <Label>
         🖼️ 识别图片
       </Label>
-      <ImageContainer isDragActive={isDragActive}>
+      <ImageContainer isDragActive={isDragActive} onClick={handleClick}>
         {imageUrl ? (
           <Image src={imageUrl} alt="待识别的图片" />
         ) : (
@@ -101,7 +110,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageUrl, isDragActive }) =
             📷 将在此处显示识别的图片
             <br />
             <small style={{ color: '#95a5a6', fontSize: '14px', marginTop: '8px', display: 'block' }}>
-              支持拖拽图片文件到此处
+              点击此区域选择图片或拖拽图片文件到此处
             </small>
           </PlaceholderText>
         )}

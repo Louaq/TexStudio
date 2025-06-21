@@ -70,6 +70,7 @@ export interface ElectronAPI {
   // 存储操作
   getSettings: () => Promise<AppSettings>;
   saveSettings: (settings: Partial<AppSettings>) => Promise<void>;
+  saveApiToSettingsFile: (apiConfig: ApiConfig) => Promise<boolean>;
   
   // 网络请求
   recognizeFormula: (imagePath: string, apiConfig: ApiConfig) => Promise<SimpletexResponse>;

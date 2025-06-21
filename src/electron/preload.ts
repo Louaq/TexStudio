@@ -19,6 +19,7 @@ const electronAPI: ElectronAPI = {
   // 存储操作
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings: Partial<AppSettings>) => ipcRenderer.invoke('save-settings', settings),
+  saveApiToSettingsFile: (apiConfig: ApiConfig) => ipcRenderer.invoke('save-api-to-settings-file', apiConfig),
 
   // 网络请求
   recognizeFormula: (imagePath: string, apiConfig: ApiConfig) => 

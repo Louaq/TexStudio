@@ -188,7 +188,6 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
               value={formData.appId}
               onChange={(e) => handleChange('appId', e.target.value)}
               placeholder="请输入APP ID"
-              required
             />
           </FormGroup>
 
@@ -199,7 +198,6 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
               value={formData.appSecret}
               onChange={(e) => handleChange('appSecret', e.target.value)}
               placeholder="请输入APP Secret"
-              required
             />
           </FormGroup>
 

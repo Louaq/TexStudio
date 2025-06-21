@@ -12,6 +12,7 @@ import ApiSettingsDialog from './components/ApiSettingsDialog';
 import ShortcutSettingsDialog from './components/ShortcutSettingsDialog';
 import HistoryDialog from './components/HistoryDialog';
 import AboutDialog from './components/AboutDialog';
+import * as path from 'path';
 
 const AppContainer = styled.div`
   display: flex;
@@ -89,6 +90,7 @@ function App() {
         // 检查是否在 Electron 环境中
         if (window.electronAPI) {
           const appSettings = await window.electronAPI.getSettings();
+          console.log('从Electron加载的设置:', appSettings);
           setSettings({
             apiConfig: appSettings.apiConfig,
             shortcuts: appSettings.shortcuts
@@ -98,14 +100,36 @@ function App() {
           // 浏览器模式下的默认设置
           const defaultSettings = {
             apiConfig: {
-              appId: 'vXSU9RyPMfUW4EQbgMWhzhQu',
-              appSecret: 'GZiaGYq24U5evF9OXlcYIbZ2mwsuPbVu'
+              appId: '',
+              appSecret: '',
+              endpoint: 'https://server.simpletex.cn/api/latex_ocr'
             },
             shortcuts: {
               capture: 'Alt+C',
               upload: 'Alt+U'
             }
           };
+          
+          // 尝试从settings.json加载配置
+          try {
+            // 使用相对路径加载settings.json
+            const response = await fetch('./settings.json');
+            if (response.ok) {
+              const settings = await response.json();
+              if (settings.app_id && settings.app_secret) {
+                defaultSettings.apiConfig.appId = settings.app_id;
+                defaultSettings.apiConfig.appSecret = settings.app_secret;
+                console.log('从settings.json加载API配置成功');
+              } else {
+                console.warn('settings.json中未找到有效的API配置');
+              }
+            } else {
+              console.warn('无法加载settings.json文件');
+            }
+          } catch (error) {
+            console.error('加载settings.json失败:', error);
+          }
+          
           setSettings(defaultSettings);
           console.warn('运行在浏览器模式下，使用默认设置');
         }
@@ -259,17 +283,27 @@ function App() {
       
       // 检查文件是否存在
       if (window.electronAPI && imagePath) {
-        // 直接在这里处理，避免useCallback依赖问题
+        // 创建一个任务ID来跟踪当前识别任务
+        const taskId = Date.now();
+        console.log(`开始识别任务 ID: ${taskId}`);
+        
+        // 先更新图片，但不更改状态消息
         setAppState(prev => ({ 
           ...prev, 
-          currentImage: `file://${imagePath}`,
-          statusMessage: '🔄 准备识别...'
+          currentImage: `file://${imagePath}`
         }));
         
+        // 等待图片加载完成
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         console.log('开始识别截图...');
+        // 获取最新的设置
+        const currentSettings = settings;
+        console.log('当前使用的设置:', currentSettings);
+        
         // 直接在这里实现识别逻辑，避免函数依赖
-        if (settings) {
-          // 开始识别
+        if (currentSettings) {
+          // 开始识别，只设置一次状态
           setAppState(prev => ({ 
             ...prev, 
             isRecognizing: true, 
@@ -278,54 +312,57 @@ function App() {
           }));
 
           try {
-            console.log('调用API识别，配置:', settings.apiConfig);
-            const result = await window.electronAPI.recognizeFormula(imagePath, settings.apiConfig);
-            console.log('API识别结果:', result);
+            console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
+            const result = await window.electronAPI.recognizeFormula(imagePath, currentSettings.apiConfig);
+            console.log(`任务 ${taskId}: API识别结果:`, result);
             
             if (result.status && result.res?.latex) {
               const latex = result.res.latex;
-              console.log('识别成功，LaTeX:', latex);
-              setAppState(prev => ({ 
-                ...prev, 
-                latexCode: latex,
-                statusMessage: '✅ 识别完成！'
-              }));
+              console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
               
-              // 添加到历史记录
-              const newItem = {
-                date: getCurrentTimestamp(),
-                latex: latex.trim()
-              };
-              
+              // 合并状态更新，一次性更新所有状态
               setAppState(prev => {
+                // 添加到历史记录
+                const newItem = {
+                  date: getCurrentTimestamp(),
+                  latex: latex.trim()
+                };
+                
+                let newHistory = prev.history;
                 const exists = prev.history.some(item => item.latex === newItem.latex);
                 if (!exists) {
-                  const newHistory = [newItem, ...prev.history.slice(0, 4)];
+                  newHistory = [newItem, ...prev.history.slice(0, 4)];
                   // 保存到设置
                   if (window.electronAPI) {
                     window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
                   }
-                  return { ...prev, history: newHistory };
                 }
-                return prev;
+                
+                return { 
+                  ...prev, 
+                  latexCode: latex,
+                  isRecognizing: false,
+                  statusMessage: '✅ 识别完成！',
+                  history: newHistory
+                };
               });
             } else {
-              console.log('识别失败，错误信息:', result.message);
+              console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
               setAppState(prev => ({ 
                 ...prev, 
                 latexCode: '',
+                isRecognizing: false,
                 statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
               }));
             }
           } catch (error) {
-            console.error('公式识别失败:', error);
+            console.error(`任务 ${taskId}: 公式识别失败:`, error);
             setAppState(prev => ({ 
               ...prev, 
               latexCode: '',
+              isRecognizing: false,
               statusMessage: '❌ 识别出错'
             }));
-          } finally {
-            setAppState(prev => ({ ...prev, isRecognizing: false }));
           }
         }
       } else {
@@ -386,6 +423,14 @@ function App() {
               
               // 直接内联识别逻辑
               if (settings) {
+                // 获取最新的设置
+                const currentSettings = settings;
+                console.log('当前使用的设置:', currentSettings);
+                
+                // 创建一个任务ID来跟踪当前识别任务
+                const taskId = Date.now();
+                console.log(`开始拖拽识别任务 ID: ${taskId}`);
+                
                 setAppState(prev => ({ 
                   ...prev, 
                   isRecognizing: true, 
@@ -394,54 +439,57 @@ function App() {
                 }));
 
                 try {
-                  console.log('调用API识别，配置:', settings.apiConfig);
-                  const result = await window.electronAPI.recognizeFormula(tempPath, settings.apiConfig);
-                  console.log('API识别结果:', result);
+                  console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
+                  const result = await window.electronAPI.recognizeFormula(tempPath, currentSettings.apiConfig);
+                  console.log(`任务 ${taskId}: API识别结果:`, result);
                   
                   if (result.status && result.res?.latex) {
                     const latex = result.res.latex;
-                    console.log('识别成功，LaTeX:', latex);
-                    setAppState(prev => ({ 
-                      ...prev, 
-                      latexCode: latex,
-                      statusMessage: '✅ 识别完成！'
-                    }));
+                    console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
                     
-                    // 添加到历史记录
-                    const newItem = {
-                      date: getCurrentTimestamp(),
-                      latex: latex.trim()
-                    };
-                    
+                    // 合并状态更新，一次性更新所有状态
                     setAppState(prev => {
+                      // 添加到历史记录
+                      const newItem = {
+                        date: getCurrentTimestamp(),
+                        latex: latex.trim()
+                      };
+                      
+                      let newHistory = prev.history;
                       const exists = prev.history.some(item => item.latex === newItem.latex);
                       if (!exists) {
-                        const newHistory = [newItem, ...prev.history.slice(0, 4)];
+                        newHistory = [newItem, ...prev.history.slice(0, 4)];
                         // 保存到设置
                         if (window.electronAPI) {
                           window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
                         }
-                        return { ...prev, history: newHistory };
                       }
-                      return prev;
+                      
+                      return { 
+                        ...prev, 
+                        latexCode: latex,
+                        isRecognizing: false,
+                        statusMessage: '✅ 识别完成！',
+                        history: newHistory
+                      };
                     });
                   } else {
-                    console.log('识别失败，错误信息:', result.message);
+                    console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
                     setAppState(prev => ({ 
                       ...prev, 
                       latexCode: '',
+                      isRecognizing: false,
                       statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
                     }));
                   }
                 } catch (error) {
-                  console.error('公式识别失败:', error);
+                  console.error(`任务 ${taskId}: 公式识别失败:`, error);
                   setAppState(prev => ({ 
                     ...prev, 
                     latexCode: '',
+                    isRecognizing: false,
                     statusMessage: '❌ 识别出错'
                   }));
-                } finally {
-                  setAppState(prev => ({ ...prev, isRecognizing: false }));
                 }
               } else {
                 console.error('settings未加载，无法进行识别');
@@ -517,6 +565,9 @@ function App() {
     try {
       const filePath = await window.electronAPI.selectFile();
       if (filePath) {
+        // 创建一个任务ID来跟踪当前识别任务
+        const taskId = Date.now();
+        
         setAppState(prev => ({ 
           ...prev, 
           currentImage: `file://${filePath}`,
@@ -525,6 +576,14 @@ function App() {
         
         // 直接内联识别逻辑
         if (settings) {
+          // 获取最新的设置
+          const currentSettings = settings;
+          console.log('当前使用的设置:', currentSettings);
+          
+          // 创建一个任务ID来跟踪当前识别任务
+          const taskId = Date.now();
+          console.log(`开始上传识别任务 ID: ${taskId}`);
+          
           setAppState(prev => ({ 
             ...prev, 
             isRecognizing: true, 
@@ -533,54 +592,57 @@ function App() {
           }));
 
           try {
-            console.log('调用API识别，配置:', settings.apiConfig);
-            const result = await window.electronAPI.recognizeFormula(filePath, settings.apiConfig);
-            console.log('API识别结果:', result);
+            console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
+            const result = await window.electronAPI.recognizeFormula(filePath, currentSettings.apiConfig);
+            console.log(`任务 ${taskId}: API识别结果:`, result);
             
             if (result.status && result.res?.latex) {
               const latex = result.res.latex;
-              console.log('识别成功，LaTeX:', latex);
-              setAppState(prev => ({ 
-                ...prev, 
-                latexCode: latex,
-                statusMessage: '✅ 识别完成！'
-              }));
+              console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
               
-              // 添加到历史记录
-              const newItem = {
-                date: getCurrentTimestamp(),
-                latex: latex.trim()
-              };
-              
+              // 合并状态更新，一次性更新所有状态
               setAppState(prev => {
+                // 添加到历史记录
+                const newItem = {
+                  date: getCurrentTimestamp(),
+                  latex: latex.trim()
+                };
+                
+                let newHistory = prev.history;
                 const exists = prev.history.some(item => item.latex === newItem.latex);
                 if (!exists) {
-                  const newHistory = [newItem, ...prev.history.slice(0, 4)];
+                  newHistory = [newItem, ...prev.history.slice(0, 4)];
                   // 保存到设置
                   if (window.electronAPI) {
                     window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
                   }
-                  return { ...prev, history: newHistory };
                 }
-                return prev;
+                
+                return { 
+                  ...prev, 
+                  latexCode: latex,
+                  isRecognizing: false,
+                  statusMessage: '✅ 识别完成！',
+                  history: newHistory
+                };
               });
             } else {
-              console.log('识别失败，错误信息:', result.message);
+              console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
               setAppState(prev => ({ 
                 ...prev, 
                 latexCode: '',
+                isRecognizing: false,
                 statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
               }));
             }
           } catch (error) {
-            console.error('公式识别失败:', error);
+            console.error(`任务 ${taskId}: 公式识别失败:`, error);
             setAppState(prev => ({ 
               ...prev, 
               latexCode: '',
+              isRecognizing: false,
               statusMessage: '❌ 识别出错'
             }));
-          } finally {
-            setAppState(prev => ({ ...prev, isRecognizing: false }));
           }
         }
       }
@@ -628,6 +690,10 @@ function App() {
       return;
     }
 
+    // 获取最新的设置
+    const currentSettings = settings;
+    console.log('当前使用的设置:', currentSettings);
+
     if (!window.electronAPI) {
       setAppState(prev => ({ 
         ...prev, 
@@ -635,6 +701,10 @@ function App() {
       }));
       return;
     }
+
+    // 创建一个任务ID来跟踪当前识别任务
+    const taskId = Date.now();
+    console.log(`开始通用识别任务 ID: ${taskId}`);
 
     setAppState(prev => ({ 
       ...prev, 
@@ -644,40 +714,63 @@ function App() {
     }));
 
     try {
-      console.log('调用API识别，配置:', settings.apiConfig);
-      const result = await window.electronAPI.recognizeFormula(imagePath, settings.apiConfig);
-      console.log('API识别结果:', result);
+      console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
+      const result = await window.electronAPI.recognizeFormula(imagePath, currentSettings.apiConfig);
+      console.log(`任务 ${taskId}: API识别结果:`, result);
       
       if (result.status && result.res?.latex) {
         const latex = result.res.latex;
-        console.log('识别成功，LaTeX:', latex);
-        setAppState(prev => ({ 
-          ...prev, 
-          latexCode: latex,
-          statusMessage: '✅ 识别完成！'
-        }));
+        console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
         
-        // 添加到历史记录
-        addToHistory(latex);
+        // 合并状态更新，一次性更新所有状态
+        setAppState(prev => {
+          // 准备历史记录更新
+          let newHistory = prev.history;
+          
+          // 只有当latex不为空时才添加到历史记录
+          if (latex.trim()) {
+            const newItem = {
+              date: getCurrentTimestamp(),
+              latex: latex.trim()
+            };
+            
+            const exists = prev.history.some(item => item.latex === newItem.latex);
+            if (!exists) {
+              newHistory = [newItem, ...prev.history.slice(0, 4)];
+              // 保存到设置
+              if (window.electronAPI) {
+                window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
+              }
+            }
+          }
+          
+          return { 
+            ...prev, 
+            latexCode: latex,
+            isRecognizing: false,
+            statusMessage: '✅ 识别完成！',
+            history: newHistory
+          };
+        });
       } else {
-        console.log('识别失败，错误信息:', result.message);
+        console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
         setAppState(prev => ({ 
           ...prev, 
           latexCode: '',
+          isRecognizing: false,
           statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
         }));
       }
     } catch (error) {
-      console.error('公式识别失败:', error);
+      console.error(`任务 ${taskId}: 公式识别失败:`, error);
       setAppState(prev => ({ 
         ...prev, 
         latexCode: '',
+        isRecognizing: false,
         statusMessage: '❌ 识别出错'
       }));
-    } finally {
-      setAppState(prev => ({ ...prev, isRecognizing: false }));
     }
-  }, [settings, addToHistory]);
+  }, [settings]);
 
   // 复制LaTeX代码
   const handleCopy = async (mode: CopyMode = 'normal') => {
@@ -751,12 +844,49 @@ function App() {
   const handleSaveApiSettings = async (apiConfig: ApiConfig) => {
     if (window.electronAPI) {
       try {
+        // 保存到electron-store
         await window.electronAPI.saveSettings({ apiConfig });
+        
+        // 同时保存到settings.json文件
+        await window.electronAPI.saveApiToSettingsFile(apiConfig);
+        
+        // 更新设置状态
+        setSettings(prev => prev ? { ...prev, apiConfig } : null);
+        
+        // 记录日志
+        console.log('API设置已保存', apiConfig);
+        
+        // 显示保存成功提示
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '✅ API设置已保存' 
+        }));
+        
+        // 清理当前图片和识别结果，避免自动触发识别
+        // 这样用户需要重新截图或上传图片，确保新API设置生效
+        setAppState(prev => ({
+          ...prev,
+          currentImage: null,
+          latexCode: ''
+        }));
+        
+        // 2秒后恢复状态
+        setTimeout(() => {
+          setAppState(prev => ({ 
+            ...prev, 
+            statusMessage: '⚡ 准备就绪，请重新截图或上传图片' 
+          }));
+        }, 2000);
       } catch (error) {
         console.error('保存API设置失败:', error);
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '❌ API设置保存失败' 
+        }));
       }
+    } else {
+      setSettings(prev => prev ? { ...prev, apiConfig } : null);
     }
-    setSettings(prev => prev ? { ...prev, apiConfig } : null);
     setShowApiSettings(false);
   };
 
@@ -816,8 +946,6 @@ function App() {
     }
   };
 
-
-
   if (!settings) {
     return <div>加载中...</div>;
   }
@@ -839,6 +967,7 @@ function App() {
           <ImageDisplay 
             imageUrl={appState.currentImage}
             isDragActive={isDragActive}
+            onUpload={handleUpload}
           />
         </TopSection>
 
@@ -894,4 +1023,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
