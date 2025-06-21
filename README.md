@@ -1,5 +1,15 @@
 # LaTeX公式识别工具 - TypeScript版
 
+## ✨ 界面截图
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-06-21_16-51-11.png)
+
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-06-21_16-51-22.png)
+
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-06-21_16-51-29.png)
+
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-06-21_16-51-42.png)
+
+
 一个基于 Electron + React + TypeScript 的现代化 LaTeX 公式识别桌面应用程序。
 
 ## ✨ 功能特性
