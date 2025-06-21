@@ -8,6 +8,46 @@ import { ScreenshotArea } from '../types';
 import { getCurrentTimestamp } from '../utils/api';
 import * as crypto from 'crypto';
 
+// 设置控制台编码为UTF-8，解决中文乱码问题
+if (process.platform === 'win32') {
+  try {
+    // 尝试设置控制台代码页为65001 (UTF-8)
+    const { execSync } = require('child_process');
+    execSync('chcp 65001', { windowsHide: true });
+    console.log('Console code page set to UTF-8 (65001)');
+  } catch (error) {
+    console.error('Failed to set console code page:', error);
+  }
+}
+
+// 创建自定义日志函数，确保中文正确显示
+const logger = {
+  log: (message: string, ...args: any[]) => {
+    // 在Windows环境下，确保日志正确显示
+    if (process.platform === 'win32') {
+      // 如果消息包含中文，添加UTF-8 BOM标记
+      if (/[\u4e00-\u9fa5]/.test(message)) {
+        console.log('\ufeff' + message, ...args);
+      } else {
+        console.log(message, ...args);
+      }
+    } else {
+      console.log(message, ...args);
+    }
+  },
+  error: (message: string, ...args: any[]) => {
+    if (process.platform === 'win32') {
+      if (/[\u4e00-\u9fa5]/.test(message)) {
+        console.error('\ufeff' + message, ...args);
+      } else {
+        console.error(message, ...args);
+      }
+    } else {
+      console.error(message, ...args);
+    }
+  }
+};
+
 // 定义API配置读取函数
 function loadApiConfigFromSettings(): { appId: string; appSecret: string } {
   const config = {
@@ -24,15 +64,15 @@ function loadApiConfigFromSettings(): { appId: string; appSecret: string } {
       if (settings.app_id && settings.app_secret) {
         config.appId = settings.app_id;
         config.appSecret = settings.app_secret;
-        console.log('成功从settings.json加载API配置');
+        logger.log('成功从settings.json加载API配置');
       } else {
-        console.log('settings.json中未找到有效的API配置');
+        logger.log('settings.json中未找到有效的API配置');
       }
     } else {
-      console.log('未找到settings.json文件，将使用空的API配置');
+      logger.log('未找到settings.json文件，将使用空的API配置');
     }
   } catch (error) {
-    console.error('读取settings.json文件失败:', error);
+    logger.error('读取settings.json文件失败:', error);
   }
   
   return config;
@@ -70,6 +110,7 @@ interface SimpletexResponse {
   };
   request_id: string;
   message?: string;
+  error_code?: string;
 }
 
 // 初始默认API配置
@@ -457,12 +498,12 @@ function createSimpleScreenshotWindow(): void {
     
     document.addEventListener('keydown', async (e) => {
       if (e.key === 'Escape') {
-        console.log('ESC键被按下，关闭截图窗口');
+        logger.log('ESC键被按下，关闭截图窗口');
         try {
           await window.screenshotAPI.closeScreenshotWindow();
-          console.log('截图窗口关闭完成');
+          logger.log('截图窗口关闭完成');
         } catch (error) {
-          console.error('关闭截图窗口时出错:', error);
+          logger.error('关闭截图窗口时出错:', error);
         }
       }
     });
@@ -555,27 +596,34 @@ if (!gotTheLock) {
           app_secret: ''
         };
         fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2), 'utf8');
-        console.log('已创建默认的settings.json文件');
+        logger.log('已创建默认的settings.json文件');
       } catch (error) {
-        console.error('创建默认settings.json文件失败:', error);
+        logger.error('创建默认settings.json文件失败:', error);
       }
     }
     
     // 加载API配置
     const apiConfig = loadApiConfigFromSettings();
-    console.log('从settings.json加载的API配置:', apiConfig);
+          logger.log('从settings.json加载的API配置:', apiConfig);
     
     // 如果配置有效，则更新默认配置
     if (apiConfig.appId && apiConfig.appSecret) {
       DEFAULT_API_CONFIG.appId = apiConfig.appId;
       DEFAULT_API_CONFIG.appSecret = apiConfig.appSecret;
-      console.log('已更新默认API配置');
+      logger.log('已更新默认API配置');
     } else {
-      console.log('settings.json中的API配置无效或为空，使用默认配置');
+      logger.log('settings.json中的API配置无效或为空，不使用任何默认配置');
+      // 确保API配置为空
+      DEFAULT_API_CONFIG.appId = '';
+      DEFAULT_API_CONFIG.appSecret = '';
     }
     
     // 初始化存储
     store.set('apiConfig', DEFAULT_API_CONFIG);
+    
+    // 测试日志输出，确认编码设置正常
+    logger.log('应用启动 - 中文日志测试');
+    logger.log('Application started - English log test');
     
     killZombieProcesses();
     await createMainWindow();
@@ -1052,18 +1100,45 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
   // 重试函数
   const tryRecognize = async (): Promise<SimpletexResponse> => {
     try {
-      // 检查API配置是否为空
-      if (!apiConfig.appId || !apiConfig.appSecret) {
-        // 尝试从settings.json加载API配置
+      // 强制检查API配置，完全忽略可能存在的硬编码默认值
+      // 首先检查传入的apiConfig
+      let hasValidConfig = false;
+      
+      if (apiConfig && apiConfig.appId && apiConfig.appSecret) {
+        // 检查是否是有效的非空字符串（不仅仅是空格）
+        if (apiConfig.appId.trim() && apiConfig.appSecret.trim()) {
+          hasValidConfig = true;
+          logger.log('使用传入的API配置');
+        }
+      }
+      
+      // 如果传入的配置无效，尝试从settings.json加载
+      if (!hasValidConfig) {
         const settingsConfig = loadApiConfigFromSettings();
         if (settingsConfig.appId && settingsConfig.appSecret) {
-          console.log('使用settings.json中的API配置');
-          apiConfig.appId = settingsConfig.appId;
-          apiConfig.appSecret = settingsConfig.appSecret;
-        } else {
-          // 使用默认的API配置
-          console.log('使用默认的API配置');
+          // 同样检查是否是有效的非空字符串
+          if (settingsConfig.appId.trim() && settingsConfig.appSecret.trim()) {
+            logger.log('使用settings.json中的API配置');
+            apiConfig = {
+              ...apiConfig,
+              appId: settingsConfig.appId,
+              appSecret: settingsConfig.appSecret
+            };
+            hasValidConfig = true;
+          }
         }
+      }
+      
+      // 如果仍然没有有效配置，返回错误
+      if (!hasValidConfig) {
+        logger.error('API配置为空，无法进行公式识别');
+        return {
+          status: false,
+          res: { latex: '', conf: 0 },
+          request_id: '',
+          message: '请先在设置中配置API密钥',
+          error_code: 'NO_API_CONFIG'
+        };
       }
       
       // 验证文件是否存在
@@ -1089,6 +1164,19 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
         };
       }
       
+      // 再次验证API配置是否有效 - 更严格的检查
+      if (!apiConfig || !apiConfig.appId || !apiConfig.appSecret || 
+          !apiConfig.appId.trim() || !apiConfig.appSecret.trim()) {
+        logger.error('API配置无效，无法进行公式识别');
+        return {
+          status: false,
+          res: { latex: '', conf: 0 },
+          request_id: '',
+          message: '请先在设置中配置API密钥',
+          error_code: 'NO_API_CONFIG'
+        };
+      }
+      
       // 准备API请求 - 每次重试都重新生成签名
       const { header, reqData } = getReqData({}, apiConfig);
       
@@ -1104,7 +1192,8 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
         formData.append(key, value);
       }
       
-      console.log(`API请求准备完成，使用的API配置: appId=${apiConfig.appId.substring(0, 4)}...，重试次数: ${retryCount}`);
+      // 使用自定义logger输出
+      logger.log(`API请求准备完成，使用的API配置: appId=${apiConfig.appId.substring(0, 4)}...，重试次数: ${retryCount}`);
       
       // 发送API请求
       const response = await axios.post('https://server.simpletex.cn/api/latex_ocr', formData, {
@@ -1128,7 +1217,7 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
         if (error.response?.status === 429) {
           if (retryCount < MAX_RETRIES) {
             retryCount++;
-            console.log(`遇到429错误，等待后重试 (${retryCount}/${MAX_RETRIES})...`);
+            logger.log(`遇到429错误，等待后重试 (${retryCount}/${MAX_RETRIES})...`);
             // 等待一段时间后重试
             await new Promise(resolve => setTimeout(resolve, 1000));
             return tryRecognize();
@@ -1204,9 +1293,9 @@ ipcMain.handle('close-window', () => {
 
 // 关闭截图窗口
 ipcMain.handle('close-screenshot-window', () => {
-  console.log('收到关闭截图窗口请求');
+  logger.log('收到关闭截图窗口请求');
   closeScreenshotWindow();
-  console.log('截图窗口已关闭，主窗口已显示');
+  logger.log('截图窗口已关闭，主窗口已显示');
   return true;
 });
 
@@ -1315,10 +1404,78 @@ ipcMain.handle('save-api-to-settings-file', async (event, apiConfig: ApiConfig) 
       app_secret: apiConfig.appSecret
     };
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
-    console.log('已保存API配置到settings.json文件');
+           logger.log('API config saved to settings.json file');
     return true;
   } catch (error) {
-    console.error('保存API配置到settings.json文件失败:', error);
+    logger.error('保存API配置到settings.json文件失败:', error);
+    return false;
+  }
+});
+
+// 清除API配置
+ipcMain.handle('clear-api-config', async (event) => {
+  try {
+    logger.log('开始清除API配置...');
+    
+    // 1. 清除内存中的API配置
+    DEFAULT_API_CONFIG.appId = '';
+    DEFAULT_API_CONFIG.appSecret = '';
+    logger.log('1. 内存中的API配置已清除');
+    
+    // 2. 更新electron-store中的API配置
+    store.set('apiConfig', {
+      appId: '',
+      appSecret: '',
+      endpoint: DEFAULT_API_CONFIG.endpoint
+    });
+    logger.log('2. electron-store中的API配置已清除');
+    
+    // 3. 清除settings.json文件中的API配置
+    const settingsPath = path.join(app.getAppPath(), 'settings.json');
+    if (fs.existsSync(settingsPath)) {
+      const settings = {
+        app_id: '',
+        app_secret: ''
+      };
+      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+      logger.log('3. settings.json文件中的API配置已清除');
+    } else {
+      logger.log('settings.json文件不存在，无需清除');
+    }
+    
+    // 4. 清除浏览器缓存和会话存储
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try {
+        // 清除所有类型的存储数据
+        await mainWindow.webContents.session.clearStorageData({
+          storages: ['localstorage', 'cookies', 'indexdb', 'websql', 'serviceworkers', 'cachestorage']
+        });
+        logger.log('4. 浏览器存储数据已清除');
+        
+        // 清除HTTP缓存
+        await mainWindow.webContents.session.clearCache();
+        logger.log('5. 浏览器HTTP缓存已清除');
+        
+        // 清除主机解析缓存
+        await mainWindow.webContents.session.clearHostResolverCache();
+        logger.log('6. 主机解析缓存已清除');
+        
+        // 清除所有授权数据
+        await mainWindow.webContents.session.clearAuthCache();
+        logger.log('7. 授权缓存已清除');
+        
+        // 强制刷新窗口内容，确保所有缓存都被清除
+        mainWindow.webContents.reloadIgnoringCache();
+        logger.log('8. 窗口内容已强制刷新');
+      } catch (e) {
+        logger.error('清除缓存失败:', e);
+      }
+    }
+    
+    logger.log('API配置已完全清除');
+    return true;
+  } catch (error) {
+    logger.error('清除API配置失败:', error);
     return false;
   }
 });

@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js';
 import { ApiConfig, SimpletexResponse } from '../types';
 
-// SimpleTex API默认配置
+// SimpleTex API默认配置 - 确保不使用硬编码的API密钥
 export const DEFAULT_API_CONFIG: ApiConfig = {
   appId: '',
   appSecret: ''
@@ -83,8 +83,13 @@ export function formatLatex(latex: string, mode: 'normal' | 'inline' | 'display'
  * @returns 是否有效
  */
 export function validateApiConfig(config: ApiConfig): boolean {
-  // 允许空的API配置
-  return true;
+  // 更严格地检查API配置是否有效
+  // 确保config存在，且appId和appSecret都是非空字符串（不仅仅是空格）
+  return !!(config && 
+            config.appId && 
+            config.appSecret && 
+            config.appId.trim() && 
+            config.appSecret.trim());
 }
 
 /**

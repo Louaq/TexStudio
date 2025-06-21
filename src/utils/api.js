@@ -5,10 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCurrentTimestamp = exports.validateApiConfig = exports.formatLatex = exports.getReqData = exports.randomStr = exports.DEFAULT_API_CONFIG = void 0;
 const crypto_js_1 = __importDefault(require("crypto-js"));
-// SimpleTex API默认配置
+// SimpleTex API默认配置 - 不使用硬编码的API密钥
 exports.DEFAULT_API_CONFIG = {
-    appId: 'vXSU9RyPMfUW4EQbgMWhzhQu',
-    appSecret: 'GZiaGYq24U5evF9OXlcYIbZ2mwsuPbVu'
+    appId: '',
+    appSecret: ''
 };
 /**
  * 生成随机字符串
@@ -43,7 +43,7 @@ function getReqData(reqData = {}, apiConfig) {
         params.push(`${key}=${reqData[key]}`);
     }
     // 添加头部参数
-    const headerKeys = ['timestamp', 'random-str', 'app-id'];
+    const headerKeys = ['app-id', 'random-str', 'timestamp'];
     for (const key of headerKeys) {
         params.push(`${key}=${header[key]}`);
     }
@@ -80,7 +80,8 @@ exports.formatLatex = formatLatex;
  * @returns 是否有效
  */
 function validateApiConfig(config) {
-    return !!(config.appId && config.appSecret);
+    // 检查API配置是否有效（appId和appSecret都不为空）
+    return !!(config && config.appId && config.appSecret);
 }
 exports.validateApiConfig = validateApiConfig;
 /**
@@ -98,4 +99,4 @@ function getCurrentTimestamp() {
     });
 }
 exports.getCurrentTimestamp = getCurrentTimestamp;
-//# sourceMappingURL=api.js.map
+//# sourceMappingURL=api.js.map 

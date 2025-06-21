@@ -20,6 +20,7 @@ const electronAPI: ElectronAPI = {
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings: Partial<AppSettings>) => ipcRenderer.invoke('save-settings', settings),
   saveApiToSettingsFile: (apiConfig: ApiConfig) => ipcRenderer.invoke('save-api-to-settings-file', apiConfig),
+  clearApiConfig: () => ipcRenderer.invoke('clear-api-config'),
 
   // 网络请求
   recognizeFormula: (imagePath: string, apiConfig: ApiConfig) => 

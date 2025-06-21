@@ -8,8 +8,11 @@ export interface HistoryItem {
 export interface SimpletexResponse {
   status: boolean;
   message?: string;
+  error_code?: string;
+  request_id?: string;
   res?: {
     latex: string;
+    conf?: number;
   };
 }
 
@@ -17,6 +20,7 @@ export interface SimpletexResponse {
 export interface ApiConfig {
   appId: string;
   appSecret: string;
+  endpoint?: string;
 }
 
 // 应用设置类型
@@ -71,6 +75,7 @@ export interface ElectronAPI {
   getSettings: () => Promise<AppSettings>;
   saveSettings: (settings: Partial<AppSettings>) => Promise<void>;
   saveApiToSettingsFile: (apiConfig: ApiConfig) => Promise<boolean>;
+  clearApiConfig: () => Promise<boolean>;
   
   // 网络请求
   recognizeFormula: (imagePath: string, apiConfig: ApiConfig) => Promise<SimpletexResponse>;

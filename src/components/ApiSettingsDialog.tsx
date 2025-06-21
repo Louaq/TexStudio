@@ -90,12 +90,12 @@ const Input = styled.input`
 
 const ButtonGroup = styled.div`
   display: flex;
+  justify-content: center;
   gap: 12px;
-  justify-content: flex-end;
   margin-top: 24px;
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
@@ -105,24 +105,41 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
   transition: all 0.3s ease;
   min-width: 100px;
 
-  ${props => props.variant === 'primary' ? `
-    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-    color: white;
+  ${props => {
+    if (props.variant === 'primary') {
+      return `
+        background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        color: white;
 
-    &:hover {
-      background: linear-gradient(135deg, #5ba0f2 0%, #458bcd 100%);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-    }
-  ` : `
-    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-    color: white;
+        &:hover {
+          background: linear-gradient(135deg, #5ba0f2 0%, #458bcd 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+      `;
+    } else if (props.variant === 'danger') {
+      return `
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
 
-    &:hover {
-      background: linear-gradient(135deg, #a4b3b6 0%, #8e9b9d 100%);
-      transform: translateY(-1px);
+        &:hover {
+          background: linear-gradient(135deg, #f75c4c 0%, #d04a3b 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+      `;
+    } else {
+      return `
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        color: white;
+
+        &:hover {
+          background: linear-gradient(135deg, #a4b3b6 0%, #8e9b9d 100%);
+          transform: translateY(-1px);
+        }
+      `;
     }
-  `}
+  }}
 
   &:active {
     transform: translateY(0);
@@ -152,18 +169,40 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
   onSave,
   onClose
 }) => {
-  const [formData, setFormData] = useState<ApiConfig>(apiConfig);
+  // 确保初始表单数据有效，处理apiConfig可能为undefined或null的情况
+  const [formData, setFormData] = useState<ApiConfig>({
+    appId: apiConfig?.appId || '',
+    appSecret: apiConfig?.appSecret || ''
+  });
+  
+  console.log('初始化ApiSettingsDialog，apiConfig:', apiConfig);
+  console.log('初始化的formData:', formData);
+  
   const [isDragging, setIsDragging] = useState(false);
   
   // 处理表单提交
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    console.log('提交表单数据:', formData);
+    
+    // 确保表单数据有效
+    const validFormData = {
+      appId: formData.appId || '',
+      appSecret: formData.appSecret || ''
+    };
+    
+    console.log('处理后的表单数据:', validFormData);
+    onSave(validFormData);
   };
 
   // 处理输入框变化
   const handleChange = (field: keyof ApiConfig, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    console.log(`输入框变化: ${field} = ${value}`);
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      console.log('新的表单数据:', newData);
+      return newData;
+    });
   };
 
   // 处理遮罩层点击
@@ -200,6 +239,29 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
     }, 10);
   };
 
+  // 清除API配置
+  const handleClearConfig = async () => {
+    if (window.confirm('确定要清除API配置吗？清除后需要重新设置才能使用公式识别功能。')) {
+      try {
+        // 清空表单数据
+        setFormData({
+          appId: '',
+          appSecret: ''
+        });
+        
+        // 保存空的API配置，这会触发父组件的handleSaveApiSettings函数
+        // 该函数会自动检测到是清空操作并调用clearApiConfig
+        onSave({
+          appId: '',
+          appSecret: ''
+        });
+      } catch (error) {
+        console.error('清除API配置失败:', error);
+        alert('清除API配置失败');
+      }
+    }
+  };
+
   return (
     <Overlay 
       onClick={handleOverlayClick}
@@ -221,9 +283,13 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
             <Label>APP ID</Label>
             <Input
               type="text"
-              value={formData.appId}
-              onChange={(e) => handleChange('appId', e.target.value)}
+              value={formData.appId || ''}
+              onChange={(e) => {
+                console.log('APP ID 输入事件:', e.target.value);
+                handleChange('appId', e.target.value);
+              }}
               placeholder="请输入APP ID"
+              autoComplete="off"
             />
           </FormGroup>
 
@@ -231,9 +297,13 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
             <Label>APP Secret</Label>
             <Input
               type="password"
-              value={formData.appSecret}
-              onChange={(e) => handleChange('appSecret', e.target.value)}
+              value={formData.appSecret || ''}
+              onChange={(e) => {
+                console.log('APP Secret 输入事件:', e.target.value);
+                handleChange('appSecret', e.target.value);
+              }}
               placeholder="请输入APP Secret"
+              autoComplete="off"
             />
           </FormGroup>
 

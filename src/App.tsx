@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useDropzone } from 'react-dropzone';
 import { AppState, HistoryItem, ApiConfig, CopyMode } from './types';
-import { formatLatex, getCurrentTimestamp } from './utils/api';
+import { formatLatex, getCurrentTimestamp, validateApiConfig } from './utils/api';
 import MenuBar from './components/MenuBar';
 import ImageDisplay from './components/ImageDisplay';
 import LatexEditor from './components/LatexEditor';
@@ -205,6 +205,19 @@ function App() {
                }));
 
                try {
+                 // 先验证API配置是否有效
+                 const apiConfig = settings.apiConfig;
+                 if (!apiConfig || !apiConfig.appId || !apiConfig.appSecret || 
+                     !apiConfig.appId.trim() || !apiConfig.appSecret.trim()) {
+                   console.log('API配置无效，无法识别');
+                   setAppState(prev => ({ 
+                     ...prev, 
+                     latexCode: '',
+                     statusMessage: '❌ 请先在设置中配置API密钥'
+                   }));
+                   return;
+                 }
+                 
                  console.log('调用API识别，配置:', settings.apiConfig);
                  const result = await window.electronAPI.recognizeFormula(filePath, settings.apiConfig);
                  console.log('API识别结果:', result);
@@ -240,11 +253,21 @@ function App() {
 
                  } else {
                    console.log('识别失败，错误信息:', result.message);
-                   setAppState(prev => ({ 
-                     ...prev, 
-                     latexCode: '',
-                     statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
-                   }));
+                   
+                   // 检查是否是API配置错误
+                   if (result.error_code === 'NO_API_CONFIG') {
+                     setAppState(prev => ({ 
+                       ...prev, 
+                       latexCode: '', // 确保清空公式区域
+                       statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
+                     }));
+                   } else {
+                     setAppState(prev => ({ 
+                       ...prev, 
+                       latexCode: '',
+                       statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
+                     }));
+                   }
                    
 
                  }
@@ -312,6 +335,19 @@ function App() {
           }));
 
           try {
+            // 先严格验证API配置是否有效
+            const apiConfig = currentSettings.apiConfig;
+            if (!validateApiConfig(apiConfig)) {
+              console.log(`任务 ${taskId}: API配置无效，无法识别`);
+              setAppState(prev => ({ 
+                ...prev, 
+                latexCode: '',
+                isRecognizing: false,
+                statusMessage: '❌ 请先在设置中配置API密钥'
+              }));
+              return;
+            }
+            
             console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
             const result = await window.electronAPI.recognizeFormula(imagePath, currentSettings.apiConfig);
             console.log(`任务 ${taskId}: API识别结果:`, result);
@@ -414,7 +450,7 @@ function App() {
             console.log('开始处理拖拽图片识别...');
             console.log('当前settings:', settings);
 
-                         try {
+            try {
                // 将File对象保存为临时文件
                const arrayBuffer = await file.arrayBuffer();
                const uint8Array = new Uint8Array(arrayBuffer);
@@ -439,6 +475,19 @@ function App() {
                 }));
 
                 try {
+                  // 先严格验证API配置是否有效
+                  const apiConfig = currentSettings.apiConfig;
+                  if (!validateApiConfig(apiConfig)) {
+                    console.log(`任务 ${taskId}: API配置无效，无法识别`);
+                    setAppState(prev => ({ 
+                      ...prev, 
+                      latexCode: '',
+                      isRecognizing: false,
+                      statusMessage: '❌ 请先在设置中配置API密钥'
+                    }));
+                    return;
+                  }
+                  
                   console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
                   const result = await window.electronAPI.recognizeFormula(tempPath, currentSettings.apiConfig);
                   console.log(`任务 ${taskId}: API识别结果:`, result);
@@ -475,12 +524,23 @@ function App() {
                     });
                   } else {
                     console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
-                    setAppState(prev => ({ 
-                      ...prev, 
-                      latexCode: '',
-                      isRecognizing: false,
-                      statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
-                    }));
+                    
+                    // 检查是否是API配置错误
+                    if (result.error_code === 'NO_API_CONFIG') {
+                      setAppState(prev => ({ 
+                        ...prev, 
+                        latexCode: '', // 确保清空公式区域
+                        isRecognizing: false,
+                        statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
+                      }));
+                    } else {
+                      setAppState(prev => ({ 
+                        ...prev, 
+                        latexCode: '',
+                        isRecognizing: false,
+                        statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
+                      }));
+                    }
                   }
                 } catch (error) {
                   console.error(`任务 ${taskId}: 公式识别失败:`, error);
@@ -592,6 +652,19 @@ function App() {
           }));
 
           try {
+            // 先严格验证API配置是否有效
+            const apiConfig = currentSettings.apiConfig;
+            if (!validateApiConfig(apiConfig)) {
+              console.log(`任务 ${taskId}: API配置无效，无法识别`);
+              setAppState(prev => ({ 
+                ...prev, 
+                latexCode: '',
+                isRecognizing: false,
+                statusMessage: '❌ 请先在设置中配置API密钥'
+              }));
+              return;
+            }
+            
             console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
             const result = await window.electronAPI.recognizeFormula(filePath, currentSettings.apiConfig);
             console.log(`任务 ${taskId}: API识别结果:`, result);
@@ -628,12 +701,23 @@ function App() {
               });
             } else {
               console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
-              setAppState(prev => ({ 
-                ...prev, 
-                latexCode: '',
-                isRecognizing: false,
-                statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
-              }));
+              
+              // 检查是否是API配置错误
+              if (result.error_code === 'NO_API_CONFIG') {
+                setAppState(prev => ({ 
+                  ...prev, 
+                  latexCode: '', // 确保清空公式区域
+                  isRecognizing: false,
+                  statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
+                }));
+              } else {
+                setAppState(prev => ({ 
+                  ...prev, 
+                  latexCode: '',
+                  isRecognizing: false,
+                  statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
+                }));
+              }
             }
           } catch (error) {
             console.error(`任务 ${taskId}: 公式识别失败:`, error);
@@ -714,6 +798,19 @@ function App() {
     }));
 
     try {
+      // 先严格验证API配置是否有效
+      const apiConfig = currentSettings.apiConfig;
+      if (!validateApiConfig(apiConfig)) {
+        console.log(`任务 ${taskId}: API配置无效，无法识别`);
+        setAppState(prev => ({ 
+          ...prev, 
+          latexCode: '',
+          isRecognizing: false,
+          statusMessage: '❌ 请先在设置中配置API密钥'
+        }));
+        return;
+      }
+      
       console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
       const result = await window.electronAPI.recognizeFormula(imagePath, currentSettings.apiConfig);
       console.log(`任务 ${taskId}: API识别结果:`, result);
@@ -754,12 +851,23 @@ function App() {
         });
       } else {
         console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
-        setAppState(prev => ({ 
-          ...prev, 
-          latexCode: '',
-          isRecognizing: false,
-          statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
-        }));
+        
+        // 检查是否是API配置错误
+        if (result.error_code === 'NO_API_CONFIG') {
+          setAppState(prev => ({ 
+            ...prev, 
+            latexCode: '', // 确保清空公式区域
+            isRecognizing: false,
+            statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
+          }));
+        } else {
+          setAppState(prev => ({ 
+            ...prev, 
+            latexCode: '',
+            isRecognizing: false,
+            statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
+          }));
+        }
       }
     } catch (error) {
       console.error(`任务 ${taskId}: 公式识别失败:`, error);
@@ -844,23 +952,61 @@ function App() {
   const handleSaveApiSettings = async (apiConfig: ApiConfig) => {
     if (window.electronAPI) {
       try {
-        // 保存到electron-store
-        await window.electronAPI.saveSettings({ apiConfig });
+        // 检查是否是清空API配置
+        const isClearing = !apiConfig.appId || !apiConfig.appSecret || 
+                          !apiConfig.appId.trim() || !apiConfig.appSecret.trim();
         
-        // 同时保存到settings.json文件
-        await window.electronAPI.saveApiToSettingsFile(apiConfig);
-        
-        // 更新设置状态
-        setSettings(prev => prev ? { ...prev, apiConfig } : null);
+        if (isClearing) {
+          console.log('检测到清除API配置操作');
+          // 如果是清空配置，调用清除API配置方法
+          const result = await window.electronAPI.clearApiConfig();
+          console.log('清除API配置结果:', result);
+          
+          if (result) {
+            // 立即更新前端设置状态为空配置
+            setSettings(prev => prev ? { 
+              ...prev, 
+              apiConfig: { appId: '', appSecret: '' }
+            } : null);
+            
+            // 显示清除成功提示
+            setAppState(prev => ({ 
+              ...prev, 
+              statusMessage: '✅ API配置已清除' 
+            }));
+            
+            // 清理当前图片和识别结果
+            setAppState(prev => ({
+              ...prev,
+              currentImage: null,
+              latexCode: ''
+            }));
+          } else {
+            // 显示清除失败提示
+            setAppState(prev => ({ 
+              ...prev, 
+              statusMessage: '❌ API配置清除失败' 
+            }));
+          }
+        } else {
+          // 保存到electron-store
+          await window.electronAPI.saveSettings({ apiConfig });
+          
+          // 同时保存到settings.json文件
+          await window.electronAPI.saveApiToSettingsFile(apiConfig);
+          
+          // 更新设置状态
+          setSettings(prev => prev ? { ...prev, apiConfig } : null);
+          
+          // 显示保存成功提示
+          setAppState(prev => ({ 
+            ...prev, 
+            statusMessage: '✅ API设置已保存' 
+          }));
+        }
         
         // 记录日志
-        console.log('API设置已保存', apiConfig);
-        
-        // 显示保存成功提示
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: '✅ API设置已保存' 
-        }));
+        console.log('API设置已更新', apiConfig);
         
         // 清理当前图片和识别结果，避免自动触发识别
         // 这样用户需要重新截图或上传图片，确保新API设置生效
@@ -874,7 +1020,7 @@ function App() {
         setTimeout(() => {
           setAppState(prev => ({ 
             ...prev, 
-            statusMessage: '⚡ 准备就绪，请重新截图或上传图片' 
+            statusMessage: isClearing ? '⚡ 请先设置API密钥' : '⚡ 准备就绪，请重新截图或上传图片' 
           }));
         }, 2000);
       } catch (error) {
@@ -885,7 +1031,19 @@ function App() {
         }));
       }
     } else {
-      setSettings(prev => prev ? { ...prev, apiConfig } : null);
+      // 浏览器环境下的处理
+      const isClearing = !apiConfig.appId || !apiConfig.appSecret || 
+                        !apiConfig.appId.trim() || !apiConfig.appSecret.trim();
+      
+      // 更新设置状态
+      if (isClearing) {
+        setSettings(prev => prev ? { 
+          ...prev, 
+          apiConfig: { appId: '', appSecret: '' }
+        } : null);
+      } else {
+        setSettings(prev => prev ? { ...prev, apiConfig } : null);
+      }
     }
     setShowApiSettings(false);
   };
