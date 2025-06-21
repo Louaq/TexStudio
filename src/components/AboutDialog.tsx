@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 const Overlay = styled.div`
@@ -18,9 +18,11 @@ const Overlay = styled.div`
 const Dialog = styled.div`
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-radius: 16px;
-  padding: 40px;
+  padding: 28px;
   width: 90%;
-  max-width: 500px;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   border: 1px solid #e1e8ed;
   animation: slideIn 0.3s ease;
@@ -39,14 +41,14 @@ const Dialog = styled.div`
 `;
 
 const AppIcon = styled.div`
-  font-size: 48px;
-  margin-bottom: 20px;
+  font-size: 42px;
+  margin-bottom: 16px;
 `;
 
 const AppTitle = styled.h1`
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
   color: #2c3e50;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   background: linear-gradient(135deg, #4a90e2 0%, #7b68ee 100%);
   -webkit-background-clip: text;
@@ -56,65 +58,66 @@ const AppTitle = styled.h1`
 
 const Version = styled.div`
   color: #7f8c8d;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 `;
 
 const Description = styled.div`
   color: #2c3e50;
-  font-size: 14px;
-  line-height: 1.6;
-  margin-bottom: 24px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 16px;
   text-align: left;
   background: rgba(255, 255, 255, 0.6);
-  padding: 20px;
+  padding: 16px;
   border-radius: 12px;
   border-left: 4px solid #4a90e2;
 `;
 
-const FeatureList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0 0 20px 0;
+const FeatureGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
 `;
 
-const FeatureItem = styled.li`
-  margin-bottom: 8px;
+const FeatureItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   color: #2c3e50;
-  font-size: 14px;
+  font-size: 13px;
+  padding: 4px 0;
 `;
 
 const FeatureIcon = styled.span`
-  font-size: 16px;
-  width: 20px;
+  font-size: 14px;
+  width: 18px;
   text-align: center;
 `;
 
 const TechInfo = styled.div`
   background: rgba(255, 255, 255, 0.8);
-  padding: 16px;
+  padding: 12px;
   border-radius: 8px;
-  margin-bottom: 24px;
-  font-size: 13px;
+  margin-bottom: 16px;
+  font-size: 12px;
   color: #666;
   border: 1px solid #e1e8ed;
 `;
 
 const Copyright = styled.div`
   color: #95a5a6;
-  font-size: 12px;
-  margin-bottom: 24px;
+  font-size: 11px;
+  margin-bottom: 16px;
 `;
 
 const CloseButton = styled.button`
   background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
   color: white;
   border: none;
-  padding: 12px 32px;
+  padding: 10px 28px;
   border-radius: 8px;
   font-weight: 600;
   font-size: 14px;
@@ -137,58 +140,89 @@ interface AboutDialogProps {
 }
 
 const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
+  const [isDragging, setIsDragging] = useState(false);
+
   const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget && !isDragging) {
       onClose();
     }
   };
 
+  // 阻止对话框上的点击事件冒泡
+  const handleDialogClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+  
+  // 监听全局鼠标按下事件
+  const handleMouseDown = () => {
+    setIsDragging(false);
+  };
+  
+  // 监听全局鼠标移动事件
+  const handleMouseMove = () => {
+    // 如果鼠标按下并移动，标记为拖动状态
+    if (isDragging === false) {
+      setIsDragging(true);
+    }
+  };
+  
+  // 监听全局鼠标释放事件
+  const handleMouseUp = () => {
+    // 延迟重置拖动状态，确保点击事件处理完成
+    setTimeout(() => {
+      setIsDragging(false);
+    }, 10);
+  };
+
   return (
-    <Overlay onClick={handleOverlayClick}>
-      <Dialog>
+    <Overlay 
+      onClick={handleOverlayClick}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
+      <Dialog onClick={handleDialogClick}>
         <AppIcon>∑</AppIcon>
         
         <AppTitle>LaTeX公式识别工具</AppTitle>
         
-        <Version>✨ 版本 1.0.3 - TypeScript版</Version>
+        <Version>✨ 版本 1.0.3</Version>
         
         <Description>
-          <p style={{ margin: '0 0 16px 0', fontWeight: '600' }}>
-            这是一个现代化的LaTeX公式识别工具，支持以下功能：
+          <p style={{ margin: '0 0 10px 0', fontWeight: '600' }}>
+            现代化的LaTeX公式识别工具
           </p>
           
-          <FeatureList>
+          <FeatureGrid>
             <FeatureItem>
               <FeatureIcon>📸</FeatureIcon>
-              截图识别公式
+              截图识别
             </FeatureItem>
             <FeatureItem>
               <FeatureIcon>📁</FeatureIcon>
-              上传图片识别
+              上传识别
             </FeatureItem>
             <FeatureItem>
               <FeatureIcon>📋</FeatureIcon>
-              复制为多种格式
+              多格式复制
             </FeatureItem>
             <FeatureItem>
               <FeatureIcon>📚</FeatureIcon>
-              历史记录保存
+              历史记录
             </FeatureItem>
             <FeatureItem>
               <FeatureIcon>⌨️</FeatureIcon>
-              全局快捷键支持
+              全局快捷键
             </FeatureItem>
             <FeatureItem>
               <FeatureIcon>🎨</FeatureIcon>
-              现代化界面设计
+              现代界面
             </FeatureItem>
-          </FeatureList>
+          </FeatureGrid>
         </Description>
 
         <TechInfo>
-          <strong>技术栈：</strong> Electron + React + TypeScript + Styled Components
-          <br />
-          <strong>API服务：</strong> SimpleTex API
+          技术栈: Electron + React + TypeScript
         </TechInfo>
 
         <Copyright>

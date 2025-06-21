@@ -153,6 +153,7 @@ const ShortcutSettingsDialog: React.FC<ShortcutSettingsDialogProps> = ({
   onClose
 }) => {
   const [formData, setFormData] = useState(shortcuts);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,14 +165,39 @@ const ShortcutSettingsDialog: React.FC<ShortcutSettingsDialogProps> = ({
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget && !isDragging) {
       onClose();
     }
   };
+  
+  const handleDialogClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+  
+  const handleMouseDown = () => {
+    setIsDragging(false);
+  };
+  
+  const handleMouseMove = () => {
+    if (isDragging === false) {
+      setIsDragging(true);
+    }
+  };
+  
+  const handleMouseUp = () => {
+    setTimeout(() => {
+      setIsDragging(false);
+    }, 10);
+  };
 
   return (
-    <Overlay onClick={handleOverlayClick}>
-      <Dialog>
+    <Overlay 
+      onClick={handleOverlayClick}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
+      <Dialog onClick={handleDialogClick}>
         <Title>
           ⌨️ 快捷键设置
         </Title>

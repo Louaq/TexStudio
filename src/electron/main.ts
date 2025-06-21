@@ -457,7 +457,13 @@ function createSimpleScreenshotWindow(): void {
     
     document.addEventListener('keydown', async (e) => {
       if (e.key === 'Escape') {
-        await window.screenshotAPI.closeScreenshotWindow();
+        console.log('ESC键被按下，关闭截图窗口');
+        try {
+          await window.screenshotAPI.closeScreenshotWindow();
+          console.log('截图窗口关闭完成');
+        } catch (error) {
+          console.error('关闭截图窗口时出错:', error);
+        }
       }
     });
   </script>
@@ -992,6 +998,12 @@ function closeScreenshotWindow(): void {
       window.hide();
     }
   });
+  
+  // 显示主窗口
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.focus();
+  }
 }
 
 // 简化截图
@@ -1192,7 +1204,10 @@ ipcMain.handle('close-window', () => {
 
 // 关闭截图窗口
 ipcMain.handle('close-screenshot-window', () => {
+  console.log('收到关闭截图窗口请求');
   closeScreenshotWindow();
+  console.log('截图窗口已关闭，主窗口已显示');
+  return true;
 });
 
 // 截图完成

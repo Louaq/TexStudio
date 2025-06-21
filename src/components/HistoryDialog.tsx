@@ -556,11 +556,38 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [latexToDelete, setLatexToDelete] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget && !isDragging) {
       onClose();
     }
+  };
+
+  // 阻止对话框上的点击事件冒泡
+  const handleDialogClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+  
+  // 监听全局鼠标按下事件
+  const handleMouseDown = () => {
+    setIsDragging(false);
+  };
+  
+  // 监听全局鼠标移动事件
+  const handleMouseMove = () => {
+    // 如果鼠标按下并移动，标记为拖动状态
+    if (isDragging === false) {
+      setIsDragging(true);
+    }
+  };
+  
+  // 监听全局鼠标释放事件
+  const handleMouseUp = () => {
+    // 延迟重置拖动状态，确保点击事件处理完成
+    setTimeout(() => {
+      setIsDragging(false);
+    }, 10);
   };
 
   const handleClear = () => {
@@ -586,8 +613,13 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
   };
 
   return (
-    <Overlay onClick={handleOverlayClick}>
-      <Dialog>
+    <Overlay 
+      onClick={handleOverlayClick}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
+      <Dialog onClick={handleDialogClick}>
         <Header>
           <Title>
             📚 历史记录
