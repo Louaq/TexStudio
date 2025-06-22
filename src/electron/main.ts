@@ -280,7 +280,7 @@ async function createMainWindow(): Promise<void> {
       webSecurity: false
     },
     icon: path.join(__dirname, '../../assets/icon.png'),
-    title: 'LaTeX formula recognition tool',
+    title: 'SimpleTex OCR - 数学公式识别工具',
     show: false,
     // 禁用系统菜单栏
     autoHideMenuBar: true
