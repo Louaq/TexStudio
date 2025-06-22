@@ -64,7 +64,7 @@ export function getReqData(reqData: Record<string, any> = {}, apiConfig: ApiConf
  * @param mode 格式化模式
  * @returns 格式化后的LaTeX代码
  */
-export function formatLatex(latex: string, mode: 'normal' | 'inline' | 'display' = 'normal'): string {
+export function formatLatex(latex: string, mode: 'normal' | 'inline' | 'display' | 'mathml' = 'normal'): string {
   if (!latex.trim()) return latex;
   
   switch (mode) {
@@ -72,6 +72,9 @@ export function formatLatex(latex: string, mode: 'normal' | 'inline' | 'display'
       return `$${latex}$`;
     case 'display':
       return `$$${latex}$$`;
+    case 'mathml':
+      // mathml模式下原样返回，实际的MathML转换由handleCopy函数处理
+      return latex;
     default:
       return latex;
   }

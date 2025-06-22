@@ -37,7 +37,7 @@ export interface ShortcutConfig {
 }
 
 // 复制模式类型
-export type CopyMode = 'normal' | 'inline' | 'display';
+export type CopyMode = 'normal' | 'inline' | 'display' | 'mathml';
 
 // 应用状态类型
 export interface AppState {
@@ -61,6 +61,7 @@ export interface ElectronAPI {
   // 文件操作
   selectFile: () => Promise<string | null>;
   saveFile: (content: string, filename: string) => Promise<boolean>;
+  saveDocxFile: (content: string, filename: string) => Promise<boolean>;
   saveTempFile: (buffer: Uint8Array, filename: string) => Promise<string>;
   
   // 截图相关

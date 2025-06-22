@@ -6,6 +6,7 @@ const electronAPI: ElectronAPI = {
   // 文件操作
   selectFile: () => ipcRenderer.invoke('select-file'),
   saveFile: (content: string, filename: string) => ipcRenderer.invoke('save-file', content, filename),
+  saveDocxFile: (content: string, filename: string) => ipcRenderer.invoke('save-docx-file', content, filename),
   saveTempFile: (buffer: Uint8Array, filename: string) => ipcRenderer.invoke('save-temp-file', buffer, filename),
 
   // 截图相关

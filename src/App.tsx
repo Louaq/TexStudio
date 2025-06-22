@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { useDropzone } from 'react-dropzone';
 import { AppState, HistoryItem, ApiConfig, CopyMode } from './types';
@@ -57,10 +57,8 @@ const BottomSection = styled.div`
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  /* 简化按钮容器样式 */
-  padding: 10px 0;
-  flex-shrink: 0;
+  gap: 15px;
+  margin-top: 20px;
 `;
 
 function App() {
@@ -884,6 +882,43 @@ function App() {
   const handleCopy = async (mode: CopyMode = 'normal') => {
     if (!appState.latexCode.trim()) return;
 
+    if (mode === 'mathml') {
+      // 使用MathML模式 - 直接转换为MathML并复制到剪贴板
+      if (!window.electronAPI) {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '❌ MathML转换功能仅在桌面应用中可用'
+        }));
+        return;
+      }
+
+      try {
+        // 直接调用保存Word文档的方法中的MathML转换功能
+        // 这会将LaTeX转换为MathML并复制到剪贴板，但不会显示保存对话框
+        const tempFilename = `temp-${Date.now()}`;
+        await window.electronAPI.saveDocxFile(appState.latexCode, tempFilename);
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '📋 MathML公式已复制到剪贴板'
+        }));
+      } catch (error) {
+        console.error('转换为MathML失败:', error);
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '❌ MathML转换失败'
+        }));
+      }
+
+      // 2秒后恢复状态
+      setTimeout(() => {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '⚡ 准备就绪'
+        }));
+      }, 2000);
+      return;
+    }
+
     const formattedLatex = formatLatex(appState.latexCode, mode);
     
     if (window.electronAPI) {
@@ -915,6 +950,8 @@ function App() {
       }));
     }, 2000);
   };
+
+
 
   // 从历史记录中使用
   const handleUseHistory = (latex: string) => {

@@ -7,6 +7,10 @@ import Store from 'electron-store';
 import { ScreenshotArea } from '../types';
 import { getCurrentTimestamp } from '../utils/api';
 import * as crypto from 'crypto';
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
+const officegen = require('officegen');
+const mammoth = require('mammoth');
+import * as mathjax from 'mathjax-node';
 
 // 设置控制台编码为UTF-8，解决中文乱码问题
 if (process.platform === 'win32') {
@@ -1600,3 +1604,37 @@ function forceQuitApp(): void {
     process.exit(0);
   }
 }
+
+// 转换LaTeX为MathML并复制到剪贴板
+ipcMain.handle('save-docx-file', async (event, latexContent: string, filename: string) => {
+  try {
+    // 使用MathJax将LaTeX转换为MathML
+    mathjax.config({
+      MathJax: {}
+    });
+    await mathjax.start();
+    
+    // 转换LaTeX为MathML
+    const mjResult = await mathjax.typeset({
+      math: latexContent,
+      format: 'TeX',
+      mml: true
+    });
+    
+    if (!mjResult.mml) {
+      throw new Error('LaTeX到MathML转换失败');
+    }
+    
+    // 提取MathML内容
+    let mathML = mjResult.mml;
+    
+    // 保存MathML到剪贴板
+    clipboard.writeText(mathML);
+    
+    logger.log('MathML格式公式已复制到剪贴板');
+    return true;
+  } catch (error) {
+    logger.error('转换为MathML失败:', error);
+    return false;
+  }
+});

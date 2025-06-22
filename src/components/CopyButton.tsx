@@ -164,6 +164,13 @@ const CopyButton: React.FC<CopyButtonProps> = ({ onCopy, disabled = false }) => 
             <ModeDescription>显示公式格式</ModeDescription>
           </div>
         </DropdownItem>
+        
+        <DropdownItem onClick={() => handleModeSelect('mathml')}>
+          <div>
+            <div>复制为 MathML</div>
+            <ModeDescription>Word公式兼容格式</ModeDescription>
+          </div>
+        </DropdownItem>
       </DropdownMenu>
     </ButtonContainer>
   );
