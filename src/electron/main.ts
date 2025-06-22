@@ -496,14 +496,14 @@ function createSimpleScreenshotWindow(): void {
       await window.screenshotAPI.closeScreenshotWindow();
     });
     
-    document.addEventListener('keydown', async (e) => {
+    document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        logger.log('ESC键被按下，关闭截图窗口');
+        console.log('ESC键被按下，关闭截图窗口');
         try {
-          await window.screenshotAPI.closeScreenshotWindow();
-          logger.log('截图窗口关闭完成');
+          window.screenshotAPI.closeScreenshotWindow();
+          console.log('截图窗口关闭请求已发送');
         } catch (error) {
-          logger.error('关闭截图窗口时出错:', error);
+          console.error('关闭截图窗口时出错:', error);
         }
       }
     });
