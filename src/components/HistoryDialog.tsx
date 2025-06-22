@@ -151,7 +151,11 @@ const ClearButton = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 12px;
-  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 120px;
+  justify-content: center;
 
   &:hover {
     background: linear-gradient(135deg, #e55347 0%, #d2433a 100%);
@@ -218,16 +222,22 @@ const ButtonGroup = styled.div`
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  align-items: center;
 `;
 
 const ActionButton = styled.button<{ variant?: 'primary' | 'danger' }>`
-  padding: 6px 12px;
+  padding: 8px 16px;
   border: none;
   border-radius: 6px;
   font-weight: 500;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+  justify-content: center;
 
   ${props => props.variant === 'danger' ? `
     background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
@@ -261,11 +271,16 @@ const CloseButton = styled.button`
   background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
 
   &:hover {
     background: linear-gradient(135deg, #a4b3b6 0%, #8e9b9d 100%);
@@ -276,8 +291,9 @@ const CloseButton = styled.button`
 
 const ButtonsContainer = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 12px;
+  margin-top: 8px;
 `;
 
 const CopyButtonContainer = styled.div`
@@ -651,14 +667,18 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
         </Content>
 
         <ButtonsContainer>
-          {history.length > 0 && (
-            <ClearButton onClick={handleClear}>
-              🗑️ 清空历史记录
-            </ClearButton>
-          )}
-          <CloseButton onClick={onClose}>
-            关闭
-          </CloseButton>
+          <div>
+            {history.length > 0 && (
+              <ClearButton onClick={handleClear}>
+                🗑️ 清空历史记录
+              </ClearButton>
+            )}
+          </div>
+          <div>
+            <CloseButton onClick={onClose}>
+              关闭
+            </CloseButton>
+          </div>
         </ButtonsContainer>
       </Dialog>
 

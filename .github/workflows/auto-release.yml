@@ -1,0 +1,57 @@
+name: Auto Create Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build app
+        run: npm run build
+        
+      - name: Package electron app
+        run: npm run package
+      
+      - name: Create timestamp
+        id: timestamp
+        run: echo "date=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+        shell: bash
+      
+      - name: Zip application files
+        run: |
+          cd release
+          Compress-Archive -Path win-unpacked -DestinationPath SimpleTex-OCR-win-${{ steps.timestamp.outputs.date }}.zip
+        shell: pwsh
+      
+      - name: Get package version
+        id: package_version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        shell: bash
+      
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.package_version.outputs.version }}-${{ steps.timestamp.outputs.date }}
+          name: Release v${{ steps.package_version.outputs.version }} (${{ steps.timestamp.outputs.date }})
+          draft: false
+          prerelease: false
+          files: ./release/SimpleTex-OCR-win-${{ steps.timestamp.outputs.date }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
