@@ -36,7 +36,7 @@ jobs:
       - name: Zip application files
         run: |
           cd release
-          Compress-Archive -Path win-unpacked -DestinationPath SimpleTex-OCR-win-${{ steps.timestamp.outputs.date }}.zip
+          Compress-Archive -Path win-unpacked -DestinationPath SimpleTex-OCR-win.zip
         shell: pwsh
       
       - name: Get package version
@@ -48,10 +48,10 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.package_version.outputs.version }}-${{ steps.timestamp.outputs.date }}
-          name: Release v${{ steps.package_version.outputs.version }} (${{ steps.timestamp.outputs.date }})
+          tag_name: v${{ steps.package_version.outputs.version }}
+          name: Release v${{ steps.package_version.outputs.version }}
           draft: false
           prerelease: false
-          files: ./release/SimpleTex-OCR-win-${{ steps.timestamp.outputs.date }}.zip
+          files: ./release/SimpleTex-OCR-win.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
