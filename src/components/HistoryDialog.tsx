@@ -490,14 +490,29 @@ interface CopyButtonProps {
 const CopyButton: React.FC<CopyButtonProps> = ({ latex }) => {
   const [showOptions, setShowOptions] = useState(false);
 
-  const handleCopy = (mode: CopyMode) => {
-    const formattedLatex = formatLatex(latex, mode);
-    
-    if (window.electronAPI) {
-      window.electronAPI.copyToClipboard(formattedLatex);
+  const handleCopy = async (mode: CopyMode) => {
+    if (mode === 'mathml') {
+      // 使用MathML模式 - 直接转换为MathML并复制到剪贴板
+      if (window.electronAPI) {
+        try {
+          // 直接调用保存Word文档的方法中的MathML转换功能
+          const tempFilename = `temp-${Date.now()}`;
+          await window.electronAPI.saveDocxFile(latex, tempFilename);
+        } catch (error) {
+          console.error('转换为MathML失败:', error);
+        }
+      } else {
+        console.error('MathML转换仅在桌面应用中可用');
+      }
     } else {
-      // 浏览器环境下使用 Clipboard API
-      navigator.clipboard.writeText(formattedLatex);
+      const formattedLatex = formatLatex(latex, mode);
+      
+      if (window.electronAPI) {
+        window.electronAPI.copyToClipboard(formattedLatex);
+      } else {
+        // 浏览器环境下使用 Clipboard API
+        navigator.clipboard.writeText(formattedLatex);
+      }
     }
     
     setShowOptions(false);
@@ -541,6 +556,11 @@ const CopyButton: React.FC<CopyButtonProps> = ({ latex }) => {
               <CopyOptionButton onClick={() => handleCopy('display')}>
                 复制为 $$...$$
                 <CopyOptionDescription>显示公式格式</CopyOptionDescription>
+              </CopyOptionButton>
+
+              <CopyOptionButton onClick={() => handleCopy('mathml')}>
+                复制为 MathML
+                <CopyOptionDescription>Word公式兼容格式</CopyOptionDescription>
               </CopyOptionButton>
             </CopyOptionsList>
             
