@@ -221,10 +221,6 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
           </FeatureGrid>
         </Description>
 
-        <TechInfo>
-          技术栈: Electron + React + TypeScript
-        </TechInfo>
-
         <Copyright>
           © 2025 All Rights Reserved
         </Copyright>
