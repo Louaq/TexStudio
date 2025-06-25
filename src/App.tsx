@@ -8,6 +8,7 @@ import ImageDisplay from './components/ImageDisplay';
 import LatexEditor from './components/LatexEditor';
 import StatusBar from './components/StatusBar';
 import CopyButton from './components/CopyButton';
+import ExportButton from './components/ExportButton';
 import ApiSettingsDialog from './components/ApiSettingsDialog';
 import ShortcutSettingsDialog from './components/ShortcutSettingsDialog';
 import HistoryDialog from './components/HistoryDialog';
@@ -1141,6 +1142,60 @@ function App() {
     }
   };
 
+  // 导出数学公式为图片
+  const handleExportFormula = async (format: 'svg' | 'png' | 'jpg') => {
+    if (!appState.latexCode.trim()) {
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '❌ 请先识别或输入数学公式'
+      }));
+      return;
+    }
+
+    if (!window.electronAPI) {
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '❌ 图片导出功能仅在桌面应用中可用'
+      }));
+      return;
+    }
+
+    try {
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `🔄 正在导出为${format.toUpperCase()}格式...`
+      }));
+
+      const result = await window.electronAPI.exportFormulaImage(appState.latexCode, format);
+      
+      if (result.success) {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: `✅ ${result.message}`
+        }));
+      } else {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: `❌ ${result.message}`
+        }));
+      }
+
+      // 3秒后恢复状态
+      setTimeout(() => {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '⚡ 准备就绪'
+        }));
+      }, 3000);
+    } catch (error) {
+      console.error(`导出${format.toUpperCase()}失败:`, error);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `❌ 导出${format.toUpperCase()}失败`
+      }));
+    }
+  };
+
   if (!settings) {
     return <div>加载中...</div>;
   }
@@ -1178,6 +1233,10 @@ function App() {
           <ButtonContainer>
             <CopyButton 
               onCopy={handleCopy}
+              disabled={!appState.latexCode.trim() || appState.isRecognizing}
+            />
+            <ExportButton 
+              onExport={handleExportFormula}
               disabled={!appState.latexCode.trim() || appState.isRecognizing}
             />
           </ButtonContainer>

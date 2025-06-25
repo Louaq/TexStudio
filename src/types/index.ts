@@ -103,6 +103,13 @@ export interface ElectronAPI {
   testDisplayScreenshot: (displayIndex: number, testArea?: ScreenshotArea) => Promise<any>;
   diagnoseScreenSources: () => Promise<any>;
   testAllDisplays: () => Promise<any>;
+
+  // 数学公式导出
+  exportFormulaImage: (latexContent: string, format: 'svg' | 'png' | 'jpg') => Promise<{
+    success: boolean;
+    filePath?: string;
+    message: string;
+  }>;
 }
 
 // 扩展全局Window接口

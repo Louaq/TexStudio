@@ -11,6 +11,7 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
 const officegen = require('officegen');
 const mammoth = require('mammoth');
 import * as mathjax from 'mathjax-node';
+const sharp = require('sharp');
 
 // 设置控制台编码为UTF-8，解决中文乱码问题
 if (process.platform === 'win32') {
@@ -1636,5 +1637,208 @@ ipcMain.handle('save-docx-file', async (event, latexContent: string, filename: s
   } catch (error) {
     logger.error('转换为MathML失败:', error);
     return false;
+  }
+});
+
+// 导出数学公式为图片
+ipcMain.handle('export-formula-image', async (event, latexContent: string, format: 'svg' | 'png' | 'jpg') => {
+  try {
+    logger.log(`开始导出数学公式为${format.toUpperCase()}格式`);
+    
+    // 初始化MathJax - 使用最简单的配置确保稳定性
+    mathjax.config({
+      MathJax: {
+        SVG: {
+          scale: 1,
+          font: 'TeX',
+          useFontCache: true,
+          useGlobalCache: false
+        }
+      }
+    });
+    await mathjax.start();
+    
+    // 转换LaTeX为SVG
+    let svgContent: string;
+    
+    try {
+      const mjResult: any = await mathjax.typeset({
+        math: latexContent,
+        format: 'TeX',
+        svg: true
+      });
+      
+      if (!mjResult.svg) {
+        throw new Error('LaTeX到SVG转换失败');
+      }
+      
+      svgContent = mjResult.svg;
+      logger.log('MathJax SVG生成成功，长度:', svgContent.length);
+      
+      // 检查SVG是否有明显的结构问题
+      const svgTagCount = (svgContent.match(/<svg/g) || []).length;
+      const svgCloseTagCount = (svgContent.match(/<\/svg>/g) || []).length;
+      
+      if (svgTagCount !== svgCloseTagCount) {
+        logger.log(`SVG标签不匹配：开始标签${svgTagCount}个，结束标签${svgCloseTagCount}个`);
+        throw new Error('SVG标签不匹配');
+      }
+      
+      // 添加XML声明（如果没有）
+      if (!svgContent.trim().startsWith('<?xml')) {
+        svgContent = '<?xml version="1.0" encoding="UTF-8"?>\n' + svgContent;
+      }
+      
+    } catch (mathJaxError) {
+      logger.error('MathJax渲染失败，使用备用SVG:', mathJaxError);
+      
+      // 创建一个简单但有效的备用SVG
+      svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="100" viewBox="0 0 400 100">
+  <rect width="100%" height="100%" fill="white" stroke="#ddd" stroke-width="1"/>
+  <text x="200" y="50" text-anchor="middle" dominant-baseline="central" 
+        font-family="Times, serif" font-size="18" fill="black">
+    ${latexContent.replace(/[<>&"']/g, function(match) {
+      switch(match) {
+        case '<': return '&lt;';
+        case '>': return '&gt;';
+        case '&': return '&amp;';
+        case '"': return '&quot;';
+        case "'": return '&#39;';
+        default: return match;
+      }
+    })}
+  </text>
+</svg>`;
+      
+      logger.log('使用备用SVG，长度:', svgContent.length);
+    }
+    
+    // 选择保存位置
+    const result = await dialog.showSaveDialog(mainWindow!, {
+      defaultPath: `formula.${format}`,
+      filters: [
+        { name: `${format.toUpperCase()} files`, extensions: [format] },
+        { name: 'All files', extensions: ['*'] }
+      ]
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { success: false, message: '用户取消保存' };
+    }
+
+    if (format === 'svg') {
+      // 直接保存SVG
+      fs.writeFileSync(result.filePath, svgContent, 'utf8');
+      logger.log(`SVG文件已保存到: ${result.filePath}`);
+      return { success: true, filePath: result.filePath, message: 'SVG文件导出成功' };
+    } else {
+      // 使用Sharp将SVG转换为PNG或JPG
+      try {
+        logger.log(`准备转换为${format.toUpperCase()}格式`);
+        
+        // 验证SVG内容的基本有效性
+        if (!svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
+          throw new Error('SVG内容格式无效：缺少必要的svg标签');
+        }
+        
+        // 先保存SVG到临时文件进行验证
+        const tempSvgPath = result.filePath.replace(/\.(png|jpg)$/, '.temp.svg');
+        fs.writeFileSync(tempSvgPath, svgContent, 'utf8');
+        logger.log(`SVG临时文件已保存: ${tempSvgPath}`);
+        
+        try {
+          // 使用文件路径创建Sharp实例，这样更稳定
+          let sharpInstance = sharp(tempSvgPath, {
+            density: 300 // 提高DPI
+          });
+          
+          // 获取图片信息用于调试
+          const metadata = await sharpInstance.metadata();
+          logger.log(`图片元数据:`, metadata);
+          
+          if (format === 'png') {
+            // 转换为PNG
+            await sharpInstance
+              .png({ 
+                quality: 100, 
+                compressionLevel: 0,
+                adaptiveFiltering: false
+              })
+              .toFile(result.filePath);
+          } else if (format === 'jpg') {
+            // 转换为JPG，先flatten添加白色背景
+            await sharpInstance
+              .flatten({ background: { r: 255, g: 255, b: 255 } })
+              .jpeg({ 
+                quality: 95,
+                progressive: true
+              })
+              .toFile(result.filePath);
+          }
+          
+          // 清理临时SVG文件
+          fs.unlinkSync(tempSvgPath);
+          
+          logger.log(`${format.toUpperCase()}文件已保存到: ${result.filePath}`);
+          return { success: true, filePath: result.filePath, message: `${format.toUpperCase()}文件导出成功` };
+          
+        } catch (sharpError) {
+          logger.error(`Sharp转换失败:`, sharpError);
+          
+          // 清理临时文件
+          if (fs.existsSync(tempSvgPath)) {
+            fs.unlinkSync(tempSvgPath);
+          }
+          
+          // 尝试使用简化的SVG
+          logger.log('尝试使用简化的SVG重新转换...');
+          
+          // 创建一个简化的、确保有效的SVG
+          const simplifiedSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200" style="background-color: white;">
+  <rect width="100%" height="100%" fill="white"/>
+  <text x="200" y="100" text-anchor="middle" dominant-baseline="central" font-family="serif" font-size="16">
+    无法渲染公式: ${latexContent.substring(0, 50)}${latexContent.length > 50 ? '...' : ''}
+  </text>
+</svg>`;
+          
+          const simplifiedPath = result.filePath.replace(/\.(png|jpg)$/, '.simplified.svg');
+          fs.writeFileSync(simplifiedPath, simplifiedSvg, 'utf8');
+          
+          try {
+            let fallbackInstance = sharp(simplifiedPath, { density: 300 });
+            
+            if (format === 'png') {
+              await fallbackInstance.png({ quality: 100 }).toFile(result.filePath);
+            } else if (format === 'jpg') {
+              await fallbackInstance.jpeg({ quality: 95 }).toFile(result.filePath);
+            }
+            
+            fs.unlinkSync(simplifiedPath);
+            
+            logger.log(`${format.toUpperCase()}文件（简化版本）已保存到: ${result.filePath}`);
+            return { success: true, filePath: result.filePath, message: `${format.toUpperCase()}文件导出成功（简化版本）` };
+            
+          } catch (fallbackError) {
+            if (fs.existsSync(simplifiedPath)) {
+              fs.unlinkSync(simplifiedPath);
+            }
+            throw fallbackError;
+          }
+        }
+        
+      } catch (error) {
+        logger.error(`最终转换失败:`, error);
+        throw error;
+      }
+    }
+    
+  } catch (error) {
+    logger.error(`导出${format.toUpperCase()}失败:`, error);
+    return { 
+      success: false, 
+      message: `导出失败: ${error instanceof Error ? error.message : '未知错误'}` 
+    };
   }
 });

@@ -54,7 +54,11 @@ const electronAPI: ElectronAPI = {
   testDisplayScreenshot: (displayIndex: number, testArea?: ScreenshotArea) => 
     ipcRenderer.invoke('test-display-screenshot', displayIndex, testArea),
   diagnoseScreenSources: () => ipcRenderer.invoke('diagnose-screen-sources'),
-  testAllDisplays: () => ipcRenderer.invoke('test-all-displays')
+  testAllDisplays: () => ipcRenderer.invoke('test-all-displays'),
+
+  // 数学公式导出
+  exportFormulaImage: (latexContent: string, format: 'svg' | 'png' | 'jpg') => 
+    ipcRenderer.invoke('export-formula-image', latexContent, format)
 };
 
 // 将 API 暴露给渲染进程
