@@ -37,7 +37,7 @@ export interface ShortcutConfig {
 }
 
 // 复制模式类型
-export type CopyMode = 'normal' | 'inline' | 'display' | 'mathml';
+export type CopyMode = 'normal' | 'inline' | 'display' | 'equation' | 'mathml';
 
 // 应用状态类型
 export interface AppState {

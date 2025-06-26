@@ -165,6 +165,13 @@ const CopyButton: React.FC<CopyButtonProps> = ({ onCopy, disabled = false }) => 
           </div>
         </DropdownItem>
         
+        <DropdownItem onClick={() => handleModeSelect('equation')}>
+          <div>
+            <div>复制为 {'\\begin{equation}...\\end{equation}'}</div>
+            <ModeDescription>编号公式环境格式</ModeDescription>
+          </div>
+        </DropdownItem>
+        
         <DropdownItem onClick={() => handleModeSelect('mathml')}>
           <div>
             <div>复制为 MathML</div>

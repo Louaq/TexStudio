@@ -558,6 +558,11 @@ const CopyButton: React.FC<CopyButtonProps> = ({ latex }) => {
                 <CopyOptionDescription>显示公式格式</CopyOptionDescription>
               </CopyOptionButton>
 
+              <CopyOptionButton onClick={() => handleCopy('equation')}>
+                复制为 {'\\begin{equation}...\\end{equation}'}
+                <CopyOptionDescription>编号公式环境格式</CopyOptionDescription>
+              </CopyOptionButton>
+
               <CopyOptionButton onClick={() => handleCopy('mathml')}>
                 复制为 MathML
                 <CopyOptionDescription>Word公式兼容格式</CopyOptionDescription>
