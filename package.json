@@ -5,10 +5,10 @@
   "author": "SimpleTex OCR",
   "main": "dist/electron/electron/main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "electron . --expose-gc --max-old-space-size=512",
     "dev": "concurrently \"npm run dev:react\" \"wait-on http://localhost:3000 && npm run dev:electron\"",
     "dev:react": "react-scripts start",
-    "dev:electron": "cross-env NODE_ENV=development electron .",
+    "dev:electron": "cross-env NODE_ENV=development electron . --expose-gc --max-old-space-size=512",
     "build": "npm run build:react && npm run build:electron",
     "build:react": "react-scripts build",
     "build:electron": "tsc -p tsconfig.electron.json",

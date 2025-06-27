@@ -1139,7 +1139,7 @@ function App() {
         setIsAlwaysOnTop(newAlwaysOnTop);
         setAppState(prev => ({ 
           ...prev, 
-          statusMessage: newAlwaysOnTop ? '📌 窗口已置顶' : '📌 已取消置顶'
+          statusMessage: newAlwaysOnTop ? '窗口已置顶' : '已取消置顶'
         }));
 
         // 2秒后恢复状态

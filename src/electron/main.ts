@@ -244,7 +244,44 @@ function cleanupAllTempFiles(): void {
   tempFiles.clear();
 }
 
-// 定期清理临时文件（每30分钟）
+// 内存垃圾回收函数
+function forceGarbageCollection(): void {
+  try {
+    if (global.gc) {
+      global.gc();
+      logger.log('手动触发垃圾回收完成');
+    }
+    
+    // 清理主窗口缓存
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.session.clearCache().catch(() => {});
+    }
+  } catch (error) {
+    logger.error('垃圾回收失败:', error);
+  }
+}
+
+// 内存监控函数
+function monitorMemoryUsage(): void {
+  try {
+    const memoryUsage = process.memoryUsage();
+    const heapUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
+    const heapTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
+    const rssMB = Math.round(memoryUsage.rss / 1024 / 1024);
+    
+    logger.log(`内存使用情况: 堆内存 ${heapUsedMB}/${heapTotalMB} MB, 常驻内存 ${rssMB} MB`);
+    
+    // 如果内存使用超过200MB，触发垃圾回收
+    if (heapUsedMB > 200) {
+      logger.log('内存使用过高，触发垃圾回收');
+      forceGarbageCollection();
+    }
+  } catch (error) {
+    logger.error('内存监控失败:', error);
+  }
+}
+
+// 定期清理临时文件和内存（每10分钟）
 function startPeriodicCleanup(): void {
   // 清除之前的定时器（如果存在）
   if (cleanupIntervalId) {
@@ -252,9 +289,16 @@ function startPeriodicCleanup(): void {
   }
   
   cleanupIntervalId = setInterval(() => {
-    console.log('Executing periodic temporary file cleanup...');
+    console.log('Executing periodic cleanup...');
+    monitorMemoryUsage();
     cleanupAllTempFiles();
-  }, 30 * 60 * 1000); // 30 minutes
+    forceGarbageCollection();
+  }, 10 * 60 * 1000); // 10 minutes - 更频繁的清理
+  
+  // 启动时也进行一次内存监控
+  setTimeout(() => {
+    monitorMemoryUsage();
+  }, 5000);
 }
 
 // 存储管理
@@ -282,7 +326,16 @@ async function createMainWindow(): Promise<void> {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
-      webSecurity: false
+      webSecurity: false,
+      // 内存优化配置
+      sandbox: false,
+      spellcheck: false,
+      backgroundThrottling: false,
+      // 减少内存使用
+      v8CacheOptions: 'none',
+      // 禁用不必要的特性来节省内存
+      enableWebSQL: false,
+      experimentalFeatures: false
     },
     icon: path.join(__dirname, '../../assets/icon.png'),
     title: 'SimpleTex OCR - 数学公式识别工具',
@@ -371,7 +424,13 @@ function createSimpleScreenshotWindow(): void {
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
-          preload: path.join(__dirname, 'preload.js')
+          preload: path.join(__dirname, 'preload.js'),
+          // 截图窗口内存优化
+          v8CacheOptions: 'none',
+          spellcheck: false,
+          backgroundThrottling: false,
+          enableWebSQL: false,
+          experimentalFeatures: false
         }
       });
 
@@ -555,18 +614,39 @@ function createScreenshotWindows(): void {
   createSimpleScreenshotWindow();
 }
 
-// 禁用硬件加速以解决GPU问题
+// 内存优化配置
 if (process.platform === 'win32') {
+  // 禁用硬件加速以解决GPU问题和节省内存
   app.disableHardwareAcceleration();
   
   // 禁用GPU进程
   app.commandLine.appendSwitch('disable-gpu');
   app.commandLine.appendSwitch('disable-gpu-compositing');
+  app.commandLine.appendSwitch('disable-gpu-sandbox');
   
   // 禁用持久化缓存，避免后台进程
   app.commandLine.appendSwitch('disable-http-cache');
   app.commandLine.appendSwitch('disable-background-networking');
   app.commandLine.appendSwitch('disable-background-timer-throttling');
+  
+  // V8内存优化
+  app.commandLine.appendSwitch('max-old-space-size', '512'); // 限制老生代内存为512MB
+  app.commandLine.appendSwitch('max-semi-space-size', '64');  // 限制新生代内存为64MB
+  
+  // 禁用不必要的功能以节省内存
+  app.commandLine.appendSwitch('disable-extensions');
+  app.commandLine.appendSwitch('disable-plugins');
+  app.commandLine.appendSwitch('disable-dev-shm-usage');
+  app.commandLine.appendSwitch('disable-software-rasterizer');
+  app.commandLine.appendSwitch('disable-features', 'VizDisplayCompositor');
+  
+  // 启用内存优化
+  app.commandLine.appendSwitch('memory-pressure-off');
+  app.commandLine.appendSwitch('disable-background-mode');
+  
+  // 启用Node.js垃圾回收
+  app.commandLine.appendSwitch('expose-gc');
+  app.commandLine.appendSwitch('enable-precise-memory-info');
 }
 
 // 设置用户数据目录以解决权限问题
@@ -1045,12 +1125,27 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
 // 关闭截图窗口
 function closeScreenshotWindow(): void {
   
-  // 关闭所有截图窗口
+  // 关闭所有截图窗口并优化内存
   screenshotWindows.forEach((window, index) => {
     if (!window.isDestroyed()) {
-      window.hide();
+      // 清理窗口事件监听器
+      window.removeAllListeners();
+      window.webContents.removeAllListeners();
+      
+      // 清理窗口缓存
+      window.webContents.session.clearCache().catch(() => {});
+      
+      // 强制关闭和销毁窗口
+      window.close();
+      window.destroy();
     }
   });
+  screenshotWindows.length = 0;
+  
+  // 手动触发垃圾回收
+  setTimeout(() => {
+    forceGarbageCollection();
+  }, 100);
   
   // 显示主窗口
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -1307,18 +1402,10 @@ ipcMain.handle('close-screenshot-window', () => {
 // 截图完成
 ipcMain.handle('screenshot-complete', (event, imagePath: string) => {
 
-  // 关闭截图窗口
-  screenshotWindows.forEach(window => {
-    if (!window.isDestroyed()) {
-      window.close();
-    }
-  });
-  screenshotWindows.length = 0;
+  // 使用优化的关闭函数
+  closeScreenshotWindow();
   
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.show();
-    mainWindow.focus();
-    
     // 立即发送截图完成事件，不再等待
     mainWindow.webContents.send('screenshot-complete', imagePath);
   }
