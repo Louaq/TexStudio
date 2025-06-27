@@ -82,6 +82,9 @@ function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
 
+  // 窗口置顶状态
+  const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
+
   // 加载设置
   useEffect(() => {
     const loadSettings = async () => {
@@ -137,10 +140,28 @@ function App() {
       }
     };
 
-    loadSettings();
-  }, []);
+            loadSettings();
+      }, []);
 
-  // 监听快捷键触发
+      // 加载窗口置顶状态
+      useEffect(() => {
+        const loadAlwaysOnTopState = async () => {
+          if (window.electronAPI) {
+            try {
+              const result = await window.electronAPI.getAlwaysOnTop();
+              if (result.success) {
+                setIsAlwaysOnTop(result.alwaysOnTop);
+              }
+            } catch (error) {
+              console.error('获取窗口置顶状态失败:', error);
+            }
+          }
+        };
+
+        loadAlwaysOnTopState();
+      }, []);
+
+      // 监听快捷键触发
   useEffect(() => {
     if (!window.electronAPI) {
       console.log('electronAPI不可用，跳过事件监听器设置');
@@ -1100,6 +1121,49 @@ function App() {
     setShowShortcutSettings(false);
   };
 
+  // 切换窗口置顶状态
+  const handleToggleAlwaysOnTop = async () => {
+    if (!window.electronAPI) {
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '❌ 窗口置顶功能仅在桌面应用中可用'
+      }));
+      return;
+    }
+
+    try {
+      const newAlwaysOnTop = !isAlwaysOnTop;
+      const result = await window.electronAPI.setAlwaysOnTop(newAlwaysOnTop);
+      
+      if (result.success) {
+        setIsAlwaysOnTop(newAlwaysOnTop);
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: newAlwaysOnTop ? '📌 窗口已置顶' : '📌 已取消置顶'
+        }));
+
+        // 2秒后恢复状态
+        setTimeout(() => {
+          setAppState(prev => ({ 
+            ...prev, 
+            statusMessage: '⚡ 准备就绪'
+          }));
+        }, 2000);
+      } else {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '❌ 设置窗口置顶失败'
+        }));
+      }
+    } catch (error) {
+      console.error('切换窗口置顶状态失败:', error);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '❌ 窗口置顶设置失败'
+      }));
+    }
+  };
+
   // 清理临时文件
   const handleCleanupTempFiles = async () => {
     if (!window.electronAPI) {
@@ -1210,6 +1274,8 @@ function App() {
         onShowHistory={() => setShowHistory(true)}
         onShowAbout={() => setShowAbout(true)}
         onCleanupTempFiles={handleCleanupTempFiles}
+        onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
+        isAlwaysOnTop={isAlwaysOnTop}
       />
 
       <MainContent>

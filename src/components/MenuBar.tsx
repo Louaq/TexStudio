@@ -44,6 +44,8 @@ interface MenuBarProps {
   onShowHistory: () => void;
   onShowAbout: () => void;
   onCleanupTempFiles: () => void;
+  onToggleAlwaysOnTop: () => void;
+  isAlwaysOnTop: boolean;
 }
 
 const MenuBar: React.FC<MenuBarProps> = ({
@@ -53,7 +55,9 @@ const MenuBar: React.FC<MenuBarProps> = ({
   onShowShortcutSettings,
   onShowHistory,
   onShowAbout,
-  onCleanupTempFiles
+  onCleanupTempFiles,
+  onToggleAlwaysOnTop,
+  isAlwaysOnTop
 }) => {
   const handleScreenshot = () => {
     console.log('统一截图功能启动');
@@ -94,6 +98,13 @@ const MenuBar: React.FC<MenuBarProps> = ({
       {/* 清理临时文件 */}
       <MenuItem onClick={onCleanupTempFiles}>
         🗑️ 清理临时文件
+      </MenuItem>
+      
+      <Divider />
+      
+      {/* 窗口置顶 */}
+      <MenuItem onClick={onToggleAlwaysOnTop}>
+        {isAlwaysOnTop ? '📌 取消置顶' : '📌 窗口置顶'}
       </MenuItem>
       
       <Divider />

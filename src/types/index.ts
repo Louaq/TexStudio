@@ -110,6 +110,10 @@ export interface ElectronAPI {
     filePath?: string;
     message: string;
   }>;
+
+  // 窗口置顶功能
+  setAlwaysOnTop: (alwaysOnTop: boolean) => Promise<{ success: boolean; alwaysOnTop?: boolean; message?: string }>;
+  getAlwaysOnTop: () => Promise<{ success: boolean; alwaysOnTop: boolean }>;
 }
 
 // 扩展全局Window接口

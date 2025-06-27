@@ -274,10 +274,10 @@ let mainWindow: BrowserWindow | null = null;
 // 创建主窗口
 async function createMainWindow(): Promise<void> {
   mainWindow = new BrowserWindow({
-    width: 830,
-    height: 715,
-    minWidth: 700,
-    minHeight: 600,
+    width: 955,
+    height: 734,
+    minWidth: 955,
+    minHeight: 734,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -1605,6 +1605,38 @@ function forceQuitApp(): void {
     process.exit(0);
   }
 }
+
+// 窗口置顶功能
+ipcMain.handle('set-always-on-top', async (event, alwaysOnTop: boolean) => {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setAlwaysOnTop(alwaysOnTop);
+      logger.log(`窗口置顶状态已设置为: ${alwaysOnTop}`);
+      return { success: true, alwaysOnTop };
+    } else {
+      logger.error('主窗口不存在或已销毁');
+      return { success: false, message: '主窗口不存在' };
+    }
+  } catch (error) {
+    logger.error('设置窗口置顶状态失败:', error);
+    return { success: false, message: '设置失败' };
+  }
+});
+
+// 获取窗口置顶状态
+ipcMain.handle('get-always-on-top', async (event) => {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const alwaysOnTop = mainWindow.isAlwaysOnTop();
+      return { success: true, alwaysOnTop };
+    } else {
+      return { success: false, alwaysOnTop: false };
+    }
+  } catch (error) {
+    logger.error('获取窗口置顶状态失败:', error);
+    return { success: false, alwaysOnTop: false };
+  }
+});
 
 // 转换LaTeX为MathML并复制到剪贴板
 ipcMain.handle('save-docx-file', async (event, latexContent: string, filename: string) => {

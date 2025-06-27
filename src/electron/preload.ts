@@ -58,7 +58,11 @@ const electronAPI: ElectronAPI = {
 
   // 数学公式导出
   exportFormulaImage: (latexContent: string, format: 'svg' | 'png' | 'jpg') => 
-    ipcRenderer.invoke('export-formula-image', latexContent, format)
+    ipcRenderer.invoke('export-formula-image', latexContent, format),
+
+  // 窗口置顶功能
+  setAlwaysOnTop: (alwaysOnTop: boolean) => ipcRenderer.invoke('set-always-on-top', alwaysOnTop),
+  getAlwaysOnTop: () => ipcRenderer.invoke('get-always-on-top')
 };
 
 // 将 API 暴露给渲染进程
