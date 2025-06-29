@@ -33,25 +33,17 @@ export function getReqData(reqData: Record<string, any> = {}, apiConfig: ApiConf
   header['random-str'] = randomStr(16);
   header['app-id'] = apiConfig.appId;
 
-  // 构建签名字符串
   const params: string[] = [];
-  
-  // 添加请求参数
   const sortedReqKeys = Object.keys(reqData).sort();
   for (const key of sortedReqKeys) {
     params.push(`${key}=${reqData[key]}`);
   }
-  
-  // 添加头部参数（按Python版本的顺序排序）
   const headerKeys = ['app-id', 'random-str', 'timestamp'];
   for (const key of headerKeys) {
     params.push(`${key}=${header[key]}`);
   }
   
-  // 添加密钥
   params.push(`secret=${apiConfig.appSecret}`);
-  
-  // 生成签名
   const preSignString = params.join('&');
   header.sign = CryptoJS.MD5(preSignString).toString();
   
@@ -75,7 +67,6 @@ export function formatLatex(latex: string, mode: 'normal' | 'inline' | 'display'
     case 'equation':
       return `\\begin{equation}\n${latex}\n\\end{equation}`;
     case 'mathml':
-      // mathml模式下原样返回，实际的MathML转换由handleCopy函数处理
       return latex;
     default:
       return latex;
@@ -88,8 +79,6 @@ export function formatLatex(latex: string, mode: 'normal' | 'inline' | 'display'
  * @returns 是否有效
  */
 export function validateApiConfig(config: ApiConfig): boolean {
-  // 更严格地检查API配置是否有效
-  // 确保config存在，且appId和appSecret都是非空字符串（不仅仅是空格）
   return !!(config && 
             config.appId && 
             config.appSecret && 

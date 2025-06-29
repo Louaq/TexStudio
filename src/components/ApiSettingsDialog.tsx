@@ -90,7 +90,7 @@ const Input = styled.input`
 
 const ButtonGroup = styled.div`
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;
 `;
@@ -136,6 +136,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
         &:hover {
           background: linear-gradient(135deg, #a4b3b6 0%, #8e9b9d 100%);
           transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(127, 140, 141, 0.2);
         }
       `;
     }

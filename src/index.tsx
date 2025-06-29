@@ -118,9 +118,10 @@ const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
+// 移除StrictMode以防止重复渲染
 root.render(
-  <React.StrictMode>
+  <>
     <GlobalStyle />
     <App />
-  </React.StrictMode>
+  </>
 ); 

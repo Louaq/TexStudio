@@ -1,7 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { HistoryItem, CopyMode } from '../types';
 import { formatLatex } from '../utils/api';
+// 引入KaTeX相关库
+import 'katex/dist/katex.min.css';
+import { InlineMath } from 'react-katex';
 
 const Overlay = styled.div`
   position: fixed;
@@ -145,16 +148,16 @@ const ClearButton = styled.button`
   background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 12px;
+  min-width: 100px;
   display: flex;
   align-items: center;
   gap: 4px;
-  min-width: 120px;
   justify-content: center;
 
   &:hover {
@@ -204,18 +207,77 @@ const DateLabel = styled.div`
   font-weight: 500;
 `;
 
-const LatexCode = styled.div`
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+// 显示模式类型
+type DisplayMode = 'rendered' | 'source';
+
+// 修改LatexCode样式组件，添加渲染模式样式
+const LatexCode = styled.div<{ mode?: DisplayMode }>`
+  background: ${props => props.mode === 'rendered' ? 'white' : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'};
   border: 1px solid #e1e8ed;
   border-radius: 8px;
   padding: 12px;
-  font-family: "Cascadia Code", "Consolas", monospace;
-  font-size: 13px;
+  font-family: ${props => props.mode === 'rendered' ? 'inherit' : '"Cascadia Code", "Consolas", monospace'};
+  font-size: ${props => props.mode === 'rendered' ? '16px' : '13px'};
   color: #2c3e50;
-  max-height: 80px;
+  max-height: 120px;
   overflow-y: auto;
   margin-bottom: 12px;
-  word-break: break-all;
+  word-break: ${props => props.mode === 'rendered' ? 'normal' : 'break-all'};
+  text-align: ${props => props.mode === 'rendered' ? 'center' : 'left'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+  
+  ${props => props.mode === 'rendered' && `
+    .katex-display {
+      margin: 0;
+    }
+    .katex {
+      font-size: 1.1em;
+    }
+  `}
+`;
+
+// 添加模式切换按钮样式
+const ModeToggleButton = styled.button<{ active: boolean }>`
+  background: ${props => props.active ? 
+    'linear-gradient(135deg, #4a90e2 0%, #357abd 100%)' : 
+    'linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%)'};
+  color: ${props => props.active ? 'white' : '#7f8c8d'};
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 50px;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+// 添加模式切换容器
+const ModeToggleContainer = styled.div`
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  justify-content: flex-start;
+`;
+
+// 添加错误显示组件
+const ErrorDisplay = styled.div`
+  color: #e74c3c;
+  font-size: 12px;
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+  background: #fdf2f2;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
 `;
 
 const ButtonGroup = styled.div`
@@ -271,16 +333,13 @@ const CloseButton = styled.button`
   background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 80px;
+  min-width: 100px;
 
   &:hover {
     background: linear-gradient(135deg, #a4b3b6 0%, #8e9b9d 100%);
@@ -291,9 +350,9 @@ const CloseButton = styled.button`
 
 const ButtonsContainer = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
-  margin-top: 8px;
+  margin-top: 24px;
 `;
 
 const CopyButtonContainer = styled.div`
@@ -579,6 +638,114 @@ const CopyButton: React.FC<CopyButtonProps> = ({ latex }) => {
   );
 };
 
+// 数学公式渲染组件
+interface MathRendererProps {
+  latex: string;
+  onUse?: () => void;
+}
+
+const MathRenderer: React.FC<MathRendererProps> = ({ latex, onUse }) => {
+  const [renderError, setRenderError] = useState<string | null>(null);
+  
+  // 安全地调用onUse函数
+  const handleUseClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (onUse) {
+      try {
+        onUse();
+      } catch (error) {
+        console.error('使用历史记录项时出错:', error);
+        setRenderError('使用历史记录项时出错');
+      }
+    }
+  };
+
+  // 渲染数学公式
+  const renderMath = () => {
+    try {
+      // 清理LaTeX代码，移除可能的包围符号
+      let cleanLatex = latex.trim();
+      
+      // 移除常见的LaTeX包围符号
+      if (cleanLatex.startsWith('$$') && cleanLatex.endsWith('$$')) {
+        cleanLatex = cleanLatex.slice(2, -2);
+      } else if (cleanLatex.startsWith('$') && cleanLatex.endsWith('$')) {
+        cleanLatex = cleanLatex.slice(1, -1);
+      } else if (cleanLatex.startsWith('\\[') && cleanLatex.endsWith('\\]')) {
+        cleanLatex = cleanLatex.slice(2, -2);
+      } else if (cleanLatex.startsWith('\\(') && cleanLatex.endsWith('\\)')) {
+        cleanLatex = cleanLatex.slice(2, -2);
+      }
+
+      return (
+        <div 
+          onClick={onUse ? handleUseClick : undefined}
+          style={{ 
+            cursor: onUse ? 'pointer' : 'default',
+            width: '100%',
+            textAlign: 'center',
+            padding: '8px'
+          }}
+          title={onUse ? "点击使用该公式" : undefined}
+        >
+          <ErrorBoundary fallback={<div style={{color: '#e74c3c'}}>无法渲染公式</div>}>
+            <InlineMath math={cleanLatex} />
+          </ErrorBoundary>
+        </div>
+      );
+    } catch (error) {
+      console.error('渲染公式失败:', error);
+      setRenderError('渲染公式失败');
+      return (
+        <div style={{ textAlign: 'center', padding: '8px', color: '#e74c3c' }}>
+          无法渲染公式
+        </div>
+      );
+    }
+  };
+
+  return (
+    <LatexCode mode="rendered">
+      {renderError ? (
+        <ErrorDisplay>
+          {renderError}
+        </ErrorDisplay>
+      ) : (
+        renderMath()
+      )}
+    </LatexCode>
+  );
+};
+
+// 错误边界组件
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error('公式渲染错误:', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+
+    return this.props.children;
+  }
+}
+
 interface HistoryDialogProps {
   history: HistoryItem[];
   onUse: (latex: string) => void;
@@ -598,6 +765,18 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [latexToDelete, setLatexToDelete] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // 安全包装的onUse函数
+  const safeUse = useCallback((latex: string) => {
+    try {
+      console.log('使用历史记录项:', latex);
+      onUse(latex);
+    } catch (error) {
+      console.error('使用历史记录项失败:', error);
+      setError('使用历史记录项失败');
+    }
+  }, [onUse]);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !isDragging) {
@@ -667,6 +846,27 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
           </Title>
         </Header>
 
+        {error && (
+          <ErrorDisplay style={{ margin: '10px 0' }}>
+            {error}
+            <div style={{ fontSize: '10px', marginTop: '5px' }}>
+              <button 
+                onClick={() => setError(null)} 
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#3498db', 
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: 0
+                }}
+              >
+                清除错误
+              </button>
+            </div>
+          </ErrorDisplay>
+        )}
+
         <Content>
           {history.length === 0 ? (
             <EmptyState>
@@ -676,8 +876,20 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
             history.map((item, index) => (
               <HistoryItemContainer key={index}>
                 <DateLabel>{item.date}</DateLabel>
-                <LatexCode>{item.latex}</LatexCode>
+                <MathRenderer 
+                  latex={item.latex} 
+                  onUse={() => safeUse(item.latex)}
+                />
                 <ButtonGroup>
+                  <ActionButton 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      safeUse(item.latex);
+                    }}
+                  >
+                    📋 使用
+                  </ActionButton>
                   <ActionButton 
                     variant="danger" 
                     onClick={() => handleDelete(item.latex)}
@@ -692,18 +904,14 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
         </Content>
 
         <ButtonsContainer>
-          <div>
-            {history.length > 0 && (
-              <ClearButton onClick={handleClear}>
-                🗑️ 清空历史记录
-              </ClearButton>
-            )}
-          </div>
-          <div>
-            <CloseButton onClick={onClose}>
-              关闭
-            </CloseButton>
-          </div>
+          {history.length > 0 && (
+            <ClearButton onClick={handleClear}>
+              🗑️ 清空历史记录
+            </ClearButton>
+          )}
+          <CloseButton onClick={onClose}>
+            关闭
+          </CloseButton>
         </ButtonsContainer>
       </Dialog>
 

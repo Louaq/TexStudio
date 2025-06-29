@@ -76,16 +76,12 @@ function App() {
     shortcuts: { capture: string; upload: string };
   } | null>(null);
 
-  // 对话框状态
   const [showApiSettings, setShowApiSettings] = useState(false);
   const [showShortcutSettings, setShowShortcutSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
 
-  // 窗口置顶状态
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
-
-  // 加载设置
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -99,7 +95,6 @@ function App() {
           });
           setAppState(prev => ({ ...prev, history: appSettings.history }));
         } else {
-          // 浏览器模式下的默认设置
           const defaultSettings = {
             apiConfig: {
               appId: '',
@@ -112,9 +107,7 @@ function App() {
             }
           };
           
-          // 尝试从settings.json加载配置
           try {
-            // 使用相对路径加载settings.json
             const response = await fetch('./settings.json');
             if (response.ok) {
               const settings = await response.json();
@@ -143,7 +136,6 @@ function App() {
             loadSettings();
       }, []);
 
-      // 加载窗口置顶状态
       useEffect(() => {
         const loadAlwaysOnTopState = async () => {
           if (window.electronAPI) {
@@ -161,11 +153,10 @@ function App() {
         loadAlwaysOnTopState();
       }, []);
 
-      // 监听快捷键触发
   useEffect(() => {
     if (!window.electronAPI) {
       console.log('electronAPI不可用，跳过事件监听器设置');
-      return; // 只在 Electron 环境中注册
+      return;
     }
 
     console.log('设置Electron事件监听器...');
@@ -173,7 +164,6 @@ function App() {
     const handleShortcut = async (action: 'capture' | 'upload') => {
       console.log('收到快捷键事件:', action);
       if (action === 'capture') {
-        // 截图处理
         if (!window.electronAPI) {
           setAppState(prev => ({ 
             ...prev, 
@@ -187,7 +177,7 @@ function App() {
           await window.electronAPI.showScreenshotOverlay();
           setAppState(prev => ({ 
             ...prev, 
-            statusMessage: '📸 请在屏幕上选择区域进行截图'
+            statusMessage: '请在屏幕上选择区域进行截图'
           }));
         } catch (error) {
           console.error('启动截图失败:', error);
@@ -214,9 +204,7 @@ function App() {
               currentImage: `file://${filePath}`,
               statusMessage: '🔄 准备识别...'
             }));
-                         // 直接在这里实现识别逻辑，避免函数依赖
              if (settings) {
-               // 开始识别
                setAppState(prev => ({ 
                  ...prev, 
                  isRecognizing: true, 
@@ -225,7 +213,6 @@ function App() {
                }));
 
                try {
-                 // 先验证API配置是否有效
                  const apiConfig = settings.apiConfig;
                  if (!apiConfig || !apiConfig.appId || !apiConfig.appSecret || 
                      !apiConfig.appId.trim() || !apiConfig.appSecret.trim()) {
@@ -251,7 +238,6 @@ function App() {
                      statusMessage: '✅ 识别完成！'
                    }));
                    
-                   // 添加到历史记录
                    const newItem = {
                      date: getCurrentTimestamp(),
                      latex: latex.trim()
@@ -261,7 +247,6 @@ function App() {
                      const exists = prev.history.some(item => item.latex === newItem.latex);
                      if (!exists) {
                        const newHistory = [newItem, ...prev.history.slice(0, 4)];
-                       // 保存到设置
                        if (window.electronAPI) {
                          window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
                        }
@@ -273,12 +258,10 @@ function App() {
 
                  } else {
                    console.log('识别失败，错误信息:', result.message);
-                   
-                   // 检查是否是API配置错误
                    if (result.error_code === 'NO_API_CONFIG') {
                      setAppState(prev => ({ 
                        ...prev, 
-                       latexCode: '', // 确保清空公式区域
+                       latexCode: '',
                        statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
                      }));
                    } else {
@@ -324,29 +307,20 @@ function App() {
       console.log('收到截图完成事件，图片路径:', imagePath);
       console.log('当前时间:', new Date().toISOString());
       
-      // 检查文件是否存在
       if (window.electronAPI && imagePath) {
-        // 创建一个任务ID来跟踪当前识别任务
         const taskId = Date.now();
         console.log(`开始识别任务 ID: ${taskId}`);
         
-        // 先更新图片，但不更改状态消息
         setAppState(prev => ({ 
           ...prev, 
           currentImage: `file://${imagePath}`
         }));
-        
-        // 等待图片加载完成
         await new Promise(resolve => setTimeout(resolve, 100));
         
         console.log('开始识别截图...');
-        // 获取最新的设置
         const currentSettings = settings;
         console.log('当前使用的设置:', currentSettings);
-        
-        // 直接在这里实现识别逻辑，避免函数依赖
         if (currentSettings) {
-          // 开始识别，只设置一次状态
           setAppState(prev => ({ 
             ...prev, 
             isRecognizing: true, 
@@ -355,7 +329,6 @@ function App() {
           }));
 
           try {
-            // 先严格验证API配置是否有效
             const apiConfig = currentSettings.apiConfig;
             if (!validateApiConfig(apiConfig)) {
               console.log(`任务 ${taskId}: API配置无效，无法识别`);
@@ -376,9 +349,7 @@ function App() {
               const latex = result.res.latex;
               console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
               
-              // 合并状态更新，一次性更新所有状态
               setAppState(prev => {
-                // 添加到历史记录
                 const newItem = {
                   date: getCurrentTimestamp(),
                   latex: latex.trim()
@@ -388,7 +359,6 @@ function App() {
                 const exists = prev.history.some(item => item.latex === newItem.latex);
                 if (!exists) {
                   newHistory = [newItem, ...prev.history.slice(0, 4)];
-                  // 保存到设置
                   if (window.electronAPI) {
                     window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
                   }
@@ -432,10 +402,8 @@ function App() {
     
     console.log('所有Electron事件监听器设置完成');
     
-    // 添加清理函数
     return () => {
       console.log('清理事件监听器');
-      // 注意：ipcRenderer.removeAllListeners 需要在preload中暴露
     };
   }, [settings]);
 
@@ -451,14 +419,12 @@ function App() {
       console.log('文件大小:', file.size);
       
       if (file.type.startsWith('image/')) {
-        // 处理拖拽的图片文件
         const reader = new FileReader();
         reader.onload = async () => {
           if (reader.result) {
             console.log('文件读取完成，设置图片显示');
             setAppState(prev => ({ ...prev, currentImage: reader.result as string }));
             
-            // 直接在这里处理识别逻辑，避免函数引用问题
             if (!window.electronAPI) {
               setAppState(prev => ({ 
                 ...prev, 
@@ -471,19 +437,15 @@ function App() {
             console.log('当前settings:', settings);
 
             try {
-               // 将File对象保存为临时文件
                const arrayBuffer = await file.arrayBuffer();
                const uint8Array = new Uint8Array(arrayBuffer);
                const tempPath = await window.electronAPI.saveTempFile(uint8Array, file.name);
                console.log('临时文件保存到:', tempPath);
               
-              // 直接内联识别逻辑
               if (settings) {
-                // 获取最新的设置
                 const currentSettings = settings;
                 console.log('当前使用的设置:', currentSettings);
                 
-                // 创建一个任务ID来跟踪当前识别任务
                 const taskId = Date.now();
                 console.log(`开始拖拽识别任务 ID: ${taskId}`);
                 
@@ -495,7 +457,6 @@ function App() {
                 }));
 
                 try {
-                  // 先严格验证API配置是否有效
                   const apiConfig = currentSettings.apiConfig;
                   if (!validateApiConfig(apiConfig)) {
                     console.log(`任务 ${taskId}: API配置无效，无法识别`);
@@ -516,9 +477,7 @@ function App() {
                     const latex = result.res.latex;
                     console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
                     
-                    // 合并状态更新，一次性更新所有状态
                     setAppState(prev => {
-                      // 添加到历史记录
                       const newItem = {
                         date: getCurrentTimestamp(),
                         latex: latex.trim()
@@ -528,7 +487,6 @@ function App() {
                       const exists = prev.history.some(item => item.latex === newItem.latex);
                       if (!exists) {
                         newHistory = [newItem, ...prev.history.slice(0, 4)];
-                        // 保存到设置
                         if (window.electronAPI) {
                           window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
                         }
@@ -545,11 +503,10 @@ function App() {
                   } else {
                     console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
                     
-                    // 检查是否是API配置错误
                     if (result.error_code === 'NO_API_CONFIG') {
                       setAppState(prev => ({ 
                         ...prev, 
-                        latexCode: '', // 确保清空公式区域
+                        latexCode: '',
                         isRecognizing: false,
                         statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
                       }));
@@ -606,7 +563,6 @@ function App() {
     multiple: false
   });
 
-  // 处理截图 - 用于菜单栏直接调用
   const handleCapture = async () => {
     if (!window.electronAPI) {
       setAppState(prev => ({ 
@@ -621,7 +577,7 @@ function App() {
       await window.electronAPI.showScreenshotOverlay();
       setAppState(prev => ({ 
         ...prev, 
-        statusMessage: '📸 请在屏幕上选择区域进行截图'
+        statusMessage: '请在屏幕上选择区域进行截图'
       }));
     } catch (error) {
       console.error('启动截图失败:', error);
@@ -632,7 +588,6 @@ function App() {
     }
   };
 
-  // 处理文件上传 - 用于菜单栏直接调用
   const handleUpload = async () => {
     if (!window.electronAPI) {
       setAppState(prev => ({ 
@@ -645,7 +600,6 @@ function App() {
     try {
       const filePath = await window.electronAPI.selectFile();
       if (filePath) {
-        // 创建一个任务ID来跟踪当前识别任务
         const taskId = Date.now();
         
         setAppState(prev => ({ 
@@ -654,13 +608,10 @@ function App() {
           statusMessage: '🔄 准备识别...'
         }));
         
-        // 直接内联识别逻辑
         if (settings) {
-          // 获取最新的设置
           const currentSettings = settings;
           console.log('当前使用的设置:', currentSettings);
           
-          // 创建一个任务ID来跟踪当前识别任务
           const taskId = Date.now();
           console.log(`开始上传识别任务 ID: ${taskId}`);
           
@@ -672,7 +623,6 @@ function App() {
           }));
 
           try {
-            // 先严格验证API配置是否有效
             const apiConfig = currentSettings.apiConfig;
             if (!validateApiConfig(apiConfig)) {
               console.log(`任务 ${taskId}: API配置无效，无法识别`);
@@ -693,9 +643,7 @@ function App() {
               const latex = result.res.latex;
               console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
               
-              // 合并状态更新，一次性更新所有状态
               setAppState(prev => {
-                // 添加到历史记录
                 const newItem = {
                   date: getCurrentTimestamp(),
                   latex: latex.trim()
@@ -705,7 +653,6 @@ function App() {
                 const exists = prev.history.some(item => item.latex === newItem.latex);
                 if (!exists) {
                   newHistory = [newItem, ...prev.history.slice(0, 4)];
-                  // 保存到设置
                   if (window.electronAPI) {
                     window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
                   }
@@ -722,11 +669,10 @@ function App() {
             } else {
               console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
               
-              // 检查是否是API配置错误
               if (result.error_code === 'NO_API_CONFIG') {
                 setAppState(prev => ({ 
                   ...prev, 
-                  latexCode: '', // 确保清空公式区域
+                  latexCode: '',
                   isRecognizing: false,
                   statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
                 }));
@@ -759,7 +705,6 @@ function App() {
     }
   };
 
-  // 添加到历史记录
   const addToHistory = useCallback(async (latex: string) => {
     if (!latex.trim()) return;
 
@@ -767,15 +712,12 @@ function App() {
       date: getCurrentTimestamp(),
       latex: latex.trim()
     };
-
-    // 检查是否已存在
     const exists = appState.history.some(item => item.latex === newItem.latex);
     if (exists) return;
 
-    const newHistory = [newItem, ...appState.history.slice(0, 4)]; // 保持最多5条
+    const newHistory = [newItem, ...appState.history.slice(0, 4)];
     setAppState(prev => ({ ...prev, history: newHistory }));
 
-    // 保存到设置（仅在 Electron 环境中）
     if (window.electronAPI) {
       try {
         await window.electronAPI.saveSettings({ history: newHistory });
@@ -785,7 +727,6 @@ function App() {
     }
   }, [appState.history]);
 
-  // 识别公式
   const recognizeFormula = useCallback(async (imagePath: string) => {
     console.log('recognizeFormula被调用，图片路径:', imagePath);
     
@@ -794,7 +735,6 @@ function App() {
       return;
     }
 
-    // 获取最新的设置
     const currentSettings = settings;
     console.log('当前使用的设置:', currentSettings);
 
@@ -806,7 +746,6 @@ function App() {
       return;
     }
 
-    // 创建一个任务ID来跟踪当前识别任务
     const taskId = Date.now();
     console.log(`开始通用识别任务 ID: ${taskId}`);
 
@@ -818,7 +757,6 @@ function App() {
     }));
 
     try {
-      // 先严格验证API配置是否有效
       const apiConfig = currentSettings.apiConfig;
       if (!validateApiConfig(apiConfig)) {
         console.log(`任务 ${taskId}: API配置无效，无法识别`);
@@ -834,17 +772,12 @@ function App() {
       console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
       const result = await window.electronAPI.recognizeFormula(imagePath, currentSettings.apiConfig);
       console.log(`任务 ${taskId}: API识别结果:`, result);
-      
       if (result.status && result.res?.latex) {
         const latex = result.res.latex;
         console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
         
-        // 合并状态更新，一次性更新所有状态
         setAppState(prev => {
-          // 准备历史记录更新
           let newHistory = prev.history;
-          
-          // 只有当latex不为空时才添加到历史记录
           if (latex.trim()) {
             const newItem = {
               date: getCurrentTimestamp(),
@@ -854,7 +787,6 @@ function App() {
             const exists = prev.history.some(item => item.latex === newItem.latex);
             if (!exists) {
               newHistory = [newItem, ...prev.history.slice(0, 4)];
-              // 保存到设置
               if (window.electronAPI) {
                 window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
               }
@@ -872,11 +804,10 @@ function App() {
       } else {
         console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
         
-        // 检查是否是API配置错误
         if (result.error_code === 'NO_API_CONFIG') {
           setAppState(prev => ({ 
             ...prev, 
-            latexCode: '', // 确保清空公式区域
+            latexCode: '',
             isRecognizing: false,
             statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
           }));
@@ -899,13 +830,10 @@ function App() {
       }));
     }
   }, [settings]);
-
-  // 复制LaTeX代码
   const handleCopy = async (mode: CopyMode = 'normal') => {
     if (!appState.latexCode.trim()) return;
 
     if (mode === 'mathml') {
-      // 使用MathML模式 - 直接转换为MathML并复制到剪贴板
       if (!window.electronAPI) {
         setAppState(prev => ({ 
           ...prev, 
@@ -915,8 +843,6 @@ function App() {
       }
 
       try {
-        // 直接调用保存Word文档的方法中的MathML转换功能
-        // 这会将LaTeX转换为MathML并复制到剪贴板，但不会显示保存对话框
         const tempFilename = `temp-${Date.now()}`;
         await window.electronAPI.saveDocxFile(appState.latexCode, tempFilename);
         setAppState(prev => ({ 
@@ -930,8 +856,6 @@ function App() {
           statusMessage: '❌ MathML转换失败'
         }));
       }
-
-      // 2秒后恢复状态
       setTimeout(() => {
         setAppState(prev => ({ 
           ...prev, 
@@ -946,7 +870,6 @@ function App() {
     if (window.electronAPI) {
       await window.electronAPI.copyToClipboard(formattedLatex);
     } else {
-      // 浏览器环境下使用 Clipboard API
       try {
         await navigator.clipboard.writeText(formattedLatex);
       } catch (error) {
@@ -963,8 +886,6 @@ function App() {
       ...prev, 
       statusMessage: '📋 已复制到剪贴板'
     }));
-
-    // 2秒后恢复状态
     setTimeout(() => {
       setAppState(prev => ({ 
         ...prev, 
@@ -973,15 +894,39 @@ function App() {
     }, 2000);
   };
 
-
-
-  // 从历史记录中使用
   const handleUseHistory = (latex: string) => {
-    setAppState(prev => ({ ...prev, latexCode: latex }));
-    setShowHistory(false);
+    try {
+      console.log('使用历史记录项:', latex);
+      
+      // 先关闭历史记录对话框
+      setShowHistory(false);
+      
+      // 确保latex是有效的
+      if (typeof latex === 'string' && latex.trim()) {
+        // 直接设置LaTeX代码
+        setAppState(prev => ({ 
+          ...prev, 
+          latexCode: latex,
+          statusMessage: '✅ 已加载历史公式'
+        }));
+          
+        // 2秒后恢复状态消息
+        setTimeout(() => {
+          setAppState(prev => ({ 
+            ...prev, 
+            statusMessage: '⚡ 准备就绪'
+          }));
+        }, 2000);
+      } else {
+        console.error('无效的LaTeX内容');
+      }
+    } catch (error) {
+      console.error('使用历史记录项失败:', error);
+      // 确保即使出错也能关闭历史记录对话框
+      setShowHistory(false);
+    }
   };
 
-  // 清空历史记录
   const handleClearHistory = async () => {
     setAppState(prev => ({ ...prev, history: [] }));
     if (window.electronAPI) {
@@ -993,8 +938,6 @@ function App() {
     }
     setShowHistory(false);
   };
-
-  // 删除历史记录项
   const handleDeleteHistoryItem = async (latex: string) => {
     const newHistory = appState.history.filter(item => item.latex !== latex);
     setAppState(prev => ({ ...prev, history: newHistory }));
@@ -1006,76 +949,52 @@ function App() {
       }
     }
   };
-
-  // 保存API设置
   const handleSaveApiSettings = async (apiConfig: ApiConfig) => {
     if (window.electronAPI) {
       try {
-        // 检查是否是清空API配置
         const isClearing = !apiConfig.appId || !apiConfig.appSecret || 
                           !apiConfig.appId.trim() || !apiConfig.appSecret.trim();
         
         if (isClearing) {
           console.log('检测到清除API配置操作');
-          // 如果是清空配置，调用清除API配置方法
           const result = await window.electronAPI.clearApiConfig();
           console.log('清除API配置结果:', result);
           
           if (result) {
-            // 立即更新前端设置状态为空配置
             setSettings(prev => prev ? { 
               ...prev, 
               apiConfig: { appId: '', appSecret: '' }
             } : null);
-            
-            // 显示清除成功提示
             setAppState(prev => ({ 
               ...prev, 
               statusMessage: '✅ API配置已清除' 
             }));
-            
-            // 清理当前图片和识别结果
             setAppState(prev => ({
               ...prev,
               currentImage: null,
               latexCode: ''
             }));
           } else {
-            // 显示清除失败提示
             setAppState(prev => ({ 
               ...prev, 
               statusMessage: '❌ API配置清除失败' 
             }));
           }
         } else {
-          // 保存到electron-store
           await window.electronAPI.saveSettings({ apiConfig });
-          
-          // 同时保存到settings.json文件
           await window.electronAPI.saveApiToSettingsFile(apiConfig);
-          
-          // 更新设置状态
           setSettings(prev => prev ? { ...prev, apiConfig } : null);
-          
-          // 显示保存成功提示
           setAppState(prev => ({ 
             ...prev, 
             statusMessage: '✅ API设置已保存' 
           }));
         }
-        
-        // 记录日志
         console.log('API设置已更新', apiConfig);
-        
-        // 清理当前图片和识别结果，避免自动触发识别
-        // 这样用户需要重新截图或上传图片，确保新API设置生效
         setAppState(prev => ({
           ...prev,
           currentImage: null,
           latexCode: ''
         }));
-        
-        // 2秒后恢复状态
         setTimeout(() => {
           setAppState(prev => ({ 
             ...prev, 
@@ -1090,11 +1009,8 @@ function App() {
         }));
       }
     } else {
-      // 浏览器环境下的处理
       const isClearing = !apiConfig.appId || !apiConfig.appSecret || 
                         !apiConfig.appId.trim() || !apiConfig.appSecret.trim();
-      
-      // 更新设置状态
       if (isClearing) {
         setSettings(prev => prev ? { 
           ...prev, 
@@ -1106,8 +1022,6 @@ function App() {
     }
     setShowApiSettings(false);
   };
-
-  // 保存快捷键设置
   const handleSaveShortcutSettings = async (shortcuts: { capture: string; upload: string }) => {
     if (window.electronAPI) {
       try {
@@ -1120,8 +1034,6 @@ function App() {
     setSettings(prev => prev ? { ...prev, shortcuts } : null);
     setShowShortcutSettings(false);
   };
-
-  // 切换窗口置顶状态
   const handleToggleAlwaysOnTop = async () => {
     if (!window.electronAPI) {
       setAppState(prev => ({ 
@@ -1141,8 +1053,6 @@ function App() {
           ...prev, 
           statusMessage: newAlwaysOnTop ? '窗口已置顶' : '已取消置顶'
         }));
-
-        // 2秒后恢复状态
         setTimeout(() => {
           setAppState(prev => ({ 
             ...prev, 
@@ -1163,8 +1073,6 @@ function App() {
       }));
     }
   };
-
-  // 清理临时文件
   const handleCleanupTempFiles = async () => {
     if (!window.electronAPI) {
       setAppState(prev => ({ 
@@ -1189,8 +1097,6 @@ function App() {
         ...prev, 
         statusMessage: `✅ 已清理 ${count} 个临时文件`
       }));
-
-      // 3秒后恢复状态
       setTimeout(() => {
         setAppState(prev => ({ 
           ...prev, 
@@ -1205,8 +1111,6 @@ function App() {
       }));
     }
   };
-
-  // 导出数学公式为图片
   const handleExportFormula = async (format: 'svg' | 'png' | 'jpg') => {
     if (!appState.latexCode.trim()) {
       setAppState(prev => ({ 
@@ -1243,8 +1147,6 @@ function App() {
           statusMessage: `❌ ${result.message}`
         }));
       }
-
-      // 3秒后恢复状态
       setTimeout(() => {
         setAppState(prev => ({ 
           ...prev, 
