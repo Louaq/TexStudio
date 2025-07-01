@@ -129,27 +129,20 @@ jobs:
           Copy-Item -Path "release\LaTeX-$version.exe" -Destination "release\LaTeX-latest.exe" -Force
           Write-Host "创建了latest版本副本: LaTeX-latest.exe"
           
-          # 创建latest.yml文件
-          $exePath = "release\LaTeX-$version.exe"
-          $fileInfo = Get-Item -Path $exePath
-          $fileSizeInBytes = $fileInfo.Length
-          $sha512 = (Get-FileHash -Path $exePath -Algorithm SHA512).Hash.ToLower()
-          
-          $releaseDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
-          
-          # 使用简单字符串拼接而不是多行字符串，避免YAML解析问题
-          $ymlContent = "version: $version`r`n"
-          $ymlContent += "files:`r`n"
-          $ymlContent += "  - url: LaTeX-$version.exe`r`n"
-          $ymlContent += "    sha512: $sha512`r`n"
-          $ymlContent += "    size: $fileSizeInBytes`r`n"
-          $ymlContent += "path: LaTeX-$version.exe`r`n"
-          $ymlContent += "sha512: $sha512`r`n"
-          $ymlContent += "releaseDate: $releaseDate`r`n"
-          
-          # 同时创建latest-mac.yml (虽然我们没有Mac版本，但为了完整性)
-          Set-Content -Path "release\latest.yml" -Value $ymlContent
-          Set-Content -Path "release\latest-mac.yml" -Value $ymlContent
+          # 复制并重命名latest.yml文件
+          if (Test-Path -Path "release\latest.yml") {
+            Copy-Item -Path "release\latest.yml" -Destination "release\latest-$version.yml" -Force
+            
+            # 修改latest.yml文件内容，更新文件名
+            $ymlContent = Get-Content -Path "release\latest.yml" -Raw
+            $ymlContent = $ymlContent -replace "latex-ocr-electron-setup-$version.exe", "LaTeX-$version.exe"
+            $ymlContent = $ymlContent -replace "path: latex-ocr-electron-setup-$version.exe", "path: LaTeX-$version.exe"
+            Set-Content -Path "release\latest.yml" -Value $ymlContent
+            
+            Write-Host "已处理latest.yml文件"
+          } else {
+            Write-Host "警告: 找不到latest.yml文件!"
+          }
           
           # 删除不需要的文件
           Write-Host "`n=== 删除多余文件 ==="
@@ -157,7 +150,7 @@ jobs:
             $_.Name -ne "LaTeX-$version.exe" -and 
             $_.Name -ne "LaTeX-latest.exe" -and 
             $_.Name -ne "latest.yml" -and
-            $_.Name -ne "latest-mac.yml"
+            $_.Name -ne "latest-$version.yml"
           } | ForEach-Object {
             Remove-Item -Path $_.FullName -Force
             Write-Host "已删除文件: $($_.Name)"
@@ -178,7 +171,7 @@ jobs:
             ./release/LaTeX-${{ steps.package_version.outputs.version }}.exe
             ./release/LaTeX-latest.exe
             ./release/latest.yml
-            ./release/latest-mac.yml
+            ./release/latest-${{ steps.package_version.outputs.version }}.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
