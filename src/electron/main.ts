@@ -82,11 +82,44 @@ const logger = {
   }
 };
 
+// 自动更新函数接口
+interface AutoUpdaterFunctions {
+  shouldCheckForUpdates: () => boolean;
+  checkForUpdates: () => void;
+}
+
+// 全局变量存储自动更新函数
+let autoUpdaterFunctions: AutoUpdaterFunctions;
+
 // 配置自动更新
 function setupAutoUpdater() {
   autoUpdater.logger = logger;
-  autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = true;
+  
+  // 修改默认自动更新行为
+  autoUpdater.autoDownload = true;           // 自动下载更新
+  autoUpdater.autoInstallOnAppQuit = true;   // 退出时自动安装
+  
+  // 设置更新检查频率 - 每天只检查一次
+  const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24小时
+  let lastCheckTime = 0;
+  
+  // 检查是否应该检查更新
+  function shouldCheckForUpdates() {
+    // 开发模式下不检查
+    if (!app.isPackaged) {
+      return false;
+    }
+    
+    const now = Date.now();
+    
+    // 如果从未检查过或已超过设定间隔，则应该检查
+    if (lastCheckTime === 0 || (now - lastCheckTime) > CHECK_INTERVAL_MS) {
+      lastCheckTime = now;
+      return true;
+    }
+    
+    return false;
+  }
 
   // 检查更新错误
   autoUpdater.on('error', (error) => {
@@ -152,6 +185,22 @@ function setupAutoUpdater() {
       });
     }
   });
+  
+  // 暴露公共方法
+  return {
+    shouldCheckForUpdates,
+    checkForUpdates: () => {
+      if (shouldCheckForUpdates()) {
+        try {
+          autoUpdater.checkForUpdates();
+        } catch (error) {
+          logger.error('检查更新失败:', error);
+        }
+      } else {
+        logger.log('跳过更新检查 (检查间隔未到或处于开发模式)');
+      }
+    }
+  };
 }
 
 // 手动检查更新
@@ -161,10 +210,17 @@ function checkForUpdates() {
     return;
   }
   
-  try {
-    autoUpdater.checkForUpdates();
-  } catch (error) {
-    logger.error('检查更新失败:', error);
+  // 如果存在autoUpdaterFunctions则使用其方法，否则直接调用autoUpdater
+  if (autoUpdaterFunctions) {
+    autoUpdaterFunctions.checkForUpdates();
+    logger.log('通过自定义函数触发检查更新');
+  } else {
+    try {
+      autoUpdater.checkForUpdates();
+      logger.log('通过autoUpdater直接触发检查更新');
+    } catch (error) {
+      logger.error('检查更新失败:', error);
+    }
   }
 }
 
@@ -781,11 +837,11 @@ if (!gotTheLock) {
     startPeriodicCleanup();
     
     // 设置自动更新
-    setupAutoUpdater();
+    autoUpdaterFunctions = setupAutoUpdater();
     
     // 检查更新（延迟启动后检查，避免影响启动速度）
     setTimeout(() => {
-      checkForUpdates();
+      autoUpdaterFunctions.checkForUpdates();
     }, 10000);
 
     app.on('activate', async () => {
@@ -1685,7 +1741,11 @@ ipcMain.handle('check-for-updates', async (event) => {
       return { success: false, message: '开发模式下不检查更新' };
     }
     
-    checkForUpdates();
+    if (autoUpdaterFunctions) {
+      autoUpdaterFunctions.checkForUpdates();
+    } else {
+      checkForUpdates();
+    }
     return { success: true, message: '已开始检查更新' };
   } catch (error) {
     logger.error('手动检查更新失败:', error);
