@@ -129,9 +129,34 @@ jobs:
           Copy-Item -Path "release\LaTeX-$version.exe" -Destination "release\LaTeX-latest.exe" -Force
           Write-Host "创建了latest版本副本: LaTeX-latest.exe"
           
+          # 创建latest.yml文件
+          $exePath = "release\LaTeX-$version.exe"
+          $fileInfo = Get-Item -Path $exePath
+          $fileSizeInBytes = $fileInfo.Length
+          $sha512 = (Get-FileHash -Path $exePath -Algorithm SHA512).Hash.ToLower()
+          
+          $ymlContent = @"
+version: $version
+files:
+  - url: LaTeX-$version.exe
+    sha512: $sha512
+    size: $fileSizeInBytes
+path: LaTeX-$version.exe
+sha512: $sha512
+releaseDate: $(Get-Date -Format "yyyy-MM-dd'T'HH:mm:ss.fffK")
+"@
+          
+          Set-Content -Path "release\latest.yml" -Value $ymlContent
+          Write-Host "已创建latest.yml文件:"
+          Get-Content -Path "release\latest.yml"
+          
           # 删除不需要的文件
           Write-Host "`n=== 删除多余文件 ==="
-          Get-ChildItem -Path "release" -File | Where-Object { $_.Name -ne "LaTeX-$version.exe" -and $_.Name -ne "LaTeX-latest.exe" } | ForEach-Object {
+          Get-ChildItem -Path "release" -File | Where-Object { 
+            $_.Name -ne "LaTeX-$version.exe" -and 
+            $_.Name -ne "LaTeX-latest.exe" -and 
+            $_.Name -ne "latest.yml" 
+          } | ForEach-Object {
             Remove-Item -Path $_.FullName -Force
             Write-Host "已删除文件: $($_.Name)"
           }
@@ -150,6 +175,7 @@ jobs:
           files: |
             ./release/LaTeX-${{ steps.package_version.outputs.version }}.exe
             ./release/LaTeX-latest.exe
+            ./release/latest.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       

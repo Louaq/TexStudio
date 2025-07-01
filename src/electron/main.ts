@@ -102,6 +102,9 @@ function setupAutoUpdater() {
   autoUpdater.allowDowngrade = false;        // 不允许降级
   autoUpdater.forceDevUpdateConfig = false;  // 正式环境配置
   
+  // 设置更新服务器地址 - 使用package.json中的配置
+  logger.log('使用package.json中的publish配置进行自动更新');
+  
   // 设置更新检查频率 - 每天只检查一次
   const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24小时
   let lastCheckTime = 0;
