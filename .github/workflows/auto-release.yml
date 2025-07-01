@@ -48,7 +48,19 @@ jobs:
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
         shell: bash
       
-      - name: 构建和发布 Electron 应用
+      - name: 标准构建包
+        run: npm run package
+        env:
+          CI: false
+      
+      - name: 验证图标文件
+        run: |
+          Get-ChildItem -Path assets\icon.* | ForEach-Object { Write-Host "Found icon: $($_.FullName), Size: $($_.Length) bytes" }
+        shell: pwsh
+      
+      - name: 尝试发布到GitHub
+        id: publish
+        continue-on-error: true
         run: npm run publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -58,7 +70,13 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           cd release
-          Compress-Archive -Path "SimpleTex-OCR-${{ steps.package_version.outputs.version }}-win-x64" -DestinationPath SimpleTex-OCR-win.zip -Force
+          if (Test-Path -Path "win-unpacked") {
+            Compress-Archive -Path win-unpacked -DestinationPath SimpleTex-OCR-win.zip -Force
+            Write-Host "win-unpacked目录已压缩成功"
+          } else {
+            Write-Host "警告: win-unpacked目录不存在"
+            Get-ChildItem -Path . | ForEach-Object { Write-Host "发现文件: $($_.Name)" }
+          }
         shell: pwsh
       
       - name: 创建 Release
@@ -68,7 +86,9 @@ jobs:
           name: Release v${{ steps.package_version.outputs.version }}
           draft: false
           prerelease: false
-          files: ./release/SimpleTex-OCR-win.zip
+          files: |
+            ./release/SimpleTex-OCR-win.zip
+            ./release/LaTeX*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
@@ -76,4 +96,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-artifacts
-          path: release/SimpleTex*.exe
+          path: |
+            release/SimpleTex-OCR-win.zip
+            release/LaTeX*.exe
