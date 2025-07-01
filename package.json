@@ -12,7 +12,7 @@
     "build": "npm run build:react && npm run build:electron",
     "build:react": "react-scripts build",
     "build:electron": "tsc -p tsconfig.electron.json",
-    "package": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
+    "package": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --dir",
     "dist": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=never",
     "publish": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=always"
   },
@@ -70,30 +70,26 @@
     "extraMetadata": {
       "main": "dist/electron/electron/main.js"
     },
-    "icon": "assets/icon.png",
-    "mac": {
-      "category": "public.app-category.productivity",
-      "icon": "assets/icon.png"
-    },
     "win": {
-      "target": "nsis",
-      "icon": "assets/icon.png"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "dir",
+          "arch": ["x64"]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "perMachine": false,
-      "installerIcon": "assets/icon.png",
-      "uninstallerIcon": "assets/icon.png",
-      "installerHeaderIcon": "assets/icon.png",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "LaTeX公式识别工具",
       "artifactName": "LaTeX公式识别工具-${version}.${ext}"
-    },
-    "linux": {
-      "target": "AppImage",
-      "icon": "assets/icon.png"
     },
     "publish": {
       "provider": "github",

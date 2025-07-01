@@ -48,19 +48,28 @@ jobs:
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
         shell: bash
       
-      - name: 标准构建包
+      - name: 创建未打包版本 (--dir)
         run: npm run package
         env:
           CI: false
       
-      - name: 验证图标文件
+      - name: 创建版本号文件
         run: |
-          Get-ChildItem -Path assets\icon.* | ForEach-Object { Write-Host "Found icon: $($_.FullName), Size: $($_.Length) bytes" }
-        shell: pwsh
+          echo ${{ steps.package_version.outputs.version }} > release/win-unpacked/version.txt
+        shell: bash
+      
+      - name: 尝试创建NSIS安装包
+        id: nsis_build
+        continue-on-error: true
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI: false
       
       - name: 尝试发布到GitHub
         id: publish
         continue-on-error: true
+        if: ${{ steps.nsis_build.outcome == 'success' }}
         run: npm run publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -71,12 +80,17 @@ jobs:
         run: |
           cd release
           if (Test-Path -Path "win-unpacked") {
-            Compress-Archive -Path win-unpacked -DestinationPath SimpleTex-OCR-win.zip -Force
+            Compress-Archive -Path win-unpacked -DestinationPath SimpleTex-OCR-${{ steps.package_version.outputs.version }}.zip -Force
             Write-Host "win-unpacked目录已压缩成功"
           } else {
             Write-Host "警告: win-unpacked目录不存在"
             Get-ChildItem -Path . | ForEach-Object { Write-Host "发现文件: $($_.Name)" }
           }
+        shell: pwsh
+      
+      - name: 列出所有构建产物
+        run: |
+          Get-ChildItem -Path release -Recurse | Select-Object FullName, Length | Format-Table -AutoSize
         shell: pwsh
       
       - name: 创建 Release
@@ -87,8 +101,9 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./release/SimpleTex-OCR-win.zip
+            ./release/SimpleTex-OCR-${{ steps.package_version.outputs.version }}.zip
             ./release/LaTeX*.exe
+            ./release/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
@@ -97,5 +112,5 @@ jobs:
         with:
           name: windows-artifacts
           path: |
-            release/SimpleTex-OCR-win.zip
-            release/LaTeX*.exe
+            release/SimpleTex-OCR-${{ steps.package_version.outputs.version }}.zip
+            release/*.exe
