@@ -58,6 +58,7 @@ jobs:
           Write-Host "=== 清理前的文件列表 ==="
           Get-ChildItem -Path release -Recurse -File | Select-Object FullName, @{Name="Size(MB)";Expression={[math]::Round($_.Length/1MB, 2)}} | Format-Table -AutoSize
           
+          # 清理临时目录
           Write-Host "`n=== 清理临时目录 ==="
           if (Test-Path -Path "release\win-unpacked") {
             Remove-Item -Path "release\win-unpacked" -Recurse -Force
@@ -69,28 +70,30 @@ jobs:
             Write-Host "已删除 .icon-ico 目录"
           }
           
+          # 重命名安装程序
+          $version = "${{ steps.package_version.outputs.version }}"
+          Write-Host "`n=== 重命名安装程序 ==="
+          $setupFile = Get-ChildItem -Path "release" -Filter "*.exe" | Where-Object { $_.Name -like "LaTeX*" -or $_.Name -like "*-setup-*.exe" } | Select-Object -First 1
+          if ($setupFile) {
+            $newName = "LaTeX-$version.exe"
+            $newPath = Join-Path -Path "release" -ChildPath $newName
+            Rename-Item -Path $setupFile.FullName -NewName $newName -Force
+            Write-Host "已将 $($setupFile.Name) 重命名为: $newName"
+          } else {
+            Write-Host "警告: 找不到安装程序文件!"
+            Get-ChildItem -Path "release" -File | ForEach-Object { Write-Host " - $($_.Name)" }
+          }
+          
+          # 删除不需要的文件
+          Write-Host "`n=== 删除多余文件 ==="
+          Get-ChildItem -Path "release" -File | Where-Object { $_.Name -ne "LaTeX-$version.exe" } | ForEach-Object {
+            Remove-Item -Path $_.FullName -Force
+            Write-Host "已删除文件: $($_.Name)"
+          }
+          
           Write-Host "`n=== 最终文件列表 ==="
           Get-ChildItem -Path release -File | Select-Object Name, @{Name="Size(MB)";Expression={[math]::Round($_.Length/1MB, 2)}} | Format-Table -AutoSize
         shell: pwsh
-      
-      - name: 尝试发布到GitHub
-        id: publish
-        continue-on-error: true
-        run: |
-          Write-Host "正在发布安装程序到GitHub..."
-          
-          # 确保只有安装程序和相关文件
-          $installerExists = Test-Path -Path "release\LaTeX*.exe"
-          if (-not $installerExists) {
-            Write-Host "错误: 安装程序文件不存在，发布失败"
-            exit 1
-          }
-          
-          npm run publish
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CI: false
       
       - name: 创建 Release
         uses: softprops/action-gh-release@v1
@@ -100,17 +103,13 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./release/LaTeX*.exe
-            ./release/latest.yml
-            ./release/*.blockmap
+            ./release/LaTeX-${{ steps.package_version.outputs.version }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer
+          name: LaTeX-installer
           path: |
-            release/LaTeX*.exe
-            release/latest.yml
-            release/*.blockmap
+            release/LaTeX-${{ steps.package_version.outputs.version }}.exe
