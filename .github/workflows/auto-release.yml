@@ -1,51 +1,67 @@
-name: Auto Create Release
+name: 构建与自动发布
 
 on:
   push:
     branches:
       - main
+      - master
+      - dev
+    tags:
+      - 'v*'
 
 jobs:
   build-and-release:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [windows-latest]
+        # 未来可以添加: macos-latest, ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: 检出代码
+        uses: actions/checkout@v4
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
       
-      - name: Install dependencies
+      - name: 缓存依赖
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      - name: 安装依赖
         run: npm ci
       
-      - name: Build app
+      - name: 构建应用
         run: npm run build
+        env:
+          CI: false
         
-      - name: Package electron app
-        run: npm run package
-      
-      - name: Create timestamp
-        id: timestamp
-        run: echo "date=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
-        shell: bash
-      
-      - name: Zip application files
-        run: |
-          cd release
-          Compress-Archive -Path win-unpacked -DestinationPath SimpleTex-OCR-win.zip
-        shell: pwsh
-      
-      - name: Get package version
+      - name: 获取版本号
         id: package_version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
         shell: bash
       
-      - name: Create Release
-        id: create_release
+      - name: 构建和发布 Electron 应用
+        run: npm run publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI: false
+      
+      - name: 压缩应用文件
+        if: matrix.os == 'windows-latest'
+        run: |
+          cd release
+          Compress-Archive -Path "SimpleTex-OCR-${{ steps.package_version.outputs.version }}-win-x64" -DestinationPath SimpleTex-OCR-win.zip -Force
+        shell: pwsh
+      
+      - name: 创建 Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.package_version.outputs.version }}
@@ -54,4 +70,10 @@ jobs:
           prerelease: false
           files: ./release/SimpleTex-OCR-win.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: release/SimpleTex*.exe
