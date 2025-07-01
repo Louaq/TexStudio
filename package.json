@@ -1,6 +1,6 @@
 {
   "name": "latex-ocr-electron",
-  "version": "3.6.2",
+  "version": "3.7.0",
   "description": "LaTeX公式识别工具 - Electron版本",
   "author": "SimpleTex OCR",
   "main": "dist/electron/electron/main.js",
@@ -13,7 +13,8 @@
     "build:react": "react-scripts build",
     "build:electron": "tsc -p tsconfig.electron.json",
     "package": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
-    "dist": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=never"
+    "dist": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=never",
+    "publish": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=always"
   },
   "dependencies": {
     "@types/crypto-js": "^4.2.2",
@@ -23,6 +24,7 @@
     "docx": "^9.5.1",
     "docx-templates": "^4.14.1",
     "electron-store": "^8.1.0",
+    "electron-updater": "^6.6.2",
     "form-data": "^4.0.0",
     "katex": "^0.16.22",
     "mammoth": "^1.9.1",
@@ -62,7 +64,8 @@
     "files": [
       "build/**/*",
       "dist/**/*",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "settings.json"
     ],
     "extraMetadata": {
       "main": "dist/electron/electron/main.js"
@@ -73,16 +76,31 @@
       "icon": "assets/icon.png"
     },
     "win": {
-      "target": "portable",
+      "target": "nsis",
       "icon": "assets/icon.png"
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "LaTeX公式识别工具",
+      "artifactName": "LaTeX公式识别工具-${version}.${ext}"
     },
     "linux": {
       "target": "AppImage",
       "icon": "assets/icon.png"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Louaq",
+      "repo": "SimpleTex-OCR",
+      "private": false,
+      "releaseType": "release"
     }
   },
   "browserslist": {

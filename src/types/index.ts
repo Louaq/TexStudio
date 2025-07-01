@@ -89,7 +89,32 @@ export interface ElectronAPI {
 
   setAlwaysOnTop: (alwaysOnTop: boolean) => Promise<{ success: boolean; alwaysOnTop?: boolean; message?: string }>;
   getAlwaysOnTop: () => Promise<{ success: boolean; alwaysOnTop: boolean }>;
+  
+  // 自动更新相关API
+  checkForUpdates: () => Promise<{ success: boolean; message: string }>;
+  onCheckingForUpdate: (callback: () => void) => void;
+  onUpdateAvailable: (callback: (info: UpdateInfo) => void) => void;
+  onUpdateNotAvailable: (callback: (info: UpdateInfo) => void) => void;
+  onUpdateError: (callback: (error: string) => void) => void;
+  onDownloadProgress: (callback: (progressObj: ProgressInfo) => void) => void;
+  onUpdateDownloaded: (callback: (info: UpdateInfo) => void) => void;
 }
+
+// 自动更新相关类型
+export interface UpdateInfo {
+  version: string;
+  releaseDate?: string;
+  releaseNotes?: string;
+  path?: string;
+}
+
+export interface ProgressInfo {
+  bytesPerSecond: number;
+  percent: number;
+  transferred: number;
+  total: number;
+}
+
 declare global {
   interface Window {
     electronAPI: ElectronAPI;

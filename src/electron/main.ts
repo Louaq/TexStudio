@@ -12,6 +12,7 @@ const officegen = require('officegen');
 const mammoth = require('mammoth');
 import * as mathjax from 'mathjax-node';
 const sharp = require('sharp');
+import { autoUpdater } from 'electron-updater';
 
 // 设置控制台编码为UTF-8，解决中文乱码问题
 if (process.platform === 'win32') {
@@ -47,8 +48,125 @@ const logger = {
     } else {
       console.error(message, ...args);
     }
+  },
+  info: (message: string, ...args: any[]) => {
+    if (process.platform === 'win32') {
+      if (/[\u4e00-\u9fa5]/.test(message)) {
+        console.info('\ufeff' + message, ...args);
+      } else {
+        console.info(message, ...args);
+      }
+    } else {
+      console.info(message, ...args);
+    }
+  },
+  warn: (message: string, ...args: any[]) => {
+    if (process.platform === 'win32') {
+      if (/[\u4e00-\u9fa5]/.test(message)) {
+        console.warn('\ufeff' + message, ...args);
+      } else {
+        console.warn(message, ...args);
+      }
+    } else {
+      console.warn(message, ...args);
+    }
+  },
+  // electron-updater需要的属性
+  silly: (message: string) => console.log(message),
+  debug: (message: string) => console.debug(message),
+  verbose: (message: string) => console.log(message),
+  transports: {
+    file: {
+      level: 'info'
+    }
   }
 };
+
+// 配置自动更新
+function setupAutoUpdater() {
+  autoUpdater.logger = logger;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  // 检查更新错误
+  autoUpdater.on('error', (error) => {
+    logger.error('更新检查失败:', error);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-error', error.message);
+    }
+  });
+
+  // 检查更新中
+  autoUpdater.on('checking-for-update', () => {
+    logger.log('正在检查更新...');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('checking-for-update');
+    }
+  });
+
+  // 有可用更新
+  autoUpdater.on('update-available', (info) => {
+    logger.log('发现新版本:', info);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-available', info);
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: '软件更新',
+        message: `发现新版本 ${info.version}，正在下载更新...`,
+        buttons: ['确定']
+      });
+    }
+  });
+
+  // 没有可用更新
+  autoUpdater.on('update-not-available', (info) => {
+    logger.log('当前已是最新版本:', info);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-not-available', info);
+    }
+  });
+
+  // 下载进度
+  autoUpdater.on('download-progress', (progressObj) => {
+    const logMsg = `下载速度: ${progressObj.bytesPerSecond} - 已下载 ${progressObj.percent.toFixed(2)}% (${progressObj.transferred}/${progressObj.total})`;
+    logger.log(logMsg);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('download-progress', progressObj);
+    }
+  });
+
+  // 更新下载完成
+  autoUpdater.on('update-downloaded', (info) => {
+    logger.log('更新下载完成，将在退出时安装');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-downloaded', info);
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: '安装更新',
+        message: '更新已下载，应用将退出并安装',
+        buttons: ['现在重启', '稍后再说']
+      }).then(result => {
+        if (result.response === 0) {
+          autoUpdater.quitAndInstall(false, true);
+        }
+      });
+    }
+  });
+}
+
+// 手动检查更新
+function checkForUpdates() {
+  if (!app.isPackaged) {
+    logger.log('开发模式不检查更新');
+    return;
+  }
+  
+  try {
+    autoUpdater.checkForUpdates();
+  } catch (error) {
+    logger.error('检查更新失败:', error);
+  }
+}
 
 // 定义API配置读取函数
 function loadApiConfigFromSettings(): { appId: string; appSecret: string } {
@@ -662,6 +780,14 @@ if (!gotTheLock) {
     registerGlobalShortcuts();
     cleanupAllTempFiles();
     startPeriodicCleanup();
+    
+    // 设置自动更新
+    setupAutoUpdater();
+    
+    // 检查更新（延迟启动后检查，避免影响启动速度）
+    setTimeout(() => {
+      checkForUpdates();
+    }, 10000);
 
     app.on('activate', async () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -1548,6 +1674,23 @@ ipcMain.handle('get-always-on-top', async (event) => {
   } catch (error) {
     logger.error('获取窗口置顶状态失败:', error);
     return { success: false, alwaysOnTop: false };
+  }
+});
+
+// 手动检查更新
+ipcMain.handle('check-for-updates', async (event) => {
+  try {
+    logger.log('手动触发检查更新');
+    if (!app.isPackaged) {
+      logger.log('开发模式下不检查更新');
+      return { success: false, message: '开发模式下不检查更新' };
+    }
+    
+    checkForUpdates();
+    return { success: true, message: '已开始检查更新' };
+  } catch (error) {
+    logger.error('手动检查更新失败:', error);
+    return { success: false, message: '检查更新失败' };
   }
 });
 

@@ -23,6 +23,7 @@
 - ⌨️ **全局快捷键** - 可自定义快捷键，支持后台运行
 - 🔑 **API配置** - 支持自定义[SimpleTex API](https://simpletex.cn/)配置 
 - 🎨 **现代化界面** - 基于 Styled Components 的美观界面设计
+- 🔄 **自动更新** - 支持检测和安装新版本，无需手动下载
 
 ## 🛠️ 技术栈
 
@@ -32,8 +33,13 @@
 - **状态管理**: React Hooks
 - **API服务**: SimpleTex OCR API
 - **构建工具**: Create React App + Electron Builder
+- **自动更新**: electron-updater
 
 ## 📦 安装和运行
+
+### 安装包下载
+
+访问 [Release 页面](https://github.com/你的GitHub用户名/SimpleTex-OCR/releases) 下载最新版安装包
 
 ### 环境要求
 
@@ -91,6 +97,12 @@
    npm run dist
    ```
 
+4. **生成安装包并发布到GitHub**
+   ```bash
+   npm run publish
+   ```
+   这会构建应用并将其发布到GitHub Releases，触发自动更新。
+
 ## 🚀 快速使用
 
 ### 基本操作
@@ -121,6 +133,14 @@
 3. **历史记录**
    - 点击菜单"历史记录"查看识别历史
    - 可以重新使用或删除历史记录
+
+### 自动更新
+
+应用支持自动更新功能，当有新版本发布时：
+
+1. 应用启动后会自动检查更新
+2. 如果发现新版本，会提示用户下载
+3. 下载完成后，可选择立即重启应用安装新版本或稍后安装
 
 ## 📁 项目结构
 
@@ -156,6 +176,7 @@ src/
   "axios": "^1.5.0",
   "crypto-js": "^4.1.1",
   "electron-store": "^8.1.0",
+  "electron-updater": "^6.6.2",
   "react-dropzone": "^14.2.3"
 }
 ```
@@ -165,13 +186,14 @@ src/
 - **React 应用**: 使用 Create React App 构建
 - **Electron 主进程**: 使用 TypeScript 编译到 `dist/` 目录
 - **打包**: 使用 Electron Builder 生成各平台安装包
+- **自动更新**: 使用 electron-updater 实现自动检测和安装更新
 
-### API 集成
+### 持续集成
 
-应用使用 SimpleTex API 进行公式识别：
-- API 地址: `https://server.simpletex.cn/api/latex_ocr`
-- 支持多种图片格式: PNG, JPG, JPEG, BMP, GIF
-- 自动处理签名和请求头
+项目配置了GitHub Actions进行自动构建和发布:
+- 当推送到主分支或有新标签时，自动触发构建
+- 构建完成后自动发布到GitHub Releases
+- 已安装的应用会自动检测到新版本
 
 ## 🔒 安全性
 
@@ -181,7 +203,12 @@ src/
 
 ## 📝 更新日志
 
-### v3.0.0 - TypeScript版本
+### v3.7.0
+- ✨ 添加安装包形式发布
+- 🔄 支持自动检测和安装更新
+- 🛠️ 优化应用启动和运行性能
+
+### v3.6.2 
 - 🚀 全新的 TypeScript + React + Electron 架构
 - 🎨 现代化的界面设计和用户体验
 - 📱 更好的响应式布局和交互

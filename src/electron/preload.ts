@@ -36,6 +36,26 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.on('screenshot-complete', (event, imagePath) => callback(imagePath));
   },
   
+  // 自动更新相关
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  onCheckingForUpdate: (callback: () => void) => {
+    ipcRenderer.on('checking-for-update', () => callback());
+  },
+  onUpdateAvailable: (callback: (info: any) => void) => {
+    ipcRenderer.on('update-available', (event, info) => callback(info));
+  },
+  onUpdateNotAvailable: (callback: (info: any) => void) => {
+    ipcRenderer.on('update-not-available', (event, info) => callback(info));
+  },
+  onUpdateError: (callback: (error: string) => void) => {
+    ipcRenderer.on('update-error', (event, error) => callback(error));
+  },
+  onDownloadProgress: (callback: (progressObj: any) => void) => {
+    ipcRenderer.on('download-progress', (event, progressObj) => callback(progressObj));
+  },
+  onUpdateDownloaded: (callback: (info: any) => void) => {
+    ipcRenderer.on('update-downloaded', (event, info) => callback(info));
+  },
 
   cleanupTempFiles: () => ipcRenderer.invoke('cleanup-temp-files'),
   removeTempFile: (filePath: string) => ipcRenderer.invoke('remove-temp-file', filePath),
