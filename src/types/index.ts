@@ -103,9 +103,20 @@ export interface ElectronAPI {
 // 自动更新相关类型
 export interface UpdateInfo {
   version: string;
-  releaseDate?: string;
-  releaseNotes?: string;
+  files?: Array<{
+    url: string;
+    sha512?: string;
+    size?: number;
+    blockMapSize?: number;
+  }>;
   path?: string;
+  sha512?: string;
+  releaseDate?: string;
+  releaseName?: string;
+  releaseNotes?: string;
+  stagingPercentage?: number;
+  isPrerelease?: boolean;
+  tag?: string;
 }
 
 export interface ProgressInfo {

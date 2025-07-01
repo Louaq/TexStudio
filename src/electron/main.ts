@@ -98,6 +98,9 @@ function setupAutoUpdater() {
   // 修改默认自动更新行为
   autoUpdater.autoDownload = true;           // 自动下载更新
   autoUpdater.autoInstallOnAppQuit = true;   // 退出时自动安装
+  autoUpdater.allowPrerelease = false;       // 不使用预发布版本
+  autoUpdater.allowDowngrade = false;        // 不允许降级
+  autoUpdater.forceDevUpdateConfig = false;  // 正式环境配置
   
   // 设置更新检查频率 - 每天只检查一次
   const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24小时
@@ -190,14 +193,12 @@ function setupAutoUpdater() {
   return {
     shouldCheckForUpdates,
     checkForUpdates: () => {
-      if (shouldCheckForUpdates()) {
-        try {
-          autoUpdater.checkForUpdates();
-        } catch (error) {
-          logger.error('检查更新失败:', error);
-        }
-      } else {
-        logger.log('跳过更新检查 (检查间隔未到或处于开发模式)');
+      try {
+        logger.log('手动触发检查更新');
+        // 手动检查总是强制检查，不考虑时间间隔
+        autoUpdater.checkForUpdates();
+      } catch (error) {
+        logger.error('检查更新失败:', error);
       }
     }
   };
@@ -210,17 +211,22 @@ function checkForUpdates() {
     return;
   }
   
-  // 如果存在autoUpdaterFunctions则使用其方法，否则直接调用autoUpdater
-  if (autoUpdaterFunctions) {
-    autoUpdaterFunctions.checkForUpdates();
-    logger.log('通过自定义函数触发检查更新');
-  } else {
-    try {
-      autoUpdater.checkForUpdates();
-      logger.log('通过autoUpdater直接触发检查更新');
-    } catch (error) {
-      logger.error('检查更新失败:', error);
-    }
+  // 无论是否有autoUpdaterFunctions，都尝试直接检查更新
+  try {
+    logger.log('手动触发检查更新');
+    autoUpdater.checkForUpdates()
+      .then(result => {
+        if (result && result.updateInfo) {
+          logger.log(`检查更新返回结果: 版本 ${result.updateInfo.version} 可用`);
+        } else {
+          logger.log('检查更新返回结果: 没有可用更新');
+        }
+      })
+      .catch(error => {
+        logger.error('检查更新出错:', error);
+      });
+  } catch (error) {
+    logger.error('检查更新失败:', error);
   }
 }
 
@@ -460,10 +466,10 @@ let mainWindow: BrowserWindow | null = null;
 // 创建主窗口
 async function createMainWindow(): Promise<void> {
   mainWindow = new BrowserWindow({
-    width: 955,
-    height: 734,
-    minWidth: 955,
-    minHeight: 734,
+    width: 1051,
+    height: 780,
+    minWidth: 1051,
+    minHeight: 780,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

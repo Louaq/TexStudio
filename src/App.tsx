@@ -400,6 +400,82 @@ function App() {
       }
     });
     
+    // 注册自动更新事件监听器
+    console.log('注册自动更新事件监听器');
+    
+    // 检查更新时的事件
+    window.electronAPI.onCheckingForUpdate(() => {
+      console.log('正在检查更新...');
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '🔄 正在检查更新...'
+      }));
+    });
+    
+    // 有可用更新时的事件
+    window.electronAPI.onUpdateAvailable((info) => {
+      console.log('发现新版本:', info);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `✅ 发现新版本 ${info.version}，正在下载...`
+      }));
+    });
+    
+    // 没有可用更新时的事件
+    window.electronAPI.onUpdateNotAvailable((info) => {
+      console.log('当前已是最新版本:', info);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '✅ 当前已是最新版本'
+      }));
+      setTimeout(() => {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '⚡ 准备就绪'
+        }));
+      }, 3000);
+    });
+    
+    // 更新错误事件
+    window.electronAPI.onUpdateError((error) => {
+      console.error('更新错误:', error);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `❌ 更新错误: ${error}`
+      }));
+      setTimeout(() => {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '⚡ 准备就绪'
+        }));
+      }, 3000);
+    });
+    
+    // 更新下载进度事件
+    window.electronAPI.onDownloadProgress((progressObj) => {
+      const percent = progressObj.percent.toFixed(2);
+      console.log(`下载进度: ${percent}%`);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `⬇️ 下载更新: ${percent}%`
+      }));
+    });
+    
+    // 更新下载完成事件
+    window.electronAPI.onUpdateDownloaded((info) => {
+      console.log('更新下载完成:', info);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `✅ 更新已下载完成，将在退出时安装 v${info.version}`
+      }));
+      setTimeout(() => {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '⚡ 准备就绪，退出应用后将安装更新'
+        }));
+      }, 5000);
+    });
+    
     console.log('所有Electron事件监听器设置完成');
     
     return () => {
@@ -1111,6 +1187,54 @@ function App() {
       }));
     }
   };
+
+  const handleCheckForUpdates = async () => {
+    if (!window.electronAPI) {
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '❌ 自动更新仅在 Electron 应用中可用'
+      }));
+      return;
+    }
+    
+    try {
+      console.log('手动触发检查更新');
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '🔄 正在检查更新...'
+      }));
+      
+      const result = await window.electronAPI.checkForUpdates();
+      if (result.success) {
+        console.log('开始检查更新:', result.message);
+      } else {
+        console.error('检查更新失败:', result.message);
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: `❌ ${result.message}`
+        }));
+        setTimeout(() => {
+          setAppState(prev => ({ 
+            ...prev, 
+            statusMessage: '⚡ 准备就绪'
+          }));
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('检查更新出错:', error);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '❌ 检查更新失败'
+      }));
+      setTimeout(() => {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '⚡ 准备就绪'
+        }));
+      }, 3000);
+    }
+  };
+
   const handleExportFormula = async (format: 'svg' | 'png' | 'jpg') => {
     if (!appState.latexCode.trim()) {
       setAppState(prev => ({ 
@@ -1177,6 +1301,7 @@ function App() {
         onShowAbout={() => setShowAbout(true)}
         onCleanupTempFiles={handleCleanupTempFiles}
         onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
+        onCheckForUpdates={handleCheckForUpdates}
         isAlwaysOnTop={isAlwaysOnTop}
       />
 

@@ -1,6 +1,6 @@
 {
   "name": "latex-ocr-electron",
-  "version": "3.7.1",
+  "version": "3.8.0",
   "description": "LaTeX公式识别工具 - Electron版本",
   "author": "SimpleTex OCR",
   "main": "dist/electron/electron/main.js",
@@ -89,7 +89,9 @@
       "owner": "Louaq",
       "repo": "SimpleTex-OCR",
       "private": false,
-      "releaseType": "release"
+      "releaseType": "release",
+      "vPrefixedTagName": true,
+      "publishAutoUpdate": true
     }
   },
   "browserslist": {

@@ -45,6 +45,7 @@ interface MenuBarProps {
   onShowAbout: () => void;
   onCleanupTempFiles: () => void;
   onToggleAlwaysOnTop: () => void;
+  onCheckForUpdates?: () => void;
   isAlwaysOnTop: boolean;
 }
 
@@ -57,6 +58,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
   onShowAbout,
   onCleanupTempFiles,
   onToggleAlwaysOnTop,
+  onCheckForUpdates,
   isAlwaysOnTop
 }) => {
   const handleScreenshot = () => {
@@ -99,6 +101,13 @@ const MenuBar: React.FC<MenuBarProps> = ({
       <MenuItem onClick={onCleanupTempFiles}>
         🗑️ 清理临时文件
       </MenuItem>
+      
+      {/* 检查更新 */}
+      {onCheckForUpdates && (
+        <MenuItem onClick={onCheckForUpdates}>
+          🔄 检查更新
+        </MenuItem>
+      )}
       
       <Divider />
       
