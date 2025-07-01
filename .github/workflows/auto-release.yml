@@ -135,16 +135,17 @@ jobs:
           $fileSizeInBytes = $fileInfo.Length
           $sha512 = (Get-FileHash -Path $exePath -Algorithm SHA512).Hash.ToLower()
           
-          $ymlContent = @"
-version: $version
-files:
-  - url: LaTeX-$version.exe
-    sha512: $sha512
-    size: $fileSizeInBytes
-path: LaTeX-$version.exe
-sha512: $sha512
-releaseDate: $(Get-Date -Format "yyyy-MM-dd'T'HH:mm:ss.fffK")
-"@
+          $releaseDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+          
+          # 使用简单字符串拼接而不是多行字符串，避免YAML解析问题
+          $ymlContent = "version: $version`r`n"
+          $ymlContent += "files:`r`n"
+          $ymlContent += "  - url: LaTeX-$version.exe`r`n"
+          $ymlContent += "    sha512: $sha512`r`n"
+          $ymlContent += "    size: $fileSizeInBytes`r`n"
+          $ymlContent += "path: LaTeX-$version.exe`r`n"
+          $ymlContent += "sha512: $sha512`r`n"
+          $ymlContent += "releaseDate: $releaseDate`r`n"
           
           Set-Content -Path "release\latest.yml" -Value $ymlContent
           Write-Host "已创建latest.yml文件:"
