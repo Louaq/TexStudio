@@ -90,9 +90,7 @@
       "repo": "SimpleTex-OCR",
       "private": false,
       "releaseType": "release",
-      "vPrefixedTagName": true,
-      "publishAutoUpdate": true,
-      "updateJsonBuiltInAssetName": "latest.yml"
+      "vPrefixedTagName": true
     }
   },
   "browserslist": {
