@@ -12,7 +12,7 @@
     "build": "npm run build:react && npm run build:electron",
     "build:react": "react-scripts build",
     "build:electron": "tsc -p tsconfig.electron.json",
-    "package": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --dir",
+    "package": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
     "dist": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=never",
     "publish": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=always"
   },
@@ -65,22 +65,15 @@
       "build/**/*",
       "dist/**/*",
       "node_modules/**/*",
-      "settings.json"
+      "settings.json",
+      "!assets/**/*"
     ],
     "extraMetadata": {
       "main": "dist/electron/electron/main.js"
     },
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        },
-        {
-          "target": "dir",
-          "arch": ["x64"]
-        }
-      ]
+      "icon": null,
+      "target": "nsis"
     },
     "nsis": {
       "oneClick": false,

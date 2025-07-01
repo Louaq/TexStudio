@@ -48,50 +48,49 @@ jobs:
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
         shell: bash
       
-      - name: 创建未打包版本 (--dir)
+      - name: 创建NSIS安装包
         run: npm run package
         env:
           CI: false
       
-      - name: 创建版本号文件
+      - name: 清理临时文件并确认最终产物
         run: |
-          echo ${{ steps.package_version.outputs.version }} > release/win-unpacked/version.txt
-        shell: bash
-      
-      - name: 尝试创建NSIS安装包
-        id: nsis_build
-        continue-on-error: true
-        run: npm run dist
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CI: false
+          Write-Host "=== 清理前的文件列表 ==="
+          Get-ChildItem -Path release -Recurse -File | Select-Object FullName, @{Name="Size(MB)";Expression={[math]::Round($_.Length/1MB, 2)}} | Format-Table -AutoSize
+          
+          Write-Host "`n=== 清理临时目录 ==="
+          if (Test-Path -Path "release\win-unpacked") {
+            Remove-Item -Path "release\win-unpacked" -Recurse -Force
+            Write-Host "已删除 win-unpacked 目录"
+          }
+          
+          if (Test-Path -Path "release\.icon-ico") {
+            Remove-Item -Path "release\.icon-ico" -Recurse -Force
+            Write-Host "已删除 .icon-ico 目录"
+          }
+          
+          Write-Host "`n=== 最终文件列表 ==="
+          Get-ChildItem -Path release -File | Select-Object Name, @{Name="Size(MB)";Expression={[math]::Round($_.Length/1MB, 2)}} | Format-Table -AutoSize
+        shell: pwsh
       
       - name: 尝试发布到GitHub
         id: publish
         continue-on-error: true
-        if: ${{ steps.nsis_build.outcome == 'success' }}
-        run: npm run publish
+        run: |
+          Write-Host "正在发布安装程序到GitHub..."
+          
+          # 确保只有安装程序和相关文件
+          $installerExists = Test-Path -Path "release\LaTeX*.exe"
+          if (-not $installerExists) {
+            Write-Host "错误: 安装程序文件不存在，发布失败"
+            exit 1
+          }
+          
+          npm run publish
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CI: false
-      
-      - name: 压缩应用文件
-        if: matrix.os == 'windows-latest'
-        run: |
-          cd release
-          if (Test-Path -Path "win-unpacked") {
-            Compress-Archive -Path win-unpacked -DestinationPath SimpleTex-OCR-${{ steps.package_version.outputs.version }}.zip -Force
-            Write-Host "win-unpacked目录已压缩成功"
-          } else {
-            Write-Host "警告: win-unpacked目录不存在"
-            Get-ChildItem -Path . | ForEach-Object { Write-Host "发现文件: $($_.Name)" }
-          }
-        shell: pwsh
-      
-      - name: 列出所有构建产物
-        run: |
-          Get-ChildItem -Path release -Recurse | Select-Object FullName, Length | Format-Table -AutoSize
-        shell: pwsh
       
       - name: 创建 Release
         uses: softprops/action-gh-release@v1
@@ -101,16 +100,17 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./release/SimpleTex-OCR-${{ steps.package_version.outputs.version }}.zip
             ./release/LaTeX*.exe
-            ./release/*.exe
+            ./release/latest.yml
+            ./release/*.blockmap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: windows-artifacts
+          name: windows-installer
           path: |
-            release/SimpleTex-OCR-${{ steps.package_version.outputs.version }}.zip
-            release/*.exe
+            release/LaTeX*.exe
+            release/latest.yml
+            release/*.blockmap

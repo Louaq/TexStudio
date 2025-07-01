@@ -420,7 +420,6 @@ async function createMainWindow(): Promise<void> {
       enableWebSQL: false,
       experimentalFeatures: false
     },
-    icon: path.join(__dirname, '../../assets/icon.png'),
     title: 'SimpleTex OCR - 数学公式识别工具',
     show: false,
     autoHideMenuBar: true
