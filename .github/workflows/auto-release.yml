@@ -147,16 +147,17 @@ jobs:
           $ymlContent += "sha512: $sha512`r`n"
           $ymlContent += "releaseDate: $releaseDate`r`n"
           
+          # 同时创建latest-mac.yml (虽然我们没有Mac版本，但为了完整性)
           Set-Content -Path "release\latest.yml" -Value $ymlContent
-          Write-Host "已创建latest.yml文件:"
-          Get-Content -Path "release\latest.yml"
+          Set-Content -Path "release\latest-mac.yml" -Value $ymlContent
           
           # 删除不需要的文件
           Write-Host "`n=== 删除多余文件 ==="
           Get-ChildItem -Path "release" -File | Where-Object { 
             $_.Name -ne "LaTeX-$version.exe" -and 
             $_.Name -ne "LaTeX-latest.exe" -and 
-            $_.Name -ne "latest.yml" 
+            $_.Name -ne "latest.yml" -and
+            $_.Name -ne "latest-mac.yml"
           } | ForEach-Object {
             Remove-Item -Path $_.FullName -Force
             Write-Host "已删除文件: $($_.Name)"
@@ -177,6 +178,7 @@ jobs:
             ./release/LaTeX-${{ steps.package_version.outputs.version }}.exe
             ./release/LaTeX-latest.exe
             ./release/latest.yml
+            ./release/latest-mac.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
