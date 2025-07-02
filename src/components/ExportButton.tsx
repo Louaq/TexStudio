@@ -10,24 +10,24 @@ const ExportButton = styled.button<{ disabled: boolean }>`
   background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 600;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.25);
   min-width: 120px;
   justify-content: center;
 
   &:hover {
-    transform: ${props => props.disabled ? 'none' : 'translateY(-2px)'};
+    transform: ${props => props.disabled ? 'none' : 'translateY(-1px)'};
     box-shadow: ${props => props.disabled ? 
-      '0 4px 12px rgba(40, 167, 69, 0.3)' : 
-      '0 6px 20px rgba(40, 167, 69, 0.4)'
+      '0 2px 6px rgba(40, 167, 69, 0.25)' : 
+      '0 3px 8px rgba(40, 167, 69, 0.35)'
     };
   }
 
@@ -37,7 +37,7 @@ const ExportButton = styled.button<{ disabled: boolean }>`
 
   ${props => props.disabled && `
     background: linear-gradient(135deg, #6c757d 0%, #868e96 100%);
-    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+    box-shadow: 0 2px 6px rgba(108, 117, 125, 0.25);
   `}
 `;
 
@@ -47,9 +47,9 @@ const DropdownMenu = styled.div<{ show: boolean }>`
   left: 0;
   right: 0;
   background: white;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e1e8ed;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   z-index: 1000;
   margin-bottom: 5px;
   overflow: hidden;
@@ -61,17 +61,17 @@ const DropdownMenu = styled.div<{ show: boolean }>`
 
 const DropdownItem = styled.button`
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border: none;
   background: white;
   color: #2c3e50;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   text-align: left;
 
   &:hover {
