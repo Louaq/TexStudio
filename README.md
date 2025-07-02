@@ -1,7 +1,7 @@
 # LaTeX公式识别工具 - TypeScript版
 
 ## ✨ 界面截图
-![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-06-27_19-09-46.png)
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-02_14-11-25.png)
 
 ![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-06-21_16-51-22.png)
 
