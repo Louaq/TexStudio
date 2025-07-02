@@ -4,22 +4,23 @@ import styled from 'styled-components';
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  /* 移除flex: 1，让容器根据内容大小调整 */
+  height: 100%;
 `;
 
 const Label = styled.h3`
   font-size: 14px;
   font-weight: 600;
   color: #2c3e50;
-  margin: 0 0 15px 0;
+  margin: 0 0 10px 0;
   display: flex;
   align-items: center;
   gap: 8px;
 `;
 
 const TextArea = styled.textarea<{ readOnly: boolean }>`
-  height: 100px;
-  padding: 15px;
+  height: 100%;
+  min-height: 80px;
+  padding: 12px;
   border: 2px solid #e1e8ed;
   border-radius: 10px;
   background: ${props => props.readOnly 
@@ -29,7 +30,7 @@ const TextArea = styled.textarea<{ readOnly: boolean }>`
   color: #2c3e50;
   font-family: "Cascadia Code", "Consolas", "Monaco", monospace;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.5;
   resize: vertical;
   transition: all 0.3s ease;
   opacity: ${props => props.readOnly ? 0.7 : 1};
@@ -39,7 +40,7 @@ const TextArea = styled.textarea<{ readOnly: boolean }>`
     outline: none;
     border-color: #4a90e2;
     background: white;
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
   }
 
   &::placeholder {
@@ -48,17 +49,17 @@ const TextArea = styled.textarea<{ readOnly: boolean }>`
   }
 
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
 
   &::-webkit-scrollbar-track {
     background: #f1f1f1;
-    border-radius: 4px;
+    border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
     background: #cbd5e0;
-    border-radius: 4px;
+    border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
@@ -107,6 +108,7 @@ const EditorContainer = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
+  height: 100%;
 `;
 
 interface LatexEditorProps {

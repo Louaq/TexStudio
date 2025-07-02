@@ -14,24 +14,24 @@ const MainButton = styled.button<{ disabled: boolean }>`
   };
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
+  padding: 10px 18px;
+  border-radius: 6px;
   font-weight: 600;
-  font-size: 14px;
-  min-width: 140px;
+  font-size: 13px;
+  min-width: 130px;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 
   &:hover {
     ${props => !props.disabled && `
       background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
     `}
   }
 
@@ -41,8 +41,8 @@ const MainButton = styled.button<{ disabled: boolean }>`
 
   &::after {
     content: '▼';
-    font-size: 10px;
-    margin-left: 8px;
+    font-size: 8px;
+    margin-left: 6px;
     opacity: 0.8;
   }
 `;
@@ -51,11 +51,11 @@ const DropdownMenu = styled.div<{ show: boolean }>`
   position: absolute;
   bottom: 100%;
   right: 0;
-  min-width: 200px;
+  min-width: 190px;
   background: white;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e1e8ed;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   z-index: 1000;
   overflow: hidden;
   display: ${props => props.show ? 'block' : 'none'};
@@ -75,14 +75,14 @@ const DropdownMenu = styled.div<{ show: boolean }>`
 `;
 
 const DropdownItem = styled.div`
-  padding: 12px 16px;
+  padding: 10px 14px;
   cursor: pointer;
   transition: background 0.2s ease;
   color: #2c3e50;
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 14px;
+  gap: 10px;
+  font-size: 13px;
   font-weight: 500;
 
   &:hover {
@@ -96,7 +96,7 @@ const DropdownItem = styled.div`
 `;
 
 const ModeDescription = styled.div`
-  font-size: 12px;
+  font-size: 11px;
   color: #7f8c8d;
   font-weight: normal;
 `;
