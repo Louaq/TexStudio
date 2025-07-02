@@ -91,6 +91,9 @@ interface AutoUpdaterFunctions {
 // 全局变量存储自动更新函数
 let autoUpdaterFunctions: AutoUpdaterFunctions;
 
+// 添加更新状态标志
+let isUpdating = false;
+
 // 配置自动更新
 function setupAutoUpdater() {
   autoUpdater.logger = logger;
@@ -186,7 +189,40 @@ function setupAutoUpdater() {
         buttons: ['现在重启', '稍后再说']
       }).then(result => {
         if (result.response === 0) {
-          autoUpdater.quitAndInstall(false, true);
+          // 避免自定义退出逻辑干扰更新安装流程
+          logger.log('用户选择立即重启安装更新');
+          
+          // 设置更新状态标志
+          isUpdating = true;
+          
+          // 移除所有自定义的退出事件监听器
+          app.removeAllListeners('before-quit');
+          app.removeAllListeners('will-quit');
+          
+          // 清除所有全局快捷键
+          globalShortcut.unregisterAll();
+          
+          // 关闭所有截图窗口但不触发强制退出
+          screenshotWindows.forEach(window => {
+            if (!window.isDestroyed()) {
+              window.removeAllListeners();
+              window.close();
+            }
+          });
+          screenshotWindows.length = 0;
+          
+          // 延迟一下确保其他窗口已关闭
+          setTimeout(() => {
+            logger.log('正在执行quitAndInstall...');
+            try {
+              // 使用isSilent=false确保显示安装程序界面，forceRunAfter=true强制安装后重启应用
+              autoUpdater.quitAndInstall(false, true);
+            } catch (error) {
+              logger.error('执行quitAndInstall失败:', error);
+              // 如果quitAndInstall失败，尝试标准的应用退出
+              app.quit();
+            }
+          }, 500);
         }
       });
     }
@@ -513,12 +549,16 @@ async function createMainWindow(): Promise<void> {
   mainWindow.on('closed', () => {
     mainWindow = null;
     
-    if (!isDev && process.platform === 'win32') {
+    if (!isDev && process.platform === 'win32' && !isUpdating) {
       forceQuitApp();
     }
   });
   
   mainWindow.on('close', (event) => {
+    // 如果正在更新，允许窗口关闭
+    if (isUpdating) {
+      return;
+    }
     
     if (!isDev && process.platform === 'win32') {
       event.preventDefault(); 
@@ -863,14 +903,25 @@ if (!gotTheLock) {
 
 
 app.on('window-all-closed', () => {
+  // 如果正在更新安装，不进行额外的退出处理
+  if (isUpdating) {
+    logger.log('检测到正在进行更新安装，跳过window-all-closed事件处理');
+    return;
+  }
+  
   if (process.platform !== 'darwin') {
-    
     forceQuitApp();
   }
 });
 
 
 app.on('before-quit', () => {
+  // 如果正在更新，不执行其他操作
+  if (isUpdating) {
+    logger.log('检测到正在进行更新安装，跳过before-quit事件处理');
+    return;
+  }
+  
   globalShortcut.unregisterAll();
   
   if (cleanupIntervalId) {
@@ -896,6 +947,11 @@ app.on('before-quit', () => {
 
 
 app.on('will-quit', (event) => {
+  // 如果正在更新，不执行其他操作
+  if (isUpdating) {
+    logger.log('检测到正在进行更新安装，跳过will-quit事件处理');
+    return;
+  }
 
   if (tempFiles.size > 0) {
     cleanupAllTempFiles();
@@ -1609,6 +1665,12 @@ ipcMain.handle('clear-api-config', async (event) => {
 
 // 在Windows平台上强制终止所有相关进程
 function terminateAllProcesses(): void {
+  // 如果正在更新安装，跳过强制终止进程
+  if (isUpdating) {
+    logger.log('检测到正在进行更新安装，跳过强制终止进程');
+    return;
+  }
+  
   if (process.platform === 'win32') {
     try {
       const { execSync } = require('child_process');
@@ -1623,7 +1685,7 @@ function terminateAllProcesses(): void {
         try {
           execSync(`taskkill /F /IM "${processName}" /T`, { windowsHide: true });
         } catch (err) {
-
+          // 忽略错误
         }
       }
       process.exit(0);
@@ -1667,6 +1729,12 @@ function killZombieProcesses(): void {
 
 // 强制退出应用
 function forceQuitApp(): void {
+  // 检查是否正在安装更新
+  if (isUpdating) {
+    logger.log('检测到正在进行更新安装，跳过强制退出流程');
+    return;
+  }
+
   globalShortcut.unregisterAll();
   if (cleanupIntervalId) {
     clearInterval(cleanupIntervalId);
