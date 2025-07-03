@@ -73,7 +73,8 @@
     },
     "win": {
       "icon": null,
-      "target": "nsis"
+      "target": "nsis",
+      "artifactName": "LaTeX-${version}.exe"
     },
     "nsis": {
       "oneClick": false,
@@ -82,7 +83,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "LaTeX公式识别工具",
-      "artifactName": "LaTeX公式识别工具-${version}.${ext}"
+      "deleteAppDataOnUninstall": true
     },
     "publish": {
       "provider": "github",
@@ -90,7 +91,13 @@
       "repo": "SimpleTex-OCR",
       "private": false,
       "releaseType": "release",
-      "vPrefixedTagName": true
+      "vPrefixedTagName": true,
+      "publishAutoUpdate": true,
+      "files": [
+        "latest.yml",
+        "*.exe"
+      ],
+      "releaseNotes": "最新版本发布：改进内存管理，优化公式识别性能"
     }
   },
   "browserslist": {
