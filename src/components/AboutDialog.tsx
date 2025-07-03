@@ -186,7 +186,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
         
         <AppTitle>LaTeX公式识别工具</AppTitle>
         
-        <Version>✨ 版本 1.0.3</Version>
+        <Version>✨ 版本 3.9.1</Version>
         
         <Description>
           <p style={{ margin: '0 0 10px 0', fontWeight: '600' }}>

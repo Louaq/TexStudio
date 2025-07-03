@@ -441,7 +441,7 @@ function App() {
       console.log('发现新版本:', info);
       setAppState(prev => ({ 
         ...prev, 
-        statusMessage: `✅ 发现新版本 ${info.version}，正在下载...`
+        statusMessage: `✅ 发现新版本 ${info.version}，请确认是否下载更新`
       }));
     });
     

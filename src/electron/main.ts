@@ -101,7 +101,7 @@ function setupAutoUpdater() {
   autoUpdater.logger = logger;
   
   // 修改默认自动更新行为
-  autoUpdater.autoDownload = true;           // 自动下载更新
+  autoUpdater.autoDownload = false;           // 禁用自动下载更新
   autoUpdater.autoInstallOnAppQuit = true;   // 退出时自动安装
   autoUpdater.allowPrerelease = false;       // 不使用预发布版本
   autoUpdater.allowDowngrade = false;        // 不允许降级
@@ -148,8 +148,16 @@ function setupAutoUpdater() {
       dialog.showMessageBox(mainWindow, {
         type: 'info',
         title: '软件更新',
-        message: `发现新版本 ${info.version}，正在下载更新...`,
-        buttons: ['确定']
+        message: `发现新版本 ${info.version}，是否下载更新？`,
+        buttons: ['下载', '取消']
+      }).then(result => {
+        if (result.response === 0) {
+          // 用户点击"下载"，开始下载更新
+          logger.log('用户选择下载更新');
+          autoUpdater.downloadUpdate();
+        } else {
+          logger.log('用户取消下载更新');
+        }
       });
     }
   });
@@ -243,9 +251,6 @@ function checkForUpdates() {
     logger.log('开发模式不检查更新');
     return;
   }
-  
-  // 重置更新通知标志，确保手动检查时可以显示通知
-  hasShownUpdateNotice = false;
   
   // 无论是否有autoUpdaterFunctions，都尝试直接检查更新
   try {
