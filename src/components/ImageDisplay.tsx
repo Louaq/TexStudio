@@ -11,7 +11,7 @@ const Label = styled.h3`
   font-size: 14px;
   font-weight: 600;
   color: #2c3e50;
-  margin: 0 0 15px 0;
+  margin: 0 0 10px 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -19,8 +19,8 @@ const Label = styled.h3`
 
 const ImageContainer = styled.div<{ isDragActive: boolean }>`
   flex: 1;
-  border: 3px dashed ${props => props.isDragActive ? '#4a90e2' : '#cbd5e0'};
-  border-radius: 12px;
+  border: 2px dashed ${props => props.isDragActive ? '#4a90e2' : '#cbd5e0'};
+  border-radius: 10px;
   background: ${props => props.isDragActive 
     ? 'linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(74, 144, 226, 0.05) 100%)'
     : 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
@@ -28,7 +28,7 @@ const ImageContainer = styled.div<{ isDragActive: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
+  min-height: 150px;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -45,9 +45,9 @@ const ImageContainer = styled.div<{ isDragActive: boolean }>`
 const PlaceholderText = styled.div`
   text-align: center;
   color: #7f8c8d;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
-  line-height: 1.5;
+  line-height: 1.4;
 `;
 
 const Image = styled.img`
@@ -55,7 +55,7 @@ const Image = styled.img`
   max-height: 100%;
   object-fit: contain;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 `;
 
 const DragOverlay = styled.div<{ show: boolean }>`
@@ -74,10 +74,10 @@ const DragOverlay = styled.div<{ show: boolean }>`
 
 const DragText = styled.div`
   color: #4a90e2;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   text-align: center;
-  padding: 20px;
+  padding: 16px;
   border: 2px solid #4a90e2;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.9);

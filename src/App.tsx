@@ -6,6 +6,7 @@ import { formatLatex, getCurrentTimestamp, validateApiConfig } from './utils/api
 import MenuBar from './components/MenuBar';
 import ImageDisplay from './components/ImageDisplay';
 import LatexEditor from './components/LatexEditor';
+import FormulaPreview from './components/FormulaPreview';
 import StatusBar from './components/StatusBar';
 import CopyButton from './components/CopyButton';
 import ExportButton from './components/ExportButton';
@@ -28,8 +29,8 @@ const MainContent = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 20px;
-  gap: 20px;
+  padding: 16px;
+  gap: 16px;
   overflow: hidden;
   /* 禁用滚动条，内容自适应窗口大小 */
   height: 100vh;
@@ -37,7 +38,8 @@ const MainContent = styled.div`
 
 const TopSection = styled.div`
   flex: 1;
-  min-height: 220px;
+  min-height: 180px;
+  max-height: 45vh;
   /* 确保图片区域有合理的最小高度，虚线完全可见 */
   overflow: visible;
   /* 确保虚线边框不被裁切 */
@@ -48,18 +50,40 @@ const BottomSection = styled.div`
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   /* 固定底部区域，不参与flex伸缩 */
-  min-height: 160px;
+  min-height: 300px;
   /* 确保不会覆盖图片区域的虚线 */
   z-index: 1;
+`;
+
+const PreviewAndEditorContainer = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  height: 240px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    height: auto;
+  }
+`;
+
+const EditorWrapper = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const PreviewWrapper = styled.div`
+  flex: 1;
+  min-width: 0;
 `;
 
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
-  gap: 15px;
-  margin-top: 20px;
+  gap: 12px;
+  margin-top: 5px;
 `;
 
 function App() {
@@ -1315,11 +1339,22 @@ function App() {
         </TopSection>
 
         <BottomSection>
-          <LatexEditor
-            value={appState.latexCode}
-            onChange={(value) => setAppState(prev => ({ ...prev, latexCode: value }))}
-            readOnly={appState.isRecognizing}
-          />
+          <PreviewAndEditorContainer>
+            <EditorWrapper>
+              <LatexEditor
+                value={appState.latexCode}
+                onChange={(value) => setAppState(prev => ({ ...prev, latexCode: value }))}
+                readOnly={appState.isRecognizing}
+              />
+            </EditorWrapper>
+            
+            <PreviewWrapper>
+              <FormulaPreview 
+                latex={appState.latexCode}
+                isLoading={appState.isRecognizing}
+              />
+            </PreviewWrapper>
+          </PreviewAndEditorContainer>
           
           <StatusBar message={appState.statusMessage} />
           

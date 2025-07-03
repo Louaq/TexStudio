@@ -2,13 +2,13 @@ import React from 'react';
 import styled from 'styled-components';
 
 const StatusContainer = styled.div`
-  padding: 12px 16px;
+  padding: 10px 14px;
   background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%);
   border: 1px solid #bdc3c7;
   border-radius: 8px;
   /* 作为内嵌状态显示 */
   flex-shrink: 0;
-  min-height: 44px;
+  min-height: 38px;
   display: flex;
   align-items: center;
 `;
@@ -16,7 +16,7 @@ const StatusContainer = styled.div`
 const StatusContent = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 `;
 
