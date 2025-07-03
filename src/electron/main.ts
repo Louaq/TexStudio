@@ -439,15 +439,54 @@ function cleanupAllTempFiles(): void {
   tempFiles.clear();
 }
 
+// 在文件顶部添加全局类型声明
+declare global {
+  namespace NodeJS {
+    interface Global {
+      MathJaxSubscriptions?: any;
+    }
+  }
+}
+
+// 将forceGarbageCollection函数中的代码修改为
 function forceGarbageCollection(): void {
   try {
+    // 先进行内存释放操作
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.session.clearCache().catch(() => {});
+      
+      // 尝试清理渲染进程的内存
+      mainWindow.webContents.send('trigger-renderer-gc');
+    }
+    
+    // 清理未使用的截图窗口
+    screenshotWindows.forEach((window, index) => {
+      if (window && !window.isDestroyed() && !window.isVisible()) {
+        try {
+          window.webContents.session.clearCache().catch(() => {});
+          window.close();
+          screenshotWindows.splice(index, 1);
+        } catch (error) {
+          logger.error('清理截图窗口失败:', error);
+        }
+      }
+    });
+    
+    // 清空可能占用内存的大型变量
+    try {
+      // 使用类型断言
+      const globalAny = global as any;
+      if (globalAny.MathJaxSubscriptions) {
+        globalAny.MathJaxSubscriptions = undefined;
+      }
+    } catch (e) {
+      // 忽略清理过程中的错误
+    }
+    
+    // 强制V8垃圾回收
     if (global.gc) {
       global.gc();
       logger.log('手动触发垃圾回收完成');
-    }
-    
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.session.clearCache().catch(() => {});
     }
   } catch (error) {
     logger.error('垃圾回收失败:', error);
@@ -463,7 +502,7 @@ function monitorMemoryUsage(): void {
     const rssMB = Math.round(memoryUsage.rss / 1024 / 1024);
     
     logger.log(`内存使用情况: 堆内存 ${heapUsedMB}/${heapTotalMB} MB, 常驻内存 ${rssMB} MB`);
-    if (heapUsedMB > 200) {
+    if (heapUsedMB > 150) {  // 降低阈值从200MB到150MB
       logger.log('内存使用过高，触发垃圾回收');
       forceGarbageCollection();
     }
@@ -472,21 +511,24 @@ function monitorMemoryUsage(): void {
   }
 }
 
-// 定期清理临时文件和内存（每10分钟）
+// 定期清理临时文件和内存（每5分钟）
 function startPeriodicCleanup(): void {
   if (cleanupIntervalId) {
     clearInterval(cleanupIntervalId);
   }
   
+  // 更频繁地执行清理，从10分钟改为5分钟
   cleanupIntervalId = setInterval(() => {
     console.log('Executing periodic cleanup...');
     monitorMemoryUsage();
     cleanupAllTempFiles();
     forceGarbageCollection();
-  }, 10 * 60 * 1000); // 10 minutes - 更频繁的清理
+  }, 5 * 60 * 1000); // 5 minutes - 更频繁的清理
   
+  // 启动后立即进行一次清理
   setTimeout(() => {
     monitorMemoryUsage();
+    cleanupAllTempFiles();
   }, 5000);
 }
 
@@ -1070,8 +1112,12 @@ ipcMain.handle('show-screenshot-overlay', () => {
 
 
 async function takeSimpleScreenshot(area: { x: number; y: number; width: number; height: number }): Promise<string> {
+  let selectedSource: Electron.DesktopCapturerSource | null = null;
+  let croppedImage: Electron.NativeImage | null = null;
+  let sources: Electron.DesktopCapturerSource[] = [];
+
   try {
-    
+    // 获取所有显示器信息
     const displays = screen.getAllDisplays();
     console.log('📺 Available displays:', displays.map((d, i) => ({
       index: i,
@@ -1081,8 +1127,8 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
       primary: d.id === screen.getPrimaryDisplay().id
     })));
     
-    
-    const sources = await desktopCapturer.getSources({
+    // 获取屏幕捕获源
+    sources = await desktopCapturer.getSources({
       types: ['screen'],
       thumbnailSize: { width: 16384, height: 16384 }  
     });
@@ -1128,7 +1174,6 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
     }
     
     if (!targetDisplay) {
-      
       targetDisplay = screen.getPrimaryDisplay();
       displayIndex = displays.findIndex(d => d.id === targetDisplay!.id);
     }
@@ -1139,8 +1184,6 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
       scaleFactor: targetDisplay.scaleFactor
     });
 
-    
-    let selectedSource: Electron.DesktopCapturerSource | null = null;
     selectedSource = sources.find(s => s.display_id === targetDisplay!.id.toString()) || null;
     if (selectedSource) {
       console.log(`✅ Found exact display_id match: "${selectedSource.name}" for display ID ${targetDisplay.id}`);
@@ -1259,7 +1302,7 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
     cropArea.y = Math.max(0, Math.min(cropArea.y, sourceSize.height - 1));
     cropArea.width = Math.max(1, Math.min(cropArea.width, sourceSize.width - cropArea.x));
     cropArea.height = Math.max(1, Math.min(cropArea.height, sourceSize.height - cropArea.y));
-    const croppedImage = selectedSource.thumbnail.crop(cropArea);
+    croppedImage = selectedSource.thumbnail.crop(cropArea);
     const resultSize = croppedImage.getSize();
     if (resultSize.width === 0 || resultSize.height === 0) {
       throw new Error('Cropped image is empty');
@@ -1270,29 +1313,43 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
     const filename = `screenshot-${timestamp}.png`;
     const tempPath = path.join(app.getPath('temp'), filename);
     
-    const buffer = croppedImage.toPNG();
-    fs.writeFileSync(tempPath, buffer);
-    addTempFile(tempPath);
-  
-    closeScreenshotWindow();
-    await new Promise(resolve => setTimeout(resolve, 100));
-    if (fs.existsSync(tempPath)) {
+    try {
+      const buffer = croppedImage.toPNG();
+      fs.writeFileSync(tempPath, buffer);
+      addTempFile(tempPath);
       
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.show();
-        mainWindow.focus();
-        
-        
-        mainWindow.webContents.send('screenshot-complete', tempPath);
+      // 主动释放图像资源
+      if (selectedSource && selectedSource.thumbnail) {
+        (selectedSource as any).thumbnail = null;
       }
+      croppedImage = null;
       
-      return tempPath;
-    } else {
-      throw new Error('截图文件未能正确保存');
+      closeScreenshotWindow();
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (fs.existsSync(tempPath)) {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.show();
+          mainWindow.focus();
+          
+          mainWindow.webContents.send('screenshot-complete', tempPath);
+        }
+        
+        return tempPath;
+      } else {
+        throw new Error('截图文件未能正确保存');
+      }
+    } finally {
+      // 确保资源被释放
+      selectedSource = null;
+      croppedImage = null;
+      sources = [];
+      forceGarbageCollection();
     }
     
   } catch (error) {
     closeScreenshotWindow();
+    forceGarbageCollection();
     throw error;
   }
 }
@@ -1354,6 +1411,8 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
   const MAX_RETRIES = 2;
   let retryCount = 0;
   let lastError: any = null;
+  let imageBuffer: Buffer | null = null;
+  
   const tryRecognize = async (): Promise<SimpletexResponse> => {
     try {
       let hasValidConfig = false;
@@ -1398,47 +1457,61 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
           message: '图片文件不存在'
         };
       }
-      const imageBuffer = fs.readFileSync(imagePath);
-      if (!imageBuffer || imageBuffer.length === 0) {
-        console.error('图片文件为空:', imagePath);
-        return {
-          status: false,
-          res: { latex: '', conf: 0 },
-          request_id: '',
-          message: '图片文件为空'
-        };
-      }
-      if (!apiConfig || !apiConfig.appId || !apiConfig.appSecret || 
-          !apiConfig.appId.trim() || !apiConfig.appSecret.trim()) {
-        logger.error('API配置无效，无法进行公式识别');
-        return {
-          status: false,
-          res: { latex: '', conf: 0 },
-          request_id: '',
-          message: '请先在设置中配置API密钥',
-          error_code: 'NO_API_CONFIG'
-        };
-      }
-      const { header, reqData } = getReqData({}, apiConfig);
-      const formData = new FormData();
-      formData.append('file', imageBuffer, {
-        filename: path.basename(imagePath),
-        contentType: 'image/png'
-      });
+      
+      // 使用try-finally确保释放imageBuffer
+      try {
+        imageBuffer = fs.readFileSync(imagePath);
+        if (!imageBuffer || imageBuffer.length === 0) {
+          console.error('图片文件为空:', imagePath);
+          return {
+            status: false,
+            res: { latex: '', conf: 0 },
+            request_id: '',
+            message: '图片文件为空'
+          };
+        }
+        if (!apiConfig || !apiConfig.appId || !apiConfig.appSecret || 
+            !apiConfig.appId.trim() || !apiConfig.appSecret.trim()) {
+          logger.error('API配置无效，无法进行公式识别');
+          return {
+            status: false,
+            res: { latex: '', conf: 0 },
+            request_id: '',
+            message: '请先在设置中配置API密钥',
+            error_code: 'NO_API_CONFIG'
+          };
+        }
+        const { header, reqData } = getReqData({}, apiConfig);
+        const formData = new FormData();
+        formData.append('file', imageBuffer, {
+          filename: path.basename(imagePath),
+          contentType: 'image/png'
+        });
 
-      for (const [key, value] of Object.entries(reqData)) {
-        formData.append(key, value);
+        for (const [key, value] of Object.entries(reqData)) {
+          formData.append(key, value);
+        }
+        logger.log(`API请求准备完成，使用的API配置: appId=${apiConfig.appId.substring(0, 4)}...，重试次数: ${retryCount}`);
+        const response = await axios.post('https://server.simpletex.cn/api/latex_ocr', formData, {
+          headers: {
+            ...formData.getHeaders(),
+            ...header
+          },
+          timeout: 30000
+        });
+        
+        // 请求完成后释放formData相关资源
+        formData.getHeaders = null as any;
+        
+        return response.data;
+      } finally {
+        // 确保处理完后清空imageBuffer
+        imageBuffer = null;
+        // 主动触发垃圾回收
+        if (global.gc) {
+          global.gc();
+        }
       }
-      logger.log(`API请求准备完成，使用的API配置: appId=${apiConfig.appId.substring(0, 4)}...，重试次数: ${retryCount}`);
-      const response = await axios.post('https://server.simpletex.cn/api/latex_ocr', formData, {
-        headers: {
-          ...formData.getHeaders(),
-          ...header
-        },
-        timeout: 30000
-      });
-
-      return response.data;
     } catch (error) {
       console.error(`Formula recognition failed (attempt ${retryCount + 1}):`, error);
       lastError = error;
@@ -1468,9 +1541,23 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
         request_id: '',
         message: error instanceof Error ? error.message : '未知错误'
       };
+    } finally {
+      // 确保在任何情况下都释放资源
+      imageBuffer = null;
+      if (retryCount >= MAX_RETRIES) {
+        // 强制清理
+        forceGarbageCollection();
+      }
     }
   };
-  return tryRecognize();
+  
+  try {
+    return await tryRecognize();
+  } finally {
+    // 公式识别完成后，强制清理一次临时资源和内存
+    imageBuffer = null;
+    forceGarbageCollection();
+  }
 });
 
 // 注册全局快捷键
@@ -1865,20 +1952,34 @@ ipcMain.handle('save-docx-file', async (event, latexContent: string, filename: s
 ipcMain.handle('export-formula-image', async (event, latexContent: string, format: 'svg' | 'png' | 'jpg') => {
   try {
     logger.log(`开始导出数学公式为${format.toUpperCase()}格式`);
-    mathjax.config({
+    
+    // 清理前一次可能的遗留资源
+    forceGarbageCollection();
+    
+    // 使用更保守的MathJax配置
+    mathjaxExt.config({
       MathJax: {
         SVG: {
           scale: 1,
           font: 'TeX',
           useFontCache: true,
-          useGlobalCache: false
+          useGlobalCache: false,
+          minScaleAdjust: 0.5
         }
       }
     });
-    await mathjax.start();
+    
+    await mathjaxExt.start();
     let svgContent: string;
     try {
-      const mjResult: any = await mathjax.typeset({
+      // 限制过长的LaTeX内容
+      const maxLength = 5000;
+      if (latexContent.length > maxLength) {
+        latexContent = latexContent.substring(0, maxLength) + '...';
+        logger.log(`LaTeX内容过长，已截断至${maxLength}字符`);
+      }
+      
+      const mjResult: any = await mathjaxExt.typeset({
         math: latexContent,
         format: 'TeX',
         svg: true
@@ -1889,6 +1990,13 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
       }
       svgContent = mjResult.svg;
       logger.log('MathJax SVG生成成功，长度:', svgContent.length);
+      
+      // 释放MathJax资源
+      if (mathjaxExt.typesetClear) {
+        mathjaxExt.typesetClear();
+      }
+      
+      // 检查SVG标签匹配性
       const svgTagCount = (svgContent.match(/<svg/g) || []).length;
       const svgCloseTagCount = (svgContent.match(/<\/svg>/g) || []).length;
       if (svgTagCount !== svgCloseTagCount) {
@@ -1922,6 +2030,12 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
 </svg>`;
       
       logger.log('使用备用SVG，长度:', svgContent.length);
+    } finally {
+      // 无论成功失败，都清理MathJax资源
+      if (mathjaxExt.typesetClear) {
+        mathjaxExt.typesetClear();
+      }
+      forceGarbageCollection();
     }
     
     // 选择保存位置
@@ -1942,7 +2056,7 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
       logger.log(`SVG文件已保存到: ${result.filePath}`);
       return { success: true, filePath: result.filePath, message: 'SVG文件导出成功' };
     } else {
-      // 使用Sharp将SVG转换为PNG或JPG
+      // 使用Sharp将SVG转换为PNG或JPG，添加资源管理
       try {
         logger.log(`准备转换为${format.toUpperCase()}格式`);
         
@@ -1955,8 +2069,10 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
         logger.log(`SVG临时文件已保存: ${tempSvgPath}`);
         
         try {
+          // 限制sharp处理的内存使用
           let sharpInstance = sharp(tempSvgPath, {
-            density: 300 
+            density: 300,
+            limitInputPixels: 30000 * 30000 // 限制输入像素数量
           });
           
           const metadata = await sharpInstance.metadata();
@@ -1965,22 +2081,28 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
           if (format === 'png') {
             await sharpInstance
               .png({ 
-                quality: 100, 
-                compressionLevel: 0,
-                adaptiveFiltering: false
+                quality: 90, // 降低质量以减少内存使用
+                compressionLevel: 6, // 增加压缩级别
+                adaptiveFiltering: true
               })
               .toFile(result.filePath);
           } else if (format === 'jpg') {
             await sharpInstance
               .flatten({ background: { r: 255, g: 255, b: 255 } })
               .jpeg({ 
-                quality: 95,
+                quality: 85, // 降低质量以减少内存使用
                 progressive: true
               })
               .toFile(result.filePath);
           }
           
-          fs.unlinkSync(tempSvgPath);
+          // 手动释放sharp实例
+          sharpInstance = null as any;
+          
+          // 删除临时SVG文件
+          if (fs.existsSync(tempSvgPath)) {
+            fs.unlinkSync(tempSvgPath);
+          }
           
           logger.log(`${format.toUpperCase()}文件已保存到: ${result.filePath}`);
           return { success: true, filePath: result.filePath, message: `${format.toUpperCase()}文件导出成功` };
@@ -1991,6 +2113,7 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
             fs.unlinkSync(tempSvgPath);
           }
           
+          // 备用方案使用更简单的SVG
           logger.log('尝试使用简化的SVG重新转换...');
           const simplifiedSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200" style="background-color: white;">
@@ -2007,12 +2130,17 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
             let fallbackInstance = sharp(simplifiedPath, { density: 300 });
             
             if (format === 'png') {
-              await fallbackInstance.png({ quality: 100 }).toFile(result.filePath);
+              await fallbackInstance.png({ quality: 90 }).toFile(result.filePath);
             } else if (format === 'jpg') {
-              await fallbackInstance.jpeg({ quality: 95 }).toFile(result.filePath);
+              await fallbackInstance.jpeg({ quality: 85 }).toFile(result.filePath);
             }
             
-            fs.unlinkSync(simplifiedPath);
+            // 释放资源
+            fallbackInstance = null as any;
+            
+            if (fs.existsSync(simplifiedPath)) {
+              fs.unlinkSync(simplifiedPath);
+            }
             
             logger.log(`${format.toUpperCase()}文件（简化版本）已保存到: ${result.filePath}`);
             return { success: true, filePath: result.filePath, message: `${format.toUpperCase()}文件导出成功（简化版本）` };
@@ -2021,12 +2149,22 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
             if (fs.existsSync(simplifiedPath)) {
               fs.unlinkSync(simplifiedPath);
             }
+            
+            // 强制清理内存
+            forceGarbageCollection();
             throw fallbackError;
+          }
+        } finally {
+          // 确保临时文件被清理
+          if (fs.existsSync(tempSvgPath)) {
+            fs.unlinkSync(tempSvgPath);
           }
         }
         
       } catch (error) {
         logger.error(`最终转换失败:`, error);
+        // 强制清理内存
+        forceGarbageCollection();
         throw error;
       }
     }
@@ -2037,5 +2175,40 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
       success: false, 
       message: `导出失败: ${error instanceof Error ? error.message : '未知错误'}` 
     };
+  } finally {
+    // 清理资源
+    if (mathjaxExt.typesetClear) {
+      mathjaxExt.typesetClear();
+    }
+    forceGarbageCollection();
   }
 });
+
+// 修复MathJax typesetClear类型错误，添加接口定义
+interface ExtendedMathJax {
+  config: Function;
+  start: Function;
+  typeset: Function;
+  typesetClear?: Function; // 我们自定义的方法
+}
+
+// 将mathjax转换为我们扩展的接口类型
+const mathjaxExt: ExtendedMathJax = mathjax as any;
+
+// 添加一个新的优化函数用于清理和重置MathJax
+if (typeof mathjaxExt.typesetClear !== 'function') {
+  mathjaxExt.typesetClear = function() {
+    try {
+      // 尝试重置MathJax状态
+      if (mathjaxExt.start) {
+        mathjaxExt.start();
+      }
+      // 触发垃圾回收
+      if (global.gc) {
+        global.gc();
+      }
+    } catch (error) {
+      logger.error('清理MathJax资源失败:', error);
+    }
+  };
+}
