@@ -93,6 +93,8 @@ let autoUpdaterFunctions: AutoUpdaterFunctions;
 
 // 添加更新状态标志
 let isUpdating = false;
+// 添加更新通知状态标志
+let hasShownUpdateNotice = false;
 
 // 配置自动更新
 function setupAutoUpdater() {
@@ -105,28 +107,18 @@ function setupAutoUpdater() {
   autoUpdater.allowDowngrade = false;        // 不允许降级
   autoUpdater.forceDevUpdateConfig = false;  // 正式环境配置
   
+  // 重置通知状态标志
+  hasShownUpdateNotice = false;
+  
   // 设置更新服务器地址 - 使用package.json中的配置
   logger.log('使用package.json中的publish配置进行自动更新');
   
-  // 设置更新检查频率 - 每天只检查一次
-  const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24小时
+  // 取消自动检查更新，只允许手动检查
   let lastCheckTime = 0;
   
   // 检查是否应该检查更新
   function shouldCheckForUpdates() {
-    // 开发模式下不检查
-    if (!app.isPackaged) {
-      return false;
-    }
-    
-    const now = Date.now();
-    
-    // 如果从未检查过或已超过设定间隔，则应该检查
-    if (lastCheckTime === 0 || (now - lastCheckTime) > CHECK_INTERVAL_MS) {
-      lastCheckTime = now;
-      return true;
-    }
-    
+    // 始终返回false，不自动检查更新
     return false;
   }
 
@@ -149,7 +141,9 @@ function setupAutoUpdater() {
   // 有可用更新
   autoUpdater.on('update-available', (info) => {
     logger.log('发现新版本:', info);
-    if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow && !mainWindow.isDestroyed() && !hasShownUpdateNotice) {
+      // 设置标志，确保只显示一次
+      hasShownUpdateNotice = true;
       mainWindow.webContents.send('update-available', info);
       dialog.showMessageBox(mainWindow, {
         type: 'info',
@@ -249,6 +243,9 @@ function checkForUpdates() {
     logger.log('开发模式不检查更新');
     return;
   }
+  
+  // 重置更新通知标志，确保手动检查时可以显示通知
+  hasShownUpdateNotice = false;
   
   // 无论是否有autoUpdaterFunctions，都尝试直接检查更新
   try {
@@ -888,10 +885,10 @@ if (!gotTheLock) {
     // 设置自动更新
     autoUpdaterFunctions = setupAutoUpdater();
     
-    // 检查更新（延迟启动后检查，避免影响启动速度）
-    setTimeout(() => {
-      autoUpdaterFunctions.checkForUpdates();
-    }, 10000);
+    // 取消启动时自动检查更新
+    // setTimeout(() => {
+    //   autoUpdaterFunctions.checkForUpdates();
+    // }, 10000);
 
     app.on('activate', async () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -1817,6 +1814,9 @@ ipcMain.handle('check-for-updates', async (event) => {
       logger.log('开发模式下不检查更新');
       return { success: false, message: '开发模式下不检查更新' };
     }
+    
+    // 重置更新通知标志，确保手动检查时可以显示通知
+    hasShownUpdateNotice = false;
     
     if (autoUpdaterFunctions) {
       autoUpdaterFunctions.checkForUpdates();
