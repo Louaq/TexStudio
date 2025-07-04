@@ -1,13 +1,12 @@
 # LaTeX公式识别工具 - TypeScript版
 
 ## ✨ 界面截图
-![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-02_14-11-25.png)
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-04_09-16-07.png)
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-04_09-15-57.png)
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-04_09-16-22.png)
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-04_09-16-30.png)
 
-![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-06-21_16-51-22.png)
 
-![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-06-21_16-51-29.png)
-
-![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-06-21_16-51-42.png)
 
 
 一个基于 Electron + React + TypeScript 的现代化 LaTeX 公式识别桌面应用程序。
@@ -203,20 +202,6 @@ src/
 - 使用 `contextIsolation` 和 `preload` 脚本确保安全
 - 配置 Content Security Policy
 - 禁用 Node.js 集成在渲染进程中
-
-## 📝 更新日志
-
-### v3.7.0
-- ✨ 添加安装包形式发布
-- 🔄 支持自动检测和安装更新
-- 🛠️ 优化应用启动和运行性能
-
-### v3.6.2 
-- 🚀 全新的 TypeScript + React + Electron 架构
-- 🎨 现代化的界面设计和用户体验
-- 📱 更好的响应式布局和交互
-- 🔧 更完善的类型安全和错误处理
-- ⚡ 更快的启动速度和运行性能
 
 ## 🤝 贡献
 
