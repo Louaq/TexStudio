@@ -1,6 +1,6 @@
 {
   "name": "latex-ocr-electron",
-  "version": "3.9.4",
+  "version": "3.10.0",
   "description": "LaTeX公式识别工具 - Electron版本",
   "author": "SimpleTex OCR",
   "main": "dist/electron/electron/main.js",
@@ -91,13 +91,7 @@
       "repo": "SimpleTex-OCR",
       "private": false,
       "releaseType": "release",
-      "vPrefixedTagName": true,
-      "publishAutoUpdate": true,
-      "files": [
-        "latest.yml",
-        "*.exe"
-      ],
-      "releaseNotes": "最新版本发布：改进内存管理，优化公式识别性能"
+      "vPrefixedTagName": true
     }
   },
   "browserslist": {

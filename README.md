@@ -41,7 +41,7 @@
 
 ### 安装包下载
 
-访问 [Release 页面](https://github.com/你的GitHub用户名/SimpleTex-OCR/releases) 下载最新版安装包
+访问 [Release 页面](https://github.com/Louaq/SimpleTex-OCR/releases) 下载最新版安装包
 
 ### 环境要求
 
