@@ -3,14 +3,23 @@ import styled from 'styled-components';
 
 const StatusContainer = styled.div`
   padding: 10px 14px;
-  background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%);
-  border: 1px solid #bdc3c7;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #f7f9fc 0%, #edf2f7 100%);
+  border: 1px solid #dce1e8;
+  border-radius: 6px;
   /* 作为内嵌状态显示 */
   flex-shrink: 0;
   min-height: 38px;
   display: flex;
   align-items: center;
+  position: relative;
+  z-index: 10; /* 提高层级，确保可见 */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    border-color: #cfd9e6;
+  }
 `;
 
 const StatusContent = styled.div`
@@ -21,7 +30,7 @@ const StatusContent = styled.div`
 `;
 
 const StatusText = styled.div`
-  color: #2c3e50;
+  color: #3a4a5b;
   font-size: 13px;
   font-weight: 500;
 `;
@@ -29,6 +38,7 @@ const StatusText = styled.div`
 const StatusIcon = styled.span`
   font-size: 16px;
   flex-shrink: 0;
+  color: #4a6583;
 `;
 
 interface StatusBarProps {

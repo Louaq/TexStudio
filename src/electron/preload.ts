@@ -95,7 +95,7 @@ const screenshotAPI = {
         try {
           displayInfo.bounds = JSON.parse(arg.split('=')[1]);
         } catch (e) {
-          console.error('解析显示器边界失败:', e);
+          // 错误处理已静默
         }
       } else if (arg.startsWith('--display-scale=')) {
         displayInfo.scaleFactor = parseFloat(arg.split('=')[1]);

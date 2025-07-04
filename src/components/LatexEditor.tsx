@@ -5,6 +5,10 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
+  background-color: rgba(250, 250, 252, 0.7);
+  border-radius: 6px;
+  padding: 5px;
 `;
 
 const Label = styled.h3`
@@ -15,32 +19,50 @@ const Label = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+  padding-left: 3px;
 `;
 
 const TextArea = styled.textarea<{ readOnly: boolean }>`
-  height: 100%;
-  min-height: 80px;
+  height: 180px; /* 固定高度 */
+  min-height: 180px;
+  max-height: 180px;
   padding: 12px;
-  border: 2px solid #e1e8ed;
-  border-radius: 10px;
+  border: 1px solid #dce1e8;
+  border-radius: 8px;
   background: ${props => props.readOnly 
-    ? 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'
-    : 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+    ? 'linear-gradient(135deg, #f8f9fa 0%, #f5f7fa 100%)'
+    : 'linear-gradient(135deg, #ffffff 0%, #fafbfc 100%)'
   };
   color: #2c3e50;
   font-family: "Cascadia Code", "Consolas", "Monaco", monospace;
   font-size: 13px;
   line-height: 1.5;
-  resize: vertical;
-  transition: all 0.3s ease;
+  resize: none; /* 禁用调整大小 */
+  transition: all 0.2s ease;
   opacity: ${props => props.readOnly ? 0.7 : 1};
   cursor: ${props => props.readOnly ? 'not-allowed' : 'text'};
+  overflow-y: auto;
+  box-sizing: border-box;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  
+  /* 在不同大小的屏幕上调整高度 */
+  @media (min-height: 900px) {
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
+  }
+  
+  @media (min-height: 1080px) {
+    height: 220px;
+    min-height: 220px;
+    max-height: 220px;
+  }
 
   &:focus {
     outline: none;
     border-color: #4a90e2;
     background: white;
-    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 2px rgba(74, 144, 226, 0.1);
   }
 
   &::placeholder {
@@ -109,6 +131,7 @@ const EditorContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden; /* 防止超出容器 */
 `;
 
 interface LatexEditorProps {

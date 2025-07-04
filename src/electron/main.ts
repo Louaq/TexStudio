@@ -18,59 +18,31 @@ if (process.platform === 'win32') {
   try {
     const { execSync } = require('child_process');
     execSync('chcp 65001', { windowsHide: true });
-    console.log('Console code page set to UTF-8 (65001)');
   } catch (error) {
-    console.error('Failed to set console code page:', error);
   }
 }
 const logger = {
   log: (message: string, ...args: any[]) => {
-    if (process.platform === 'win32') {
-      if (/[\u4e00-\u9fa5]/.test(message)) {
-        console.log('\ufeff' + message, ...args);
-      } else {
-        console.log(message, ...args);
-      }
-    } else {
-      console.log(message, ...args);
-    }
+    
   },
   error: (message: string, ...args: any[]) => {
-    if (process.platform === 'win32') {
-      if (/[\u4e00-\u9fa5]/.test(message)) {
-        console.error('\ufeff' + message, ...args);
-      } else {
-        console.error(message, ...args);
-      }
-    } else {
-      console.error(message, ...args);
-    }
+    
   },
   info: (message: string, ...args: any[]) => {
-    if (process.platform === 'win32') {
-      if (/[\u4e00-\u9fa5]/.test(message)) {
-        console.info('\ufeff' + message, ...args);
-      } else {
-        console.info(message, ...args);
-      }
-    } else {
-      console.info(message, ...args);
-    }
+    
   },
   warn: (message: string, ...args: any[]) => {
-    if (process.platform === 'win32') {
-      if (/[\u4e00-\u9fa5]/.test(message)) {
-        console.warn('\ufeff' + message, ...args);
-      } else {
-        console.warn(message, ...args);
-      }
-    } else {
-      console.warn(message, ...args);
-    }
+    
   },
-  silly: (message: string) => console.log(message),
-  debug: (message: string) => console.debug(message),
-  verbose: (message: string) => console.log(message),
+  silly: (message: string) => {
+  
+  },
+  debug: (message: string) => {
+
+  },
+  verbose: (message: string) => {
+
+  },
   transports: {
     file: {
       level: 'info'
@@ -88,11 +60,11 @@ let isUpdating = false;
 let hasShownUpdateNotice = false;
 function setupAutoUpdater() {
   autoUpdater.logger = logger;
-  autoUpdater.autoDownload = false;           
-  autoUpdater.autoInstallOnAppQuit = true;   
-  autoUpdater.allowPrerelease = false;       
-  autoUpdater.allowDowngrade = false;        
-  autoUpdater.forceDevUpdateConfig = false;  
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = false;
+  autoUpdater.allowDowngrade = false;
+  autoUpdater.forceDevUpdateConfig = false;
   hasShownUpdateNotice = false;
   logger.log('使用package.json中的publish配置进行自动更新');
   let lastCheckTime = 0;
@@ -228,7 +200,7 @@ function loadApiConfigFromSettings(): { appId: string; appSecret: string } {
     appId: '',
     appSecret: ''
   };
-  
+
   try {
     const settingsPath = path.join(app.getAppPath(), 'settings.json');
     if (fs.existsSync(settingsPath)) {
@@ -247,7 +219,7 @@ function loadApiConfigFromSettings(): { appId: string; appSecret: string } {
   } catch (error) {
     logger.error('读取settings.json文件失败:', error);
   }
-  
+
   return config;
 }
 interface AppSettings {
@@ -304,7 +276,7 @@ function getReqData(reqData: Record<string, any> = {}, apiConfig: ApiConfig) {
   header['app-id'] = apiConfig.appId;
 
   const params: string[] = [];
-  
+
   const sortedReqKeys = Object.keys(reqData).sort();
   for (const key of sortedReqKeys) {
     params.push(`${key}=${reqData[key]}`);
@@ -313,12 +285,12 @@ function getReqData(reqData: Record<string, any> = {}, apiConfig: ApiConfig) {
   for (const key of headerKeys) {
     params.push(`${key}=${header[key]}`);
   }
-  
+
   params.push(`secret=${apiConfig.appSecret}`);
-  
+
   const preSignString = params.join('&');
   header.sign = crypto.createHash('md5').update(preSignString).digest('hex');
-  
+
   return { header, reqData };
 }
 function randomStr(length: number = 16): string {
@@ -341,7 +313,6 @@ function removeTempFile(filePath: string): boolean {
     tempFiles.delete(filePath);
     return true;
   } catch (error) {
-    console.error(`Failed to delete temporary file: ${filePath}`, error);
     return false;
   }
 }
@@ -349,7 +320,7 @@ function removeTempFile(filePath: string): boolean {
 function cleanupAllTempFiles(): void {
   let successCount = 0;
   let failCount = 0;
-  
+
   for (const filePath of tempFiles) {
     if (removeTempFile(filePath)) {
       successCount++;
@@ -357,28 +328,28 @@ function cleanupAllTempFiles(): void {
       failCount++;
     }
   }
-  
+
   try {
     const tempDir = app.getPath('temp');
     const files = fs.readdirSync(tempDir);
-    
+
     for (const file of files) {
       if (file.startsWith(TEMP_FILE_PREFIX)) {
         const fullPath = path.join(tempDir, file);
         try {
           const stats = fs.statSync(fullPath);
           const fileAge = Date.now() - stats.mtime.getTime();
-          
+
           if (fileAge > 60 * 60 * 1000) {
             fs.unlinkSync(fullPath);
           }
         } catch (error) {
-          console.error(`Error processing temporary file: ${fullPath}`, error);
+          // 错误处理已静默
         }
       }
     }
   } catch (error) {
-    console.error('Failed to scan temporary directory:', error);
+    // 错误处理已静默
   }
   tempFiles.clear();
 }
@@ -397,17 +368,17 @@ function forceGarbageCollection(): void {
   try {
     // 先进行内存释放操作
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.session.clearCache().catch(() => {});
-      
+      mainWindow.webContents.session.clearCache().catch(() => { });
+
       // 尝试清理渲染进程的内存
       mainWindow.webContents.send('trigger-renderer-gc');
     }
-    
+
     // 清理未使用的截图窗口
     screenshotWindows.forEach((window, index) => {
       if (window && !window.isDestroyed() && !window.isVisible()) {
         try {
-          window.webContents.session.clearCache().catch(() => {});
+          window.webContents.session.clearCache().catch(() => { });
           window.close();
           screenshotWindows.splice(index, 1);
         } catch (error) {
@@ -415,7 +386,7 @@ function forceGarbageCollection(): void {
         }
       }
     });
-    
+
     // 清空可能占用内存的大型变量
     try {
       // 使用类型断言
@@ -426,7 +397,7 @@ function forceGarbageCollection(): void {
     } catch (e) {
       // 忽略清理过程中的错误
     }
-    
+
     // 强制V8垃圾回收
     if (global.gc) {
       global.gc();
@@ -444,9 +415,9 @@ function monitorMemoryUsage(): void {
     const heapUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
     const heapTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
     const rssMB = Math.round(memoryUsage.rss / 1024 / 1024);
-    
+
     logger.log(`内存使用情况: 堆内存 ${heapUsedMB}/${heapTotalMB} MB, 常驻内存 ${rssMB} MB`);
-    if (heapUsedMB > 150) {  
+    if (heapUsedMB > 150) {
       logger.log('内存使用过高，触发垃圾回收');
       forceGarbageCollection();
     }
@@ -463,7 +434,7 @@ function startPeriodicCleanup(): void {
     monitorMemoryUsage();
     cleanupAllTempFiles();
     forceGarbageCollection();
-  }, 5 * 60 * 1000); 
+  }, 5 * 60 * 1000);
   setTimeout(() => {
     monitorMemoryUsage();
     cleanupAllTempFiles();
@@ -517,7 +488,7 @@ async function createMainWindow(): Promise<void> {
       await mainWindow.loadURL('http://localhost:3000');
       mainWindow.webContents.openDevTools();
     } catch (error) {
-      console.error('Failed to load dev server, falling back to build:', error);
+      // 开发服务器加载失败
       mainWindow.loadFile(path.join(__dirname, '../../../build/index.html'));
     }
   } else {
@@ -530,20 +501,20 @@ async function createMainWindow(): Promise<void> {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
-    
+
     if (!isDev && process.platform === 'win32' && !isUpdating) {
       forceQuitApp();
     }
   });
-  
+
   mainWindow.on('close', (event) => {
     // 如果正在更新，允许窗口关闭
     if (isUpdating) {
       return;
     }
-    
+
     if (!isDev && process.platform === 'win32') {
-      event.preventDefault(); 
+      event.preventDefault();
       forceQuitApp();
     }
   });
@@ -563,7 +534,7 @@ function createSimpleScreenshotWindow(): void {
     const displays = screen.getAllDisplays();
 
     displays.forEach((display, index) => {
-      
+
       const screenshotWindow = new BrowserWindow({
         x: display.bounds.x,
         y: display.bounds.y,
@@ -637,18 +608,10 @@ function createSimpleScreenshotWindow(): void {
     let startX, startY;
     let selectionBox = null;
     
-    console.log('Screenshot window loaded for display ${index}:', displayBounds);
-    
     document.addEventListener('mousedown', (e) => {
       isSelecting = true;
       startX = e.clientX;
       startY = e.clientY;
-      
-      console.log('🖱️ Mouse down on display ${index} at window coords:', { x: startX, y: startY });
-      console.log('🌍 Will become absolute coords:', { 
-        x: startX + displayBounds.x, 
-        y: startY + displayBounds.y 
-      });
       
       if (selectionBox) selectionBox.remove();
       
@@ -699,14 +662,10 @@ function createSimpleScreenshotWindow(): void {
           height: height
         };
         
-        console.log('Window coords:', { x: left, y: top, width, height });
-        console.log('Display bounds:', displayBounds);
-        console.log('Absolute coords:', absoluteArea);
-        
         try {
           await window.screenshotAPI.takeSimpleScreenshot(absoluteArea);
         } catch (error) {
-          console.error('Screenshot failed:', error);
+          // 截图失败处理
         }
       }
       
@@ -715,25 +674,23 @@ function createSimpleScreenshotWindow(): void {
     
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        console.log('ESC键被按下，关闭截图窗口');
         try {
           window.screenshotAPI.closeScreenshotWindow();
-          console.log('截图窗口关闭请求已发送');
         } catch (error) {
-          console.error('关闭截图窗口时出错:', error);
+          // 关闭窗口错误处理
         }
       }
     });
   </script>
 </body>
 </html>`;
-      
+
       screenshotWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(screenshotHTML)}`);
       screenshotWindows.push(screenshotWindow);
-      
+
     });
-    
-    
+
+
   } catch (error) {
   }
 }
@@ -742,7 +699,7 @@ function showSimpleScreenshotOverlay(): void {
   if (screenshotWindows.length === 0) {
     createSimpleScreenshotWindow();
   }
-  
+
   screenshotWindows.forEach((window, index) => {
     if (!window.isDestroyed()) {
       window.show();
@@ -762,33 +719,33 @@ function showUnifiedScreenshotOverlay(): void {
 
 
 function createScreenshotWindows(): void {
-  
+
   createSimpleScreenshotWindow();
 }
 
 
 if (process.platform === 'win32') {
-  
+
   app.disableHardwareAcceleration();
   app.commandLine.appendSwitch('disable-gpu');
   app.commandLine.appendSwitch('disable-gpu-compositing');
   app.commandLine.appendSwitch('disable-gpu-sandbox');
-  
-  
+
+
   app.commandLine.appendSwitch('disable-http-cache');
   app.commandLine.appendSwitch('disable-background-networking');
   app.commandLine.appendSwitch('disable-background-timer-throttling');
-  
-  
-  app.commandLine.appendSwitch('max-old-space-size', '512'); 
-  app.commandLine.appendSwitch('max-semi-space-size', '64');  
+
+
+  app.commandLine.appendSwitch('max-old-space-size', '512');
+  app.commandLine.appendSwitch('max-semi-space-size', '64');
   app.commandLine.appendSwitch('disable-extensions');
   app.commandLine.appendSwitch('disable-plugins');
   app.commandLine.appendSwitch('disable-dev-shm-usage');
   app.commandLine.appendSwitch('disable-software-rasterizer');
   app.commandLine.appendSwitch('disable-features', 'VizDisplayCompositor');
-  
-  
+
+
   app.commandLine.appendSwitch('memory-pressure-off');
   app.commandLine.appendSwitch('disable-background-mode');
   app.commandLine.appendSwitch('expose-gc');
@@ -814,13 +771,13 @@ if (!gotTheLock) {
       mainWindow.focus();
     }
   });
-  
+
   app.whenReady().then(async () => {
-    
+
     const settingsPath = path.join(app.getAppPath(), 'settings.json');
     if (!fs.existsSync(settingsPath)) {
       try {
-        
+
         const defaultSettings = {
           app_id: '',
           app_secret: ''
@@ -829,28 +786,28 @@ if (!gotTheLock) {
       } catch (error) {
       }
     }
-    
-    
+
+
     const apiConfig = loadApiConfigFromSettings();
     if (apiConfig.appId && apiConfig.appSecret) {
       DEFAULT_API_CONFIG.appId = apiConfig.appId;
       DEFAULT_API_CONFIG.appSecret = apiConfig.appSecret;
     } else {
-      
+
       DEFAULT_API_CONFIG.appId = '';
       DEFAULT_API_CONFIG.appSecret = '';
     }
-    
-    
+
+
     store.set('apiConfig', DEFAULT_API_CONFIG);
     killZombieProcesses();
     await createMainWindow();
     registerGlobalShortcuts();
     cleanupAllTempFiles();
     startPeriodicCleanup();
-    
+
     autoUpdaterFunctions = setupAutoUpdater();
-    
+
     app.on('activate', async () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         await createMainWindow();
@@ -864,7 +821,7 @@ app.on('window-all-closed', () => {
   if (isUpdating) {
     return;
   }
-  
+
   if (process.platform !== 'darwin') {
     forceQuitApp();
   }
@@ -875,15 +832,15 @@ app.on('before-quit', () => {
   if (isUpdating) {
     return;
   }
-  
+
   globalShortcut.unregisterAll();
-  
+
   if (cleanupIntervalId) {
     clearInterval(cleanupIntervalId);
     cleanupIntervalId = null;
   }
-  
-  
+
+
   screenshotWindows.forEach(window => {
     if (!window.isDestroyed()) {
       window.removeAllListeners();
@@ -893,7 +850,7 @@ app.on('before-quit', () => {
   screenshotWindows.length = 0;
 
   cleanupAllTempFiles();
-  
+
   setTimeout(() => {
     process.exit(0);
   }, 500);
@@ -908,7 +865,7 @@ app.on('will-quit', (event) => {
   if (tempFiles.size > 0) {
     cleanupAllTempFiles();
   }
-  
+
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.removeAllListeners();
     mainWindow = null;
@@ -925,18 +882,18 @@ app.on('will-quit', (event) => {
 
 function registerGlobalShortcuts(): void {
   const shortcuts = store.get('shortcuts');
-  
-  
+
+
   globalShortcut.register(shortcuts.capture, () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.hide(); 
+      mainWindow.hide();
     }
     setTimeout(() => {
       showUnifiedScreenshotOverlay();
     }, 200);
   });
 
-  
+
   globalShortcut.register(shortcuts.upload, () => {
     if (mainWindow && !mainWindow.isFocused()) {
       mainWindow.show();
@@ -978,7 +935,7 @@ ipcMain.handle('save-file', async (event, content: string, filename: string) => 
       fs.writeFileSync(result.filePath, content, 'utf8');
       return true;
     } catch (error) {
-      console.error('Failed to save file:', error);
+      // 文件保存失败
       return false;
     }
   }
@@ -991,7 +948,7 @@ ipcMain.handle('save-temp-file', async (event, buffer: Uint8Array, filename: str
     const ext = path.extname(filename) || '.png';
     const tempPath = path.join(app.getPath('temp'), `${TEMP_FILE_PREFIX}${Date.now()}${ext}`);
     fs.writeFileSync(tempPath, buffer);
-    addTempFile(tempPath); 
+    addTempFile(tempPath);
     return tempPath;
   } catch (error) {
     throw error;
@@ -1006,11 +963,11 @@ ipcMain.handle('force-test-second-screen', async () => {
 
 
 ipcMain.handle('show-screenshot-overlay', () => {
-  
+
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.hide();
   }
-  
+
 
   showUnifiedScreenshotOverlay();
 });
@@ -1024,73 +981,46 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
   try {
     // 获取所有显示器信息
     const displays = screen.getAllDisplays();
-    console.log('📺 Available displays:', displays.map((d, i) => ({
-      index: i,
-      id: d.id,
-      bounds: d.bounds,
-      scaleFactor: d.scaleFactor,
-      primary: d.id === screen.getPrimaryDisplay().id
-    })));
     
     // 获取屏幕捕获源
     sources = await desktopCapturer.getSources({
       types: ['screen'],
-      thumbnailSize: { width: 16384, height: 16384 }  
+      thumbnailSize: { width: 16384, height: 16384 }
     });
-
-    console.log('🖼️ Available screen sources:', sources.map((s, i) => ({
-      index: i,
-      name: s.name,
-      id: s.id,
-      display_id: s.display_id,
-      size: s.thumbnail.getSize()
-    })));
 
     if (sources.length === 0) {
       throw new Error('No screen sources available');
     }
 
-    
+    // 计算选择区域中心点
     const centerX = area.x + area.width / 2;
     const centerY = area.y + area.height / 2;
-    
-    
+
+    // 寻找包含选择区域中心点的显示器
     let targetDisplay: Electron.Display | null = null;
     let displayIndex = -1;
-    
-    
+
+    // 查找目标显示器
     for (let i = 0; i < displays.length; i++) {
       const display = displays[i];
       const inX = centerX >= display.bounds.x && centerX < display.bounds.x + display.bounds.width;
       const inY = centerY >= display.bounds.y && centerY < display.bounds.y + display.bounds.height;
-      
-      console.log(`Display [${i}] (ID: ${display.id}):`, {
-        bounds: display.bounds,
-        centerInX: inX,
-        centerInY: inY,
-        isTarget: inX && inY
-      });
-      
+
       if (inX && inY) {
         targetDisplay = display;
         displayIndex = i;
         break;
       }
     }
-    
+
     if (!targetDisplay) {
       targetDisplay = screen.getPrimaryDisplay();
       displayIndex = displays.findIndex(d => d.id === targetDisplay!.id);
     }
-    
-    console.log(`🎯 Target display [${displayIndex}]:`, {
-      id: targetDisplay.id,
-      bounds: targetDisplay.bounds,
-      scaleFactor: targetDisplay.scaleFactor
-    });
 
     selectedSource = sources.find(s => s.display_id === targetDisplay!.id.toString()) || null;
     if (selectedSource) {
+      // 找到了匹配的源
     } else {
       if (!targetDisplay.id.toString().includes(screen.getPrimaryDisplay().id.toString())) {
         const nonPrimarySources = sources.filter(s => s.display_id !== screen.getPrimaryDisplay().id.toString());
@@ -1106,92 +1036,80 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
       if (!selectedSource) {
         const expectedWidth = targetDisplay.bounds.width * targetDisplay.scaleFactor;
         const expectedHeight = targetDisplay.bounds.height * targetDisplay.scaleFactor;
-        
+
         let bestMatch = sources[0];
         let bestScore = 0;
-        
-        
+
+        // 找到最佳匹配
         for (const source of sources) {
           const size = source.thumbnail.getSize();
           const widthDiff = Math.abs(size.width - expectedWidth);
           const heightDiff = Math.abs(size.height - expectedHeight);
-          const score = 1 / (1 + widthDiff + heightDiff);  
-        
-          
+          const score = 1 / (1 + widthDiff + heightDiff);
+
+          // 更新最佳匹配
           if (score > bestScore) {
             bestScore = score;
             bestMatch = source;
           }
         }
-        
+
         selectedSource = bestMatch;
-        console.log(`✅ Using resolution-based match: "${selectedSource.name}" (score: ${bestScore.toFixed(3)})`);
       }
     }
 
     const sourceSize = selectedSource.thumbnail.getSize();
-    console.log(`🖥️ Using source: "${selectedSource.name}" (${sourceSize.width}x${sourceSize.height})`);
 
-    
+    // 计算剪裁区域
     let cropArea: { x: number; y: number; width: number; height: number };
-    
+
     if (displays.length === 1) {
-      
+      // 单屏幕情况
       const scaleX = sourceSize.width / targetDisplay.bounds.width;
       const scaleY = sourceSize.height / targetDisplay.bounds.height;
-      
+
       cropArea = {
         x: Math.round(area.x * scaleX),
         y: Math.round(area.y * scaleY),
         width: Math.round(area.width * scaleX),
         height: Math.round(area.height * scaleY)
       };
-      
+
     } else {
-      
+      // 多屏幕情况
       if (selectedSource.display_id === targetDisplay.id.toString()) {
-        
+        // 直接匹配的显示器
         const relativeX = area.x - targetDisplay.bounds.x;
         const relativeY = area.y - targetDisplay.bounds.y;
-        
+
         const scaleX = sourceSize.width / targetDisplay.bounds.width;
         const scaleY = sourceSize.height / targetDisplay.bounds.height;
-        
+
         cropArea = {
           x: Math.round(relativeX * scaleX),
           y: Math.round(relativeY * scaleY),
           width: Math.round(area.width * scaleX),
           height: Math.round(area.height * scaleY)
         };
-        
-        console.log('📐 Multi-display relative coords:', {
-          relative: { x: relativeX, y: relativeY },
-          scale: { x: scaleX, y: scaleY }
-        });
       } else {
-
+        // 未直接匹配的显示器，使用绝对坐标
         let minX = Math.min(...displays.map(d => d.bounds.x));
         let minY = Math.min(...displays.map(d => d.bounds.y));
         let maxX = Math.max(...displays.map(d => d.bounds.x + d.bounds.width));
         let maxY = Math.max(...displays.map(d => d.bounds.y + d.bounds.height));
-        
+
         const totalWidth = maxX - minX;
         const totalHeight = maxY - minY;
-        
+
         const scaleX = sourceSize.width / totalWidth;
         const scaleY = sourceSize.height / totalHeight;
-        
+
         cropArea = {
           x: Math.round((area.x - minX) * scaleX),
           y: Math.round((area.y - minY) * scaleY),
           width: Math.round(area.width * scaleX),
           height: Math.round(area.height * scaleY)
         };
-        
-        console.log('📐 Multi-display absolute coords:', {
-          virtualScreen: { width: totalWidth, height: totalHeight, offset: { x: minX, y: minY } },
-          scale: { x: scaleX, y: scaleY }
-        });
       }
     }
     cropArea.x = Math.max(0, Math.min(cropArea.x, sourceSize.width - 1));
@@ -1203,11 +1121,11 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
     if (resultSize.width === 0 || resultSize.height === 0) {
       throw new Error('Cropped image is empty');
     }
-    
+
     const timestamp = Date.now();
     const filename = `screenshot-${timestamp}.png`;
     const tempPath = path.join(app.getPath('temp'), filename);
-    
+
     try {
       const buffer = croppedImage.toPNG();
       fs.writeFileSync(tempPath, buffer);
@@ -1216,18 +1134,18 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
         (selectedSource as any).thumbnail = null;
       }
       croppedImage = null;
-      
+
       closeScreenshotWindow();
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       if (fs.existsSync(tempPath)) {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.show();
           mainWindow.focus();
-          
+
           mainWindow.webContents.send('screenshot-complete', tempPath);
         }
-        
+
         return tempPath;
       } else {
         throw new Error('截图文件未能正确保存');
@@ -1239,7 +1157,7 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
       sources = [];
       forceGarbageCollection();
     }
-    
+
   } catch (error) {
     closeScreenshotWindow();
     forceGarbageCollection();
@@ -1262,7 +1180,7 @@ function closeScreenshotWindow(): void {
     if (!window.isDestroyed()) {
       window.removeAllListeners();
       window.webContents.removeAllListeners();
-      window.webContents.session.clearCache().catch(() => {});
+      window.webContents.session.clearCache().catch(() => { });
       window.close();
       window.destroy();
     }
@@ -1277,12 +1195,10 @@ function closeScreenshotWindow(): void {
   }
 }
 ipcMain.handle('take-simple-screenshot', async (event, area: { x: number; y: number; width: number; height: number }) => {
-  console.log('IPC: take-simple-screenshot called with area:', area);
   try {
     const tempPath = await takeSimpleScreenshot(area);
     return tempPath;
   } catch (error) {
-    console.error('IPC: take-simple-screenshot failed:', error);
     throw error;
   }
 });
@@ -1309,11 +1225,11 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
   let retryCount = 0;
   let lastError: any = null;
   let imageBuffer: Buffer | null = null;
-  
+
   const tryRecognize = async (): Promise<SimpletexResponse> => {
     try {
       let hasValidConfig = false;
-      
+
       if (apiConfig && apiConfig.appId && apiConfig.appSecret) {
         if (apiConfig.appId.trim() && apiConfig.appSecret.trim()) {
           hasValidConfig = true;
@@ -1345,7 +1261,7 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
         };
       }
       if (!fs.existsSync(imagePath)) {
-        console.error('图片文件不存在:', imagePath);
+        // 图片文件不存在
         return {
           status: false,
           res: { latex: '', conf: 0 },
@@ -1356,7 +1272,7 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
       try {
         imageBuffer = fs.readFileSync(imagePath);
         if (!imageBuffer || imageBuffer.length === 0) {
-          console.error('图片文件为空:', imagePath);
+          // 图片文件为空
           return {
             status: false,
             res: { latex: '', conf: 0 },
@@ -1364,8 +1280,8 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
             message: '图片文件为空'
           };
         }
-        if (!apiConfig || !apiConfig.appId || !apiConfig.appSecret || 
-            !apiConfig.appId.trim() || !apiConfig.appSecret.trim()) {
+        if (!apiConfig || !apiConfig.appId || !apiConfig.appSecret ||
+          !apiConfig.appId.trim() || !apiConfig.appSecret.trim()) {
           logger.error('API配置无效，无法进行公式识别');
           return {
             status: false,
@@ -1393,9 +1309,9 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
           },
           timeout: 30000
         });
-        
+
         formData.getHeaders = null as any;
-        
+
         return response.data;
       } finally {
         imageBuffer = null;
@@ -1404,12 +1320,11 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
         }
       }
     } catch (error) {
-      console.error(`Formula recognition failed (attempt ${retryCount + 1}):`, error);
+      // 公式识别失败
       lastError = error;
-      
+
       if (axios.isAxiosError(error)) {
-        console.error('Response status:', error.response?.status);
-        console.error('Response data:', error.response?.data);
+        // 响应错误信息处理
 
         if (error.response?.status === 429) {
           if (retryCount < MAX_RETRIES) {
@@ -1440,7 +1355,7 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
       }
     }
   };
-  
+
   try {
     return await tryRecognize();
   } finally {
@@ -1452,11 +1367,11 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
 // 注册全局快捷键
 ipcMain.handle('register-global-shortcuts', (event, shortcuts: { capture: string; upload: string }) => {
   globalShortcut.unregisterAll();
-  
+
   try {
     globalShortcut.register(shortcuts.capture, () => {
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.hide(); 
+        mainWindow.hide();
       }
       setTimeout(() => {
         showUnifiedScreenshotOverlay();
@@ -1470,7 +1385,7 @@ ipcMain.handle('register-global-shortcuts', (event, shortcuts: { capture: string
       }
       mainWindow?.webContents.send('shortcut-triggered', 'upload');
     });
-    
+
     return true;
   } catch (error) {
     return false;
@@ -1519,7 +1434,7 @@ ipcMain.handle('get-display-info', async () => {
       types: ['screen'],
       thumbnailSize: { width: 150, height: 150 }
     });
-    
+
     const displayInfo = displays.map((display, index) => ({
       index,
       id: display.id,
@@ -1529,7 +1444,7 @@ ipcMain.handle('get-display-info', async () => {
       isPrimary: index === 0,
       label: display.label || `Display ${index + 1}`
     }));
-    
+
     const sourceInfo = sources.map((source, index) => ({
       index,
       id: source.id,
@@ -1546,7 +1461,7 @@ ipcMain.handle('get-display-info', async () => {
           return !s.name.includes('Primary') && !s.name.includes('Main');
         }
       });
-      
+
       return {
         display: { index: displayIndex, id: display.id, name: `Display ${displayIndex}` },
         exactMatches: potentialSources,
@@ -1554,7 +1469,7 @@ ipcMain.handle('get-display-info', async () => {
         recommendedSource: potentialSources[0] || nameMatchSources[0] || sources[displayIndex] || null
       };
     });
-    
+
     return {
       displays: displayInfo,
       sources: sourceInfo,
@@ -1617,25 +1532,21 @@ ipcMain.handle('clear-api-config', async (event) => {
         logger.error('清除缓存失败:', e);
       }
     }
-    
-    logger.log('API配置已完全清除');
     return true;
   } catch (error) {
-    logger.error('清除API配置失败:', error);
     return false;
   }
 });
 
 function terminateAllProcesses(): void {
   if (isUpdating) {
-    logger.log('检测到正在进行更新安装，跳过强制终止进程');
     return;
   }
-  
+
   if (process.platform === 'win32') {
     try {
       const { execSync } = require('child_process');
-      
+
       const possibleProcessNames = [
         'LaTeX公式识别工具.exe',
         'electron.exe',
@@ -1682,7 +1593,7 @@ function killZombieProcesses(): void {
         } catch (err) {
         }
       }
-      
+
     } catch (error) {
     }
   }
@@ -1690,7 +1601,6 @@ function killZombieProcesses(): void {
 
 function forceQuitApp(): void {
   if (isUpdating) {
-    logger.log('检测到正在进行更新安装，跳过强制退出流程');
     return;
   }
 
@@ -1723,10 +1633,10 @@ function forceQuitApp(): void {
     } catch (e) {
     }
   }
-  
+
   app.removeAllListeners();
-  app.releaseSingleInstanceLock();  
-  
+  app.releaseSingleInstanceLock();
+
   if (process.platform === 'win32') {
     terminateAllProcesses();
   } else {
@@ -1776,10 +1686,10 @@ ipcMain.handle('check-for-updates', async (event) => {
       logger.log('开发模式下不检查更新');
       return { success: false, message: '开发模式下不检查更新' };
     }
-    
+
     // 重置更新通知标志，确保手动检查时可以显示通知
     hasShownUpdateNotice = false;
-    
+
     if (autoUpdaterFunctions) {
       autoUpdaterFunctions.checkForUpdates();
     } else {
@@ -1803,12 +1713,12 @@ ipcMain.handle('save-docx-file', async (event, latexContent: string, filename: s
       format: 'TeX',
       mml: true
     });
-    
+
     if (!mjResult.mml) {
       throw new Error('LaTeX到MathML转换失败');
     }
     let mathML = mjResult.mml;
-    
+
     clipboard.writeText(mathML);
     logger.log('MathML格式公式已复制到剪贴板');
     return true;
@@ -1834,7 +1744,7 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
         }
       }
     });
-    
+
     await mathjaxExt.start();
     let svgContent: string;
     try {
@@ -1843,13 +1753,13 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
         latexContent = latexContent.substring(0, maxLength) + '...';
         logger.log(`LaTeX内容过长，已截断至${maxLength}字符`);
       }
-      
+
       const mjResult: any = await mathjaxExt.typeset({
         math: latexContent,
         format: 'TeX',
         svg: true
       });
-      
+
       if (!mjResult.svg) {
         throw new Error('LaTeX到SVG转换失败');
       }
@@ -1867,29 +1777,29 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
       if (!svgContent.trim().startsWith('<?xml')) {
         svgContent = '<?xml version="1.0" encoding="UTF-8"?>\n' + svgContent;
       }
-      
+
     } catch (mathJaxError) {
       logger.error('MathJax渲染失败，使用备用SVG:', mathJaxError);
-      
+
       // 创建一个简单但有效的备用SVG
       svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="100" viewBox="0 0 400 100">
   <rect width="100%" height="100%" fill="white" stroke="#ddd" stroke-width="1"/>
   <text x="200" y="50" text-anchor="middle" dominant-baseline="central" 
         font-family="Times, serif" font-size="18" fill="black">
-    ${latexContent.replace(/[<>&"']/g, function(match) {
-      switch(match) {
-        case '<': return '&lt;';
-        case '>': return '&gt;';
-        case '&': return '&amp;';
-        case '"': return '&quot;';
-        case "'": return '&#39;';
-        default: return match;
-      }
-    })}
+    ${latexContent.replace(/[<>&"']/g, function (match) {
+        switch (match) {
+          case '<': return '&lt;';
+          case '>': return '&gt;';
+          case '&': return '&amp;';
+          case '"': return '&quot;';
+          case "'": return '&#39;';
+          default: return match;
+        }
+      })}
   </text>
 </svg>`;
-      
+
       logger.log('使用备用SVG，长度:', svgContent.length);
     } finally {
       if (mathjaxExt.typesetClear) {
@@ -1897,7 +1807,7 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
       }
       forceGarbageCollection();
     }
-    
+
     // 选择保存位置
     const result = await dialog.showSaveDialog(mainWindow!, {
       defaultPath: `formula.${format}`,
@@ -1918,7 +1828,7 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
     } else {
       try {
         logger.log(`准备转换为${format.toUpperCase()}格式`);
-        
+
         if (!svgContent.includes('<svg') || !svgContent.includes('</svg>')) {
           throw new Error('SVG内容格式无效：缺少必要的svg标签');
         }
@@ -1926,29 +1836,29 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
         const tempSvgPath = result.filePath.replace(/\.(png|jpg)$/, '.temp.svg');
         fs.writeFileSync(tempSvgPath, svgContent, 'utf8');
         logger.log(`SVG临时文件已保存: ${tempSvgPath}`);
-        
+
         try {
           let sharpInstance = sharp(tempSvgPath, {
             density: 300,
-            limitInputPixels: 30000 * 30000 
+            limitInputPixels: 30000 * 30000
           });
-          
+
           const metadata = await sharpInstance.metadata();
           logger.log(`图片元数据:`, metadata);
-          
+
           if (format === 'png') {
             await sharpInstance
-              .png({ 
-                quality: 90, 
-                compressionLevel: 6, 
+              .png({
+                quality: 90,
+                compressionLevel: 6,
                 adaptiveFiltering: true
               })
               .toFile(result.filePath);
           } else if (format === 'jpg') {
             await sharpInstance
               .flatten({ background: { r: 255, g: 255, b: 255 } })
-              .jpeg({ 
-                quality: 85, 
+              .jpeg({
+                quality: 85,
                 progressive: true
               })
               .toFile(result.filePath);
@@ -1959,16 +1869,16 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
           if (fs.existsSync(tempSvgPath)) {
             fs.unlinkSync(tempSvgPath);
           }
-          
+
           logger.log(`${format.toUpperCase()}文件已保存到: ${result.filePath}`);
           return { success: true, filePath: result.filePath, message: `${format.toUpperCase()}文件导出成功` };
-          
+
         } catch (sharpError) {
           logger.error(`Sharp转换失败:`, sharpError);
           if (fs.existsSync(tempSvgPath)) {
             fs.unlinkSync(tempSvgPath);
           }
-          
+
           logger.log('尝试使用简化的SVG重新转换...');
           const simplifiedSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200" style="background-color: white;">
@@ -1977,33 +1887,33 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
     无法渲染公式: ${latexContent.substring(0, 50)}${latexContent.length > 50 ? '...' : ''}
   </text>
 </svg>`;
-          
+
           const simplifiedPath = result.filePath.replace(/\.(png|jpg)$/, '.simplified.svg');
           fs.writeFileSync(simplifiedPath, simplifiedSvg, 'utf8');
-          
+
           try {
             let fallbackInstance = sharp(simplifiedPath, { density: 300 });
-            
+
             if (format === 'png') {
               await fallbackInstance.png({ quality: 90 }).toFile(result.filePath);
             } else if (format === 'jpg') {
               await fallbackInstance.jpeg({ quality: 85 }).toFile(result.filePath);
             }
-            
+
             fallbackInstance = null as any;
-            
+
             if (fs.existsSync(simplifiedPath)) {
               fs.unlinkSync(simplifiedPath);
             }
-            
+
             logger.log(`${format.toUpperCase()}文件（简化版本）已保存到: ${result.filePath}`);
             return { success: true, filePath: result.filePath, message: `${format.toUpperCase()}文件导出成功（简化版本）` };
-            
+
           } catch (fallbackError) {
             if (fs.existsSync(simplifiedPath)) {
               fs.unlinkSync(simplifiedPath);
             }
-            
+
             forceGarbageCollection();
             throw fallbackError;
           }
@@ -2012,19 +1922,19 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
             fs.unlinkSync(tempSvgPath);
           }
         }
-        
+
       } catch (error) {
         logger.error(`最终转换失败:`, error);
         forceGarbageCollection();
         throw error;
       }
     }
-    
+
   } catch (error) {
     logger.error(`导出${format.toUpperCase()}失败:`, error);
-    return { 
-      success: false, 
-      message: `导出失败: ${error instanceof Error ? error.message : '未知错误'}` 
+    return {
+      success: false,
+      message: `导出失败: ${error instanceof Error ? error.message : '未知错误'}`
     };
   } finally {
     if (mathjaxExt.typesetClear) {
@@ -2044,7 +1954,7 @@ interface ExtendedMathJax {
 const mathjaxExt: ExtendedMathJax = mathjax as any;
 
 if (typeof mathjaxExt.typesetClear !== 'function') {
-  mathjaxExt.typesetClear = function() {
+  mathjaxExt.typesetClear = function () {
     try {
       if (mathjaxExt.start) {
         mathjaxExt.start();

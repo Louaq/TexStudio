@@ -20,7 +20,16 @@ const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: #f8f9fa;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),
+    repeating-linear-gradient(
+      45deg, 
+      rgba(240, 240, 245, 0.3), 
+      rgba(240, 240, 245, 0.3) 15px, 
+      transparent 15px, 
+      transparent 30px
+    );
   font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
   color: #2c3e50;
 `;
@@ -30,60 +39,117 @@ const MainContent = styled.div`
   display: flex;
   flex-direction: column;
   padding: 16px;
+  padding-bottom: 8px; /* 减少底部内边距 */
   gap: 16px;
   overflow: hidden;
   /* 禁用滚动条，内容自适应窗口大小 */
-  height: 100vh;
+  height: calc(100vh - 50px); /* 减去菜单栏的高度 */
+  background-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  
+  /* 确保有足够的间距，但不要过多 */
+  @media (min-height: 900px) {
+    gap: 20px;
+  }
 `;
 
 const TopSection = styled.div`
   flex: 1;
   min-height: 180px;
-  max-height: 45vh;
+  display: flex;
+  flex-direction: column;
   /* 确保图片区域有合理的最小高度，虚线完全可见 */
   overflow: visible;
   /* 确保虚线边框不被裁切 */
   padding: 2px;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  
+  /* 根据不同屏幕大小调整比例 */
+  @media (min-height: 768px) {
+    flex: 1.5;
+  }
+  
+  @media (min-height: 900px) {
+    flex: 2;
+  }
+  
+  @media (min-height: 1080px) {
+    flex: 2.5;
+  }
 `;
 
 const BottomSection = styled.div`
-  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  /* 固定底部区域，不参与flex伸缩 */
+  /* 保持固定高度，自适应内容大小 */
   min-height: 300px;
+  max-height: 340px;
+  height: auto;
   /* 确保不会覆盖图片区域的虚线 */
   z-index: 1;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  padding: 10px 10px 6px 10px; /* 减少底部内边距 */
 `;
 
 const PreviewAndEditorContainer = styled.div`
   display: flex;
   gap: 12px;
-  margin-bottom: 8px;
-  height: 240px;
+  height: 220px; /* 固定高度，包含标题和内容区域 */
+  margin-bottom: 0; /* 移除下方间距 */
 
   @media (max-width: 768px) {
     flex-direction: column;
     height: auto;
+  }
+  
+  /* 在大屏幕上自适应调整高度 */
+  @media (min-height: 900px) {
+    height: 240px;
+  }
+  
+  /* 在更大屏幕上进一步调整高度 */
+  @media (min-height: 1080px) {
+    height: 260px;
   }
 `;
 
 const EditorWrapper = styled.div`
   flex: 1;
   min-width: 0;
+  height: 220px;
+  overflow: hidden;
+  position: relative;
 `;
 
 const PreviewWrapper = styled.div`
   flex: 1;
   min-width: 0;
+  height: 220px;
+  overflow: hidden;
+  position: relative;
 `;
 
+// 需要调整ButtonContainer的样式，确保按钮区域紧凑
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 5px;
+  margin-top: 2px;
+  margin-bottom: 0;
+  padding: 0;
+  height: 36px; /* 固定高度，避免计算错误 */
+`;
+
+// 修改StatusBarWrapper样式，减少边距
+const StatusBarWrapper = styled.div`
+  margin: 0;
+  position: relative;
+  z-index: 10; /* 确保状态栏位于较高层级 */
+  flex-shrink: 0; /* 防止被压缩 */
+  height: 38px; /* 固定状态栏高度 */
 `;
 
 function App() {
@@ -1315,7 +1381,7 @@ function App() {
   }
 
   return (
-    <AppContainer {...getRootProps()}>
+    <AppContainer {...getRootProps()} className="simpletex-app">
       <MenuBar
         onCapture={handleCapture}
         onUpload={handleUpload}
@@ -1356,7 +1422,9 @@ function App() {
             </PreviewWrapper>
           </PreviewAndEditorContainer>
           
-          <StatusBar message={appState.statusMessage} />
+          <StatusBarWrapper>
+            <StatusBar message={appState.statusMessage} />
+          </StatusBarWrapper>
           
           <ButtonContainer>
             <CopyButton 

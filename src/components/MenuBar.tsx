@@ -3,12 +3,12 @@ import styled from 'styled-components';
 
 const MenuContainer = styled.div`
   display: flex;
-  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-  border-bottom: 1px solid #e1e8ed;
+  background: linear-gradient(180deg, #fafbfd 0%, #f2f5f9 100%);
+  border-bottom: 1px solid #dce1e8;
   padding: 6px 12px;
   gap: 2px;
   font-size: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   overflow-x: auto;
   white-space: nowrap;
   justify-content: flex-start;
@@ -20,7 +20,7 @@ const MenuItem = styled.div`
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  color: #2c3e50;
+  color: #3a4a5b;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -32,9 +32,9 @@ const MenuItem = styled.div`
 
   &:hover {
     background: #edf2f7;
-    color: #4a90e2;
+    color: #4375b9;
     transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   }
   
   &:active {
@@ -46,7 +46,7 @@ const MenuItem = styled.div`
 const Divider = styled.div`
   width: 1px;
   height: 22px;
-  background: #e1e8ed;
+  background: #dce1e8;
   margin: 0 2px;
   opacity: 0.5;
 `;

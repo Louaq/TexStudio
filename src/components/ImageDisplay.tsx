@@ -5,25 +5,29 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  background-color: rgba(250, 250, 252, 0.7);
+  border-radius: 6px;
+  padding: 5px;
 `;
 
 const Label = styled.h3`
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: #3a4a5b;
   margin: 0 0 10px 0;
   display: flex;
   align-items: center;
   gap: 8px;
+  padding-left: 3px;
 `;
 
 const ImageContainer = styled.div<{ isDragActive: boolean }>`
   flex: 1;
-  border: 2px dashed ${props => props.isDragActive ? '#4a90e2' : '#cbd5e0'};
-  border-radius: 10px;
+  border: 1px dashed ${props => props.isDragActive ? '#4375b9' : '#dce1e8'};
+  border-radius: 8px;
   background: ${props => props.isDragActive 
-    ? 'linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(74, 144, 226, 0.05) 100%)'
-    : 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+    ? 'linear-gradient(135deg, rgba(67, 117, 185, 0.08) 0%, rgba(67, 117, 185, 0.04) 100%)'
+    : 'linear-gradient(135deg, #fefefe 0%, #f7f9fc 100%)'
   };
   display: flex;
   align-items: center;
@@ -36,26 +40,35 @@ const ImageContainer = styled.div<{ isDragActive: boolean }>`
   box-sizing: border-box;
   cursor: pointer;
 
+  /* 添加淡色网格背景，类似于科学论文中的图表网格 */
+  background-image: 
+    linear-gradient(rgba(220, 225, 232, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(220, 225, 232, 0.3) 1px, transparent 1px);
+  background-size: 20px 20px;
+
   &:hover {
-    border-color: #4a90e2;
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.05) 0%, rgba(74, 144, 226, 0.02) 100%);
+    border-color: #4375b9;
+    background: linear-gradient(135deg, rgba(67, 117, 185, 0.05) 0%, rgba(67, 117, 185, 0.02) 100%);
   }
 `;
 
 const PlaceholderText = styled.div`
   text-align: center;
-  color: #7f8c8d;
+  color: #4a6583;
   font-size: 15px;
   font-weight: 500;
   line-height: 1.4;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 15px;
+  border-radius: 8px;
 `;
 
 const Image = styled.img`
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  border-radius: 8px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 `;
 
 const DragOverlay = styled.div<{ show: boolean }>`
@@ -64,22 +77,22 @@ const DragOverlay = styled.div<{ show: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(74, 144, 226, 0.2);
+  background: rgba(67, 117, 185, 0.1);
   display: ${props => props.show ? 'flex' : 'none'};
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(1px);
 `;
 
 const DragText = styled.div`
-  color: #4a90e2;
+  color: #4375b9;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
   text-align: center;
   padding: 16px;
-  border: 2px solid #4a90e2;
-  border-radius: 8px;
+  border: 1px solid #4375b9;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.9);
 `;
 

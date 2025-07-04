@@ -7,6 +7,10 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
+  background-color: rgba(250, 250, 252, 0.7);
+  border-radius: 6px;
+  padding: 5px;
 `;
 
 const Label = styled.h3`
@@ -17,19 +21,44 @@ const Label = styled.h3`
   display: flex;
   align-items: center;
   gap: 8px;
+  padding-left: 3px;
 `;
 
 const PreviewArea = styled.div`
   padding: 12px;
-  min-height: 80px;
-  height: 100%;
-  border: 2px solid #e1e8ed;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  min-height: 180px;
+  height: 180px; /* 固定高度 */
+  border: 1px solid #dce1e8;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #fefefe 0%, #f9fafb 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow-x: auto;
+  overflow: auto;
+  box-sizing: border-box;
+  position: relative;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  
+  /* 在不同大小的屏幕上调整高度 */
+  @media (min-height: 900px) {
+    height: 200px;
+    min-height: 200px;
+  }
+  
+  @media (min-height: 1080px) {
+    height: 220px;
+    min-height: 220px;
+  }
+
+  /* 添加淡色数学元素背景 */
+  background-image: 
+    repeating-linear-gradient(
+      -45deg,
+      rgba(245, 247, 250, 0.5) 0px,
+      rgba(245, 247, 250, 0.5) 1px,
+      transparent 1px,
+      transparent 20px
+    );
 
   .katex-display {
     margin: 0;
@@ -63,48 +92,38 @@ const FormulaPreview: React.FC<FormulaPreviewProps> = ({
   latex, 
   isLoading = false 
 }) => {
-  // 如果没有LaTeX代码，显示占位符
-  if (!latex.trim()) {
-    return (
-      <Container>
-        <Label>
-          🔍 公式预览
-        </Label>
-        <PreviewArea>
-          <PlaceholderText>
-            {isLoading ? "正在加载..." : "输入LaTeX代码后显示公式渲染效果"}
-          </PlaceholderText>
-        </PreviewArea>
-      </Container>
-    );
-  }
+  // 渲染预览区域内容
+  const renderPreviewContent = () => {
+    if (!latex.trim()) {
+      return (
+        <PlaceholderText>
+          {isLoading ? "正在加载..." : "输入LaTeX代码后显示公式渲染效果"}
+        </PlaceholderText>
+      );
+    }
 
-  // 尝试渲染公式，如果出错显示错误信息
-  try {
-    return (
-      <Container>
-        <Label>
-          🔍 公式预览
-        </Label>
-        <PreviewArea>
-          <BlockMath math={latex} errorColor={'#e74c3c'} />
-        </PreviewArea>
-      </Container>
-    );
-  } catch (error) {
-    return (
-      <Container>
-        <Label>
-          🔍 公式预览
-        </Label>
-        <PreviewArea>
-          <ErrorMessage>
-            无法渲染公式，请检查LaTeX代码是否正确
-          </ErrorMessage>
-        </PreviewArea>
-      </Container>
-    );
-  }
+    // 尝试渲染公式
+    try {
+      return <BlockMath math={latex} errorColor={'#e74c3c'} />;
+    } catch (error) {
+      return (
+        <ErrorMessage>
+          无法渲染公式，请检查LaTeX代码是否正确
+        </ErrorMessage>
+      );
+    }
+  };
+
+  return (
+    <Container>
+      <Label>
+        🔍 公式预览
+      </Label>
+      <PreviewArea>
+        {renderPreviewContent()}
+      </PreviewArea>
+    </Container>
+  );
 };
 
 export default FormulaPreview; 
