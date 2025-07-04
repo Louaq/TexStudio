@@ -14,7 +14,6 @@ import * as mathjax from 'mathjax-node';
 const sharp = require('sharp');
 import { autoUpdater } from 'electron-updater';
 
-// 设置控制台编码为UTF-8，解决中文乱码问题
 if (process.platform === 'win32') {
   try {
     const { execSync } = require('child_process');
@@ -24,8 +23,6 @@ if (process.platform === 'win32') {
     console.error('Failed to set console code page:', error);
   }
 }
-
-// 创建自定义日志函数，确保中文正确显示
 const logger = {
   log: (message: string, ...args: any[]) => {
     if (process.platform === 'win32') {
@@ -71,7 +68,6 @@ const logger = {
       console.warn(message, ...args);
     }
   },
-  // electron-updater需要的属性
   silly: (message: string) => console.log(message),
   debug: (message: string) => console.debug(message),
   verbose: (message: string) => console.log(message),
@@ -82,67 +78,42 @@ const logger = {
   }
 };
 
-// 自动更新函数接口
 interface AutoUpdaterFunctions {
   shouldCheckForUpdates: () => boolean;
   checkForUpdates: () => void;
 }
 
-// 全局变量存储自动更新函数
 let autoUpdaterFunctions: AutoUpdaterFunctions;
-
-// 添加更新状态标志
 let isUpdating = false;
-// 添加更新通知状态标志
 let hasShownUpdateNotice = false;
-
-// 配置自动更新
 function setupAutoUpdater() {
   autoUpdater.logger = logger;
-  
-  // 修改默认自动更新行为
-  autoUpdater.autoDownload = false;           // 禁用自动下载更新
-  autoUpdater.autoInstallOnAppQuit = true;   // 退出时自动安装
-  autoUpdater.allowPrerelease = false;       // 不使用预发布版本
-  autoUpdater.allowDowngrade = false;        // 不允许降级
-  autoUpdater.forceDevUpdateConfig = false;  // 正式环境配置
-  
-  // 重置通知状态标志
+  autoUpdater.autoDownload = false;           
+  autoUpdater.autoInstallOnAppQuit = true;   
+  autoUpdater.allowPrerelease = false;       
+  autoUpdater.allowDowngrade = false;        
+  autoUpdater.forceDevUpdateConfig = false;  
   hasShownUpdateNotice = false;
-  
-  // 设置更新服务器地址 - 使用package.json中的配置
   logger.log('使用package.json中的publish配置进行自动更新');
-  
-  // 取消自动检查更新，只允许手动检查
   let lastCheckTime = 0;
-  
-  // 检查是否应该检查更新
   function shouldCheckForUpdates() {
-    // 始终返回false，不自动检查更新
     return false;
   }
-
-  // 检查更新错误
   autoUpdater.on('error', (error) => {
     logger.error('更新检查失败:', error);
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('update-error', error.message);
     }
   });
-
-  // 检查更新中
   autoUpdater.on('checking-for-update', () => {
     logger.log('正在检查更新...');
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('checking-for-update');
     }
   });
-
-  // 有可用更新
   autoUpdater.on('update-available', (info) => {
     logger.log('发现新版本:', info);
     if (mainWindow && !mainWindow.isDestroyed() && !hasShownUpdateNotice) {
-      // 设置标志，确保只显示一次
       hasShownUpdateNotice = true;
       mainWindow.webContents.send('update-available', info);
       dialog.showMessageBox(mainWindow, {
@@ -152,7 +123,6 @@ function setupAutoUpdater() {
         buttons: ['下载', '取消']
       }).then(result => {
         if (result.response === 0) {
-          // 用户点击"下载"，开始下载更新
           logger.log('用户选择下载更新');
           autoUpdater.downloadUpdate();
         } else {
@@ -179,7 +149,6 @@ function setupAutoUpdater() {
     }
   });
 
-  // 更新下载完成
   autoUpdater.on('update-downloaded', (info) => {
     logger.log('更新下载完成，将在退出时安装');
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -191,20 +160,11 @@ function setupAutoUpdater() {
         buttons: ['现在重启', '稍后再说']
       }).then(result => {
         if (result.response === 0) {
-          // 避免自定义退出逻辑干扰更新安装流程
           logger.log('用户选择立即重启安装更新');
-          
-          // 设置更新状态标志
           isUpdating = true;
-          
-          // 移除所有自定义的退出事件监听器
           app.removeAllListeners('before-quit');
           app.removeAllListeners('will-quit');
-          
-          // 清除所有全局快捷键
           globalShortcut.unregisterAll();
-          
-          // 关闭所有截图窗口但不触发强制退出
           screenshotWindows.forEach(window => {
             if (!window.isDestroyed()) {
               window.removeAllListeners();
@@ -212,16 +172,12 @@ function setupAutoUpdater() {
             }
           });
           screenshotWindows.length = 0;
-          
-          // 延迟一下确保其他窗口已关闭
           setTimeout(() => {
             logger.log('正在执行quitAndInstall...');
             try {
-              // 使用isSilent=false确保显示安装程序界面，forceRunAfter=true强制安装后重启应用
               autoUpdater.quitAndInstall(false, true);
             } catch (error) {
               logger.error('执行quitAndInstall失败:', error);
-              // 如果quitAndInstall失败，尝试标准的应用退出
               app.quit();
             }
           }, 500);
@@ -229,14 +185,11 @@ function setupAutoUpdater() {
       });
     }
   });
-  
-  // 暴露公共方法
   return {
     shouldCheckForUpdates,
     checkForUpdates: () => {
       try {
         logger.log('手动触发检查更新');
-        // 手动检查总是强制检查，不考虑时间间隔
         autoUpdater.checkForUpdates();
       } catch (error) {
         logger.error('检查更新失败:', error);
@@ -251,8 +204,6 @@ function checkForUpdates() {
     logger.log('开发模式不检查更新');
     return;
   }
-  
-  // 无论是否有autoUpdaterFunctions，都尝试直接检查更新
   try {
     logger.log('手动触发检查更新');
     autoUpdater.checkForUpdates()
@@ -380,14 +331,12 @@ function randomStr(length: number = 16): string {
 }
 function addTempFile(filePath: string): void {
   tempFiles.add(filePath);
-  console.log(`Added temporary file to management list: ${filePath}`);
 }
 
 function removeTempFile(filePath: string): boolean {
   try {
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      console.log(`Deleted temporary file: ${filePath}`);
     }
     tempFiles.delete(filePath);
     return true;
@@ -398,8 +347,6 @@ function removeTempFile(filePath: string): boolean {
 }
 
 function cleanupAllTempFiles(): void {
-  console.log(`Starting cleanup of ${tempFiles.size} temporary files...`);
-  
   let successCount = 0;
   let failCount = 0;
   
@@ -424,7 +371,6 @@ function cleanupAllTempFiles(): void {
           
           if (fileAge > 60 * 60 * 1000) {
             fs.unlinkSync(fullPath);
-            console.log(`Deleted expired temporary file: ${fullPath}`);
           }
         } catch (error) {
           console.error(`Error processing temporary file: ${fullPath}`, error);
@@ -434,8 +380,6 @@ function cleanupAllTempFiles(): void {
   } catch (error) {
     console.error('Failed to scan temporary directory:', error);
   }
-  
-  console.log(`Temporary files cleanup completed: Success ${successCount}, Fail ${failCount}`);
   tempFiles.clear();
 }
 
@@ -502,7 +446,7 @@ function monitorMemoryUsage(): void {
     const rssMB = Math.round(memoryUsage.rss / 1024 / 1024);
     
     logger.log(`内存使用情况: 堆内存 ${heapUsedMB}/${heapTotalMB} MB, 常驻内存 ${rssMB} MB`);
-    if (heapUsedMB > 150) {  // 降低阈值从200MB到150MB
+    if (heapUsedMB > 150) {  
       logger.log('内存使用过高，触发垃圾回收');
       forceGarbageCollection();
     }
@@ -511,21 +455,15 @@ function monitorMemoryUsage(): void {
   }
 }
 
-// 定期清理临时文件和内存（每5分钟）
 function startPeriodicCleanup(): void {
   if (cleanupIntervalId) {
     clearInterval(cleanupIntervalId);
   }
-  
-  // 更频繁地执行清理，从10分钟改为5分钟
   cleanupIntervalId = setInterval(() => {
-    console.log('Executing periodic cleanup...');
     monitorMemoryUsage();
     cleanupAllTempFiles();
     forceGarbageCollection();
-  }, 5 * 60 * 1000); // 5 minutes - 更频繁的清理
-  
-  // 启动后立即进行一次清理
+  }, 5 * 60 * 1000); 
   setTimeout(() => {
     monitorMemoryUsage();
     cleanupAllTempFiles();
@@ -832,8 +770,6 @@ function createScreenshotWindows(): void {
 if (process.platform === 'win32') {
   
   app.disableHardwareAcceleration();
-  
-  
   app.commandLine.appendSwitch('disable-gpu');
   app.commandLine.appendSwitch('disable-gpu-compositing');
   app.commandLine.appendSwitch('disable-gpu-sandbox');
@@ -846,8 +782,6 @@ if (process.platform === 'win32') {
   
   app.commandLine.appendSwitch('max-old-space-size', '512'); 
   app.commandLine.appendSwitch('max-semi-space-size', '64');  
-  
-  
   app.commandLine.appendSwitch('disable-extensions');
   app.commandLine.appendSwitch('disable-plugins');
   app.commandLine.appendSwitch('disable-dev-shm-usage');
@@ -857,8 +791,6 @@ if (process.platform === 'win32') {
   
   app.commandLine.appendSwitch('memory-pressure-off');
   app.commandLine.appendSwitch('disable-background-mode');
-  
-  
   app.commandLine.appendSwitch('expose-gc');
   app.commandLine.appendSwitch('enable-precise-memory-info');
 }
@@ -894,23 +826,16 @@ if (!gotTheLock) {
           app_secret: ''
         };
         fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2), 'utf8');
-        logger.log('已创建默认的settings.json文件');
       } catch (error) {
-        logger.error('创建默认settings.json文件失败:', error);
       }
     }
     
     
     const apiConfig = loadApiConfigFromSettings();
-          logger.log('从settings.json加载的API配置:', apiConfig);
-    
-    
     if (apiConfig.appId && apiConfig.appSecret) {
       DEFAULT_API_CONFIG.appId = apiConfig.appId;
       DEFAULT_API_CONFIG.appSecret = apiConfig.appSecret;
-      logger.log('已更新默认API配置');
     } else {
-      logger.log('settings.json中的API配置无效或为空，不使用任何默认配置');
       
       DEFAULT_API_CONFIG.appId = '';
       DEFAULT_API_CONFIG.appSecret = '';
@@ -918,25 +843,14 @@ if (!gotTheLock) {
     
     
     store.set('apiConfig', DEFAULT_API_CONFIG);
-    
-    
-    logger.log('应用启动 - 中文日志测试');
-    logger.log('Application started - English log test');
-    
     killZombieProcesses();
     await createMainWindow();
     registerGlobalShortcuts();
     cleanupAllTempFiles();
     startPeriodicCleanup();
     
-    // 设置自动更新
     autoUpdaterFunctions = setupAutoUpdater();
     
-    // 取消启动时自动检查更新
-    // setTimeout(() => {
-    //   autoUpdaterFunctions.checkForUpdates();
-    // }, 10000);
-
     app.on('activate', async () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         await createMainWindow();
@@ -947,9 +861,7 @@ if (!gotTheLock) {
 
 
 app.on('window-all-closed', () => {
-  // 如果正在更新安装，不进行额外的退出处理
   if (isUpdating) {
-    logger.log('检测到正在进行更新安装，跳过window-all-closed事件处理');
     return;
   }
   
@@ -960,9 +872,7 @@ app.on('window-all-closed', () => {
 
 
 app.on('before-quit', () => {
-  // 如果正在更新，不执行其他操作
   if (isUpdating) {
-    logger.log('检测到正在进行更新安装，跳过before-quit事件处理');
     return;
   }
   
@@ -991,9 +901,7 @@ app.on('before-quit', () => {
 
 
 app.on('will-quit', (event) => {
-  // 如果正在更新，不执行其他操作
   if (isUpdating) {
-    logger.log('检测到正在进行更新安装，跳过will-quit事件处理');
     return;
   }
 
@@ -1001,13 +909,10 @@ app.on('will-quit', (event) => {
     cleanupAllTempFiles();
   }
   
-
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.removeAllListeners();
     mainWindow = null;
   }
-  
-  
   setTimeout(() => {
     if (process.platform === 'win32') {
       terminateAllProcesses();
@@ -1186,23 +1091,16 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
 
     selectedSource = sources.find(s => s.display_id === targetDisplay!.id.toString()) || null;
     if (selectedSource) {
-      console.log(`✅ Found exact display_id match: "${selectedSource.name}" for display ID ${targetDisplay.id}`);
     } else {
-      console.log(`⚠️ No exact display_id match found for display ID ${targetDisplay.id}`);
-      
-      
       if (!targetDisplay.id.toString().includes(screen.getPrimaryDisplay().id.toString())) {
-        
         const nonPrimarySources = sources.filter(s => s.display_id !== screen.getPrimaryDisplay().id.toString());
         if (nonPrimarySources.length > 0) {
           selectedSource = nonPrimarySources[0];
-          console.log(`✅ Using non-primary source for secondary display: "${selectedSource.name}"`);
         }
       }
 
       if (!selectedSource && displayIndex < sources.length) {
         selectedSource = sources[displayIndex];
-        console.log(`✅ Using index-based match for display ${displayIndex}: "${selectedSource.name}"`);
       }
 
       if (!selectedSource) {
@@ -1212,15 +1110,13 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
         let bestMatch = sources[0];
         let bestScore = 0;
         
-        console.log(`🔍 Looking for source matching ${expectedWidth}x${expectedHeight}...`);
         
         for (const source of sources) {
           const size = source.thumbnail.getSize();
           const widthDiff = Math.abs(size.width - expectedWidth);
           const heightDiff = Math.abs(size.height - expectedHeight);
           const score = 1 / (1 + widthDiff + heightDiff);  
-          
-          console.log(`  Source "${source.name}": ${size.width}x${size.height}, score=${score.toFixed(3)}`);
+        
           
           if (score > bestScore) {
             bestScore = score;
@@ -1307,7 +1203,6 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
     if (resultSize.width === 0 || resultSize.height === 0) {
       throw new Error('Cropped image is empty');
     }
-
     
     const timestamp = Date.now();
     const filename = `screenshot-${timestamp}.png`;
@@ -1317,8 +1212,6 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
       const buffer = croppedImage.toPNG();
       fs.writeFileSync(tempPath, buffer);
       addTempFile(tempPath);
-      
-      // 主动释放图像资源
       if (selectedSource && selectedSource.thumbnail) {
         (selectedSource as any).thumbnail = null;
       }
@@ -1355,6 +1248,15 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
 }
 
 
+
+
+
+
+
+
+
+
+
 function closeScreenshotWindow(): void {
   screenshotWindows.forEach((window, index) => {
     if (!window.isDestroyed()) {
@@ -1374,13 +1276,10 @@ function closeScreenshotWindow(): void {
     mainWindow.focus();
   }
 }
-
-// 简化截图
 ipcMain.handle('take-simple-screenshot', async (event, area: { x: number; y: number; width: number; height: number }) => {
   console.log('IPC: take-simple-screenshot called with area:', area);
   try {
     const tempPath = await takeSimpleScreenshot(area);
-    console.log('IPC: Simple screenshot completed, file saved to:', tempPath);
     return tempPath;
   } catch (error) {
     console.error('IPC: take-simple-screenshot failed:', error);
@@ -1388,7 +1287,7 @@ ipcMain.handle('take-simple-screenshot', async (event, area: { x: number; y: num
   }
 });
 
-// 剪贴板操作
+
 ipcMain.handle('copy-to-clipboard', (event, text: string) => {
   clipboard.writeText(text);
 });
@@ -1405,8 +1304,6 @@ ipcMain.handle('save-settings', (event, settings: Partial<AppSettings>) => {
     registerGlobalShortcuts();
   }
 });
-
-// 公式识别
 ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: ApiConfig): Promise<SimpletexResponse> => {
   const MAX_RETRIES = 2;
   let retryCount = 0;
@@ -1426,7 +1323,6 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
       if (!hasValidConfig) {
         const settingsConfig = loadApiConfigFromSettings();
         if (settingsConfig.appId && settingsConfig.appSecret) {
-          // 同样检查是否是有效的非空字符串
           if (settingsConfig.appId.trim() && settingsConfig.appSecret.trim()) {
             logger.log('使用settings.json中的API配置');
             apiConfig = {
@@ -1457,8 +1353,6 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
           message: '图片文件不存在'
         };
       }
-      
-      // 使用try-finally确保释放imageBuffer
       try {
         imageBuffer = fs.readFileSync(imagePath);
         if (!imageBuffer || imageBuffer.length === 0) {
@@ -1500,14 +1394,11 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
           timeout: 30000
         });
         
-        // 请求完成后释放formData相关资源
         formData.getHeaders = null as any;
         
         return response.data;
       } finally {
-        // 确保处理完后清空imageBuffer
         imageBuffer = null;
-        // 主动触发垃圾回收
         if (global.gc) {
           global.gc();
         }
@@ -1545,7 +1436,6 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
       // 确保在任何情况下都释放资源
       imageBuffer = null;
       if (retryCount >= MAX_RETRIES) {
-        // 强制清理
         forceGarbageCollection();
       }
     }
@@ -1554,7 +1444,6 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
   try {
     return await tryRecognize();
   } finally {
-    // 公式识别完成后，强制清理一次临时资源和内存
     imageBuffer = null;
     forceGarbageCollection();
   }
@@ -1600,9 +1489,7 @@ ipcMain.handle('close-window', () => {
 });
 
 ipcMain.handle('close-screenshot-window', () => {
-  logger.log('收到关闭截图窗口请求');
   closeScreenshotWindow();
-  logger.log('截图窗口已关闭，主窗口已显示');
   return true;
 });
 
@@ -1692,10 +1579,8 @@ ipcMain.handle('save-api-to-settings-file', async (event, apiConfig: ApiConfig) 
       app_secret: apiConfig.appSecret
     };
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
-           logger.log('API config saved to settings.json file');
     return true;
   } catch (error) {
-    logger.error('保存API配置到settings.json文件失败:', error);
     return false;
   }
 });
@@ -1703,16 +1588,13 @@ ipcMain.handle('save-api-to-settings-file', async (event, apiConfig: ApiConfig) 
 // 清除API配置
 ipcMain.handle('clear-api-config', async (event) => {
   try {
-    logger.log('开始清除API配置...');
     DEFAULT_API_CONFIG.appId = '';
     DEFAULT_API_CONFIG.appSecret = '';
-    logger.log('1. 内存中的API配置已清除');
     store.set('apiConfig', {
       appId: '',
       appSecret: '',
       endpoint: DEFAULT_API_CONFIG.endpoint
     });
-    logger.log('2. electron-store中的API配置已清除');
 
     const settingsPath = path.join(app.getAppPath(), 'settings.json');
     if (fs.existsSync(settingsPath)) {
@@ -1721,24 +1603,16 @@ ipcMain.handle('clear-api-config', async (event) => {
         app_secret: ''
       };
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
-      logger.log('3. settings.json文件中的API配置已清除');
-    } else {
-      logger.log('settings.json文件不存在，无需清除');
     }
     if (mainWindow && !mainWindow.isDestroyed()) {
       try {
         await mainWindow.webContents.session.clearStorageData({
           storages: ['localstorage', 'cookies', 'indexdb', 'websql', 'serviceworkers', 'cachestorage']
         });
-        logger.log('4. 浏览器存储数据已清除');
         await mainWindow.webContents.session.clearCache();
-        logger.log('5. 浏览器HTTP缓存已清除');
         await mainWindow.webContents.session.clearHostResolverCache();
-        logger.log('6. 主机解析缓存已清除');
         await mainWindow.webContents.session.clearAuthCache();
-        logger.log('7. 授权缓存已清除');
         mainWindow.webContents.reloadIgnoringCache();
-        logger.log('8. 窗口内容已强制刷新');
       } catch (e) {
         logger.error('清除缓存失败:', e);
       }
@@ -1752,9 +1626,7 @@ ipcMain.handle('clear-api-config', async (event) => {
   }
 });
 
-// 在Windows平台上强制终止所有相关进程
 function terminateAllProcesses(): void {
-  // 如果正在更新安装，跳过强制终止进程
   if (isUpdating) {
     logger.log('检测到正在进行更新安装，跳过强制终止进程');
     return;
@@ -1816,9 +1688,7 @@ function killZombieProcesses(): void {
   }
 }
 
-// 强制退出应用
 function forceQuitApp(): void {
-  // 检查是否正在安装更新
   if (isUpdating) {
     logger.log('检测到正在进行更新安装，跳过强制退出流程');
     return;
@@ -1952,11 +1822,7 @@ ipcMain.handle('save-docx-file', async (event, latexContent: string, filename: s
 ipcMain.handle('export-formula-image', async (event, latexContent: string, format: 'svg' | 'png' | 'jpg') => {
   try {
     logger.log(`开始导出数学公式为${format.toUpperCase()}格式`);
-    
-    // 清理前一次可能的遗留资源
     forceGarbageCollection();
-    
-    // 使用更保守的MathJax配置
     mathjaxExt.config({
       MathJax: {
         SVG: {
@@ -1972,7 +1838,6 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
     await mathjaxExt.start();
     let svgContent: string;
     try {
-      // 限制过长的LaTeX内容
       const maxLength = 5000;
       if (latexContent.length > maxLength) {
         latexContent = latexContent.substring(0, maxLength) + '...';
@@ -1990,13 +1855,9 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
       }
       svgContent = mjResult.svg;
       logger.log('MathJax SVG生成成功，长度:', svgContent.length);
-      
-      // 释放MathJax资源
       if (mathjaxExt.typesetClear) {
         mathjaxExt.typesetClear();
       }
-      
-      // 检查SVG标签匹配性
       const svgTagCount = (svgContent.match(/<svg/g) || []).length;
       const svgCloseTagCount = (svgContent.match(/<\/svg>/g) || []).length;
       if (svgTagCount !== svgCloseTagCount) {
@@ -2031,7 +1892,6 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
       
       logger.log('使用备用SVG，长度:', svgContent.length);
     } finally {
-      // 无论成功失败，都清理MathJax资源
       if (mathjaxExt.typesetClear) {
         mathjaxExt.typesetClear();
       }
@@ -2056,7 +1916,6 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
       logger.log(`SVG文件已保存到: ${result.filePath}`);
       return { success: true, filePath: result.filePath, message: 'SVG文件导出成功' };
     } else {
-      // 使用Sharp将SVG转换为PNG或JPG，添加资源管理
       try {
         logger.log(`准备转换为${format.toUpperCase()}格式`);
         
@@ -2069,10 +1928,9 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
         logger.log(`SVG临时文件已保存: ${tempSvgPath}`);
         
         try {
-          // 限制sharp处理的内存使用
           let sharpInstance = sharp(tempSvgPath, {
             density: 300,
-            limitInputPixels: 30000 * 30000 // 限制输入像素数量
+            limitInputPixels: 30000 * 30000 
           });
           
           const metadata = await sharpInstance.metadata();
@@ -2081,8 +1939,8 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
           if (format === 'png') {
             await sharpInstance
               .png({ 
-                quality: 90, // 降低质量以减少内存使用
-                compressionLevel: 6, // 增加压缩级别
+                quality: 90, 
+                compressionLevel: 6, 
                 adaptiveFiltering: true
               })
               .toFile(result.filePath);
@@ -2090,16 +1948,14 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
             await sharpInstance
               .flatten({ background: { r: 255, g: 255, b: 255 } })
               .jpeg({ 
-                quality: 85, // 降低质量以减少内存使用
+                quality: 85, 
                 progressive: true
               })
               .toFile(result.filePath);
           }
-          
-          // 手动释放sharp实例
+
           sharpInstance = null as any;
-          
-          // 删除临时SVG文件
+
           if (fs.existsSync(tempSvgPath)) {
             fs.unlinkSync(tempSvgPath);
           }
@@ -2113,7 +1969,6 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
             fs.unlinkSync(tempSvgPath);
           }
           
-          // 备用方案使用更简单的SVG
           logger.log('尝试使用简化的SVG重新转换...');
           const simplifiedSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200" style="background-color: white;">
@@ -2135,7 +1990,6 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
               await fallbackInstance.jpeg({ quality: 85 }).toFile(result.filePath);
             }
             
-            // 释放资源
             fallbackInstance = null as any;
             
             if (fs.existsSync(simplifiedPath)) {
@@ -2150,12 +2004,10 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
               fs.unlinkSync(simplifiedPath);
             }
             
-            // 强制清理内存
             forceGarbageCollection();
             throw fallbackError;
           }
         } finally {
-          // 确保临时文件被清理
           if (fs.existsSync(tempSvgPath)) {
             fs.unlinkSync(tempSvgPath);
           }
@@ -2163,7 +2015,6 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
         
       } catch (error) {
         logger.error(`最终转换失败:`, error);
-        // 强制清理内存
         forceGarbageCollection();
         throw error;
       }
@@ -2176,7 +2027,6 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
       message: `导出失败: ${error instanceof Error ? error.message : '未知错误'}` 
     };
   } finally {
-    // 清理资源
     if (mathjaxExt.typesetClear) {
       mathjaxExt.typesetClear();
     }
@@ -2184,7 +2034,6 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
   }
 });
 
-// 修复MathJax typesetClear类型错误，添加接口定义
 interface ExtendedMathJax {
   config: Function;
   start: Function;
@@ -2192,18 +2041,14 @@ interface ExtendedMathJax {
   typesetClear?: Function; // 我们自定义的方法
 }
 
-// 将mathjax转换为我们扩展的接口类型
 const mathjaxExt: ExtendedMathJax = mathjax as any;
 
-// 添加一个新的优化函数用于清理和重置MathJax
 if (typeof mathjaxExt.typesetClear !== 'function') {
   mathjaxExt.typesetClear = function() {
     try {
-      // 尝试重置MathJax状态
       if (mathjaxExt.start) {
         mathjaxExt.start();
       }
-      // 触发垃圾回收
       if (global.gc) {
         global.gc();
       }
