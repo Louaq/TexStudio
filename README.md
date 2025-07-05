@@ -6,9 +6,6 @@
 ![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-04_09-16-22.png)
 ![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-04_09-16-30.png)
 
-
-
-
 一个基于 Electron + React + TypeScript 的现代化 LaTeX 公式识别桌面应用程序。
 
 
