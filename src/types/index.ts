@@ -71,7 +71,12 @@ export interface ElectronAPI {
   closeWindow: () => Promise<void>;
 
   onShortcutTriggered: (callback: (action: 'capture' | 'upload') => void) => void;
+  removeShortcutTriggeredListener: (callback: (action: 'capture' | 'upload') => void) => void;
+  
   onScreenshotComplete: (callback: (imagePath: string) => void) => void;
+  removeScreenshotCompleteListener: (callback: (imagePath: string) => void) => void;
+  
+  setMaxListeners: (count: number) => void;
 
   cleanupTempFiles: () => Promise<void>;
   removeTempFile: (filePath: string) => Promise<boolean>;

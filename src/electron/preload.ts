@@ -32,8 +32,21 @@ const electronAPI: ElectronAPI = {
   onShortcutTriggered: (callback: (action: 'capture' | 'upload') => void) => {
     ipcRenderer.on('shortcut-triggered', (event, action) => callback(action));
   },
+  // 添加移除快捷键事件监听器的方法
+  removeShortcutTriggeredListener: (callback: (action: 'capture' | 'upload') => void) => {
+    // 在实际实现中，无法移除使用匿名函数创建的监听器
+    // 这里只移除所有'shortcut-triggered'的监听器，可能会有副作用
+    // 但在当前使用场景下是安全的，因为在设置新监听器前会清理
+    ipcRenderer.removeAllListeners('shortcut-triggered');
+  },
+
   onScreenshotComplete: (callback: (imagePath: string) => void) => {
     ipcRenderer.on('screenshot-complete', (event, imagePath) => callback(imagePath));
+  },
+  // 添加移除截图完成事件监听器的方法
+  removeScreenshotCompleteListener: (callback: (imagePath: string) => void) => {
+    // 同样移除所有监听器
+    ipcRenderer.removeAllListeners('screenshot-complete');
   },
   
   // 自动更新相关
@@ -70,7 +83,12 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('export-formula-image', latexContent, format),
 
   setAlwaysOnTop: (alwaysOnTop: boolean) => ipcRenderer.invoke('set-always-on-top', alwaysOnTop),
-  getAlwaysOnTop: () => ipcRenderer.invoke('get-always-on-top')
+  getAlwaysOnTop: () => ipcRenderer.invoke('get-always-on-top'),
+  
+  // 添加设置最大监听器数量的方法
+  setMaxListeners: (count: number) => {
+    ipcRenderer.setMaxListeners(count);
+  }
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

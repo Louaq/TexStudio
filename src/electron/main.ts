@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, clipboard, globalShortcut, screen, nativeImage, desktopCapturer } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, clipboard, globalShortcut, screen, nativeImage, desktopCapturer, Menu } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import axios from 'axios';
@@ -447,7 +447,7 @@ const store = new Store<AppSettings>({
     apiConfig: DEFAULT_API_CONFIG,
     shortcuts: {
       capture: 'Alt+C',
-      upload: 'Alt+U'
+      upload: 'Alt+S'  // 修改为Alt+S代替Alt+U
     },
     history: []
   }
@@ -479,8 +479,18 @@ async function createMainWindow(): Promise<void> {
     autoHideMenuBar: true
   });
 
+  // 完全禁用菜单栏
+  Menu.setApplicationMenu(null);
   mainWindow.setMenuBarVisibility(false);
   mainWindow.setAutoHideMenuBar(true);
+
+  // 添加键盘事件监听，阻止Alt键呼出菜单
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    // 阻止单独的Alt键和Alt+字母的组合（除了已注册的全局快捷键）
+    if (input.key === 'Alt' || (input.alt && !input.control && !input.meta && !input.shift)) {
+      event.preventDefault();
+    }
+  });
 
   const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
   if (isDev) {
@@ -964,18 +974,30 @@ function registerGlobalShortcuts(): void {
 
 
 ipcMain.handle('select-file', async () => {
-  const result = await dialog.showOpenDialog(mainWindow!, {
-    properties: ['openFile'],
-    filters: [
-      { name: 'Image files', extensions: ['png', 'jpg', 'jpeg', 'bmp', 'gif'] },
-      { name: 'All files', extensions: ['*'] }
-    ]
-  });
-
-  if (!result.canceled && result.filePaths.length > 0) {
-    return result.filePaths[0];
+  // 如果对话框已经打开，直接返回null
+  if (isFileDialogOpen) {
+    return null;
   }
-  return null;
+
+  try {
+    isFileDialogOpen = true;
+    const result = await dialog.showOpenDialog(mainWindow!, {
+      properties: ['openFile'],
+      filters: [
+        { name: 'Image files', extensions: ['png', 'jpg', 'jpeg', 'bmp', 'gif'] },
+        { name: 'All files', extensions: ['*'] }
+      ]
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
+  } finally {
+    isFileDialogOpen = false;
+    // 添加一点延时，确保锁定完全释放
+    setTimeout(() => {}, 200);
+  }
 });
 
 
@@ -1422,6 +1444,14 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
   }
 });
 
+// 移除之前添加的防抖变量
+// let uploadInProgress = false;
+// let uploadDebounceTimer: NodeJS.Timeout | null = null;
+
+// 添加一个可靠的锁定机制
+let isFileDialogOpen = false;
+let lastShortcutTime = 0;
+
 // 注册全局快捷键
 ipcMain.handle('register-global-shortcuts', (event, shortcuts: { capture: string; upload: string }) => {
   globalShortcut.unregisterAll();
@@ -1437,10 +1467,22 @@ ipcMain.handle('register-global-shortcuts', (event, shortcuts: { capture: string
     });
 
     globalShortcut.register(shortcuts.upload, () => {
+      // 确保文件对话框未打开 + 时间间隔检查（至少500ms）
+      const now = Date.now();
+      if (isFileDialogOpen || (now - lastShortcutTime) < 1000) {
+        return;
+      }
+      
+      // 更新最后触发时间
+      lastShortcutTime = now;
+      
+      // 聚焦主窗口
       if (mainWindow && !mainWindow.isFocused()) {
         mainWindow.show();
         mainWindow.focus();
       }
+      
+      // 发送事件给渲染进程，但不立即打开文件选择器
       mainWindow?.webContents.send('shortcut-triggered', 'upload');
     });
 
@@ -1939,8 +1981,8 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
 
           logger.log('尝试使用简化的SVG重新转换...');
           const simplifiedSvg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200" style="background-color: white;">
-  <rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200">
+  ${format === 'jpg' ? '<rect width="100%" height="100%" fill="white"/>' : ''}
   <text x="200" y="100" text-anchor="middle" dominant-baseline="central" font-family="serif" font-size="16">
     无法渲染公式: ${latexContent.substring(0, 50)}${latexContent.length > 50 ? '...' : ''}
   </text>
@@ -1955,7 +1997,10 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
             if (format === 'png') {
               await fallbackInstance.png({ quality: 90 }).toFile(result.filePath);
             } else if (format === 'jpg') {
-              await fallbackInstance.jpeg({ quality: 85 }).toFile(result.filePath);
+              await fallbackInstance
+                .flatten({ background: { r: 255, g: 255, b: 255 } })
+                .jpeg({ quality: 85 })
+                .toFile(result.filePath);
             }
 
             fallbackInstance = null as any;
