@@ -591,6 +591,23 @@ function createSimpleScreenshotWindow(): void {
       font-family: Arial, sans-serif;
       z-index: 9999;
     }
+    .coordinates {
+      position: fixed;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 5px 6px 5px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 10000;
+      white-space: nowrap;
+      width: fit-content;
+      display: inline-block;
+      box-sizing: border-box;
+      margin: 0;
+      line-height: 1;
+    }
   </style>
 </head>
 <body>
@@ -607,6 +624,39 @@ function createSimpleScreenshotWindow(): void {
     let isSelecting = false;
     let startX, startY;
     let selectionBox = null;
+    let coordinatesBox = null;
+    
+    // 创建坐标信息显示元素
+    function createCoordinatesBox() {
+      coordinatesBox = document.createElement('div');
+      coordinatesBox.className = 'coordinates';
+      document.body.appendChild(coordinatesBox);
+      return coordinatesBox;
+    }
+    
+    // 更新坐标信息
+    function updateCoordinates(left, top, width, height) {
+      if (!coordinatesBox) {
+        coordinatesBox = createCoordinatesBox();
+      }
+      
+      // 计算绝对坐标
+      const absX = left + displayBounds.x;
+      const absY = top + displayBounds.y;
+      
+      coordinatesBox.innerHTML = "X:" + absX + " Y:" + absY + " | W:" + width + " H:" + height;
+      
+      // 信息框放在截图框上方
+      const infoHeight = 22; // 估计信息框高度
+      coordinatesBox.style.top = (top - infoHeight) + 'px';
+      coordinatesBox.style.left = left + 'px';
+      coordinatesBox.style.right = 'auto';
+      
+      // 如果太靠近顶部，改为放在截图框内部顶部
+      if (top < infoHeight + 5) {
+        coordinatesBox.style.top = top + 'px';
+      }
+    }
     
     document.addEventListener('mousedown', (e) => {
       isSelecting = true;
@@ -614,6 +664,7 @@ function createSimpleScreenshotWindow(): void {
       startY = e.clientY;
       
       if (selectionBox) selectionBox.remove();
+      if (coordinatesBox) coordinatesBox.remove();
       
       selectionBox = document.createElement('div');
       selectionBox.className = 'selection-box';
@@ -636,6 +687,9 @@ function createSimpleScreenshotWindow(): void {
       selectionBox.style.top = top + 'px';
       selectionBox.style.width = width + 'px';
       selectionBox.style.height = height + 'px';
+      
+      // 更新坐标信息显示
+      updateCoordinates(left, top, width, height);
     });
     
     document.addEventListener('mouseup', async (e) => {
@@ -646,10 +700,14 @@ function createSimpleScreenshotWindow(): void {
       const width = Math.abs(e.clientX - startX);
       const height = Math.abs(e.clientY - startY);
       
-      // 清理选择框
+      // 清理选择框和坐标信息框
       if (selectionBox) {
         selectionBox.remove();
         selectionBox = null;
+      }
+      if (coordinatesBox) {
+        coordinatesBox.remove();
+        coordinatesBox = null;
       }
       isSelecting = false;
       
