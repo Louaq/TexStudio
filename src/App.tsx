@@ -234,8 +234,88 @@ function App() {
       }
     };
 
-            loadSettings();
-      }, []);
+    loadSettings();
+
+    // 创建更新事件处理函数
+    const handleCheckingForUpdate = () => {
+      console.log('正在检查更新...');
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '🔄 正在检查更新...'
+      }));
+    };
+
+    const handleUpdateAvailable = (info: any) => {
+      console.log('发现新版本:', info);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `✅ 发现新版本: ${info.version}`
+      }));
+    };
+
+    const handleUpdateNotAvailable = (info: any) => {
+      console.log('当前已是最新版本:', info);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '✅ 当前已是最新版本'
+      }));
+      // 3秒后恢复状态
+      setTimeout(() => {
+        setAppState(prev => ({ ...prev, statusMessage: '⚡ 准备就绪' }));
+      }, 3000);
+    };
+
+    const handleUpdateError = (error: string) => {
+      console.error('更新检查失败:', error);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `❌ 检查更新失败: ${error}`
+      }));
+      // 5秒后恢复状态
+      setTimeout(() => {
+        setAppState(prev => ({ ...prev, statusMessage: '⚡ 准备就绪' }));
+      }, 5000);
+    };
+
+    const handleDownloadProgress = (progressObj: any) => {
+      const percent = progressObj.percent.toFixed(2);
+      console.log(`下载进度: ${percent}%`);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `⬇️ 正在下载更新: ${percent}%`
+      }));
+    };
+
+    const handleUpdateDownloaded = (info: any) => {
+      console.log('更新下载完成:', info);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '✅ 更新下载完成，将在重启后安装'
+      }));
+      // 5秒后恢复状态
+      setTimeout(() => {
+        setAppState(prev => ({ ...prev, statusMessage: '⚡ 准备就绪' }));
+      }, 5000);
+    };
+
+    // 注册自动更新事件处理程序
+    if (window.electronAPI) {
+      window.electronAPI.onCheckingForUpdate(handleCheckingForUpdate);
+      window.electronAPI.onUpdateAvailable(handleUpdateAvailable);
+      window.electronAPI.onUpdateNotAvailable(handleUpdateNotAvailable);
+      window.electronAPI.onUpdateError(handleUpdateError);
+      window.electronAPI.onDownloadProgress(handleDownloadProgress);
+      window.electronAPI.onUpdateDownloaded(handleUpdateDownloaded);
+    }
+
+    // 清理函数 - 移除事件监听器
+    return () => {
+      if (window.electronAPI) {
+        // 移除所有相关的事件监听器
+        window.electronAPI.removeUpdateListeners();
+      }
+    };
+  }, []);
 
       useEffect(() => {
         const loadAlwaysOnTopState = async () => {

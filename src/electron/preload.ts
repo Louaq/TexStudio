@@ -69,6 +69,15 @@ const electronAPI: ElectronAPI = {
   onUpdateDownloaded: (callback: (info: any) => void) => {
     ipcRenderer.on('update-downloaded', (event, info) => callback(info));
   },
+  // 添加移除自动更新事件监听器的方法
+  removeUpdateListeners: () => {
+    ipcRenderer.removeAllListeners('checking-for-update');
+    ipcRenderer.removeAllListeners('update-available');
+    ipcRenderer.removeAllListeners('update-not-available');
+    ipcRenderer.removeAllListeners('update-error');
+    ipcRenderer.removeAllListeners('download-progress');
+    ipcRenderer.removeAllListeners('update-downloaded');
+  },
 
   cleanupTempFiles: () => ipcRenderer.invoke('cleanup-temp-files'),
   removeTempFile: (filePath: string) => ipcRenderer.invoke('remove-temp-file', filePath),

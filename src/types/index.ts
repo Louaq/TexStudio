@@ -103,6 +103,7 @@ export interface ElectronAPI {
   onUpdateError: (callback: (error: string) => void) => void;
   onDownloadProgress: (callback: (progressObj: ProgressInfo) => void) => void;
   onUpdateDownloaded: (callback: (info: UpdateInfo) => void) => void;
+  removeUpdateListeners: () => void;
 }
 
 // 自动更新相关类型
