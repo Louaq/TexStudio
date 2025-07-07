@@ -87,20 +87,8 @@ function setupAutoUpdater() {
     logger.log('发现新版本:', info);
     if (mainWindow && !mainWindow.isDestroyed() && !hasShownUpdateNotice) {
       hasShownUpdateNotice = true;
+      // 仅发送事件通知渲染进程，由渲染进程显示自己的对话框
       mainWindow.webContents.send('update-available', info);
-      dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: '软件更新',
-        message: `发现新版本 ${info.version}，是否下载更新？`,
-        buttons: ['下载', '取消']
-      }).then(result => {
-        if (result.response === 0) {
-          logger.log('用户选择下载更新');
-          autoUpdater.downloadUpdate();
-        } else {
-          logger.log('用户取消下载更新');
-        }
-      });
     }
   });
 
@@ -124,37 +112,8 @@ function setupAutoUpdater() {
   autoUpdater.on('update-downloaded', (info) => {
     logger.log('更新下载完成，将在退出时安装');
     if (mainWindow && !mainWindow.isDestroyed()) {
+      // 仅发送事件通知渲染进程，由渲染进程显示自己的对话框
       mainWindow.webContents.send('update-downloaded', info);
-      dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: '安装更新',
-        message: '更新已下载，应用将退出并安装',
-        buttons: ['现在重启', '稍后再说']
-      }).then(result => {
-        if (result.response === 0) {
-          logger.log('用户选择立即重启安装更新');
-          isUpdating = true;
-          app.removeAllListeners('before-quit');
-          app.removeAllListeners('will-quit');
-          globalShortcut.unregisterAll();
-          screenshotWindows.forEach(window => {
-            if (!window.isDestroyed()) {
-              window.removeAllListeners();
-              window.close();
-            }
-          });
-          screenshotWindows.length = 0;
-          setTimeout(() => {
-            logger.log('正在执行quitAndInstall...');
-            try {
-              autoUpdater.quitAndInstall(false, true);
-            } catch (error) {
-              logger.error('执行quitAndInstall失败:', error);
-              app.quit();
-            }
-          }, 500);
-        }
-      });
     }
   });
   return {
@@ -317,7 +276,7 @@ function removeTempFile(filePath: string): boolean {
   }
 }
 
-function cleanupAllTempFiles(): void {
+function cleanupAllTempFiles(): { success: boolean; count: number } {
   let successCount = 0;
   let failCount = 0;
 
@@ -342,16 +301,23 @@ function cleanupAllTempFiles(): void {
 
           if (fileAge > 60 * 60 * 1000) {
             fs.unlinkSync(fullPath);
+            successCount++;
           }
         } catch (error) {
-          // 错误处理已静默
+          failCount++;
         }
       }
     }
   } catch (error) {
-    // 错误处理已静默
+    failCount++;
   }
+  
   tempFiles.clear();
+  
+  return {
+    success: failCount === 0,
+    count: successCount
+  };
 }
 
 // 在文件顶部添加全局类型声明
@@ -931,7 +897,8 @@ app.on('will-quit', (event) => {
   }
 
   if (tempFiles.size > 0) {
-    cleanupAllTempFiles();
+    const result = cleanupAllTempFiles();
+    logger.log(`退出时清理了 ${result.count} 个临时文件`);
   }
 
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -1517,7 +1484,7 @@ ipcMain.handle('screenshot-complete', (event, imagePath: string) => {
 });
 
 ipcMain.handle('cleanup-temp-files', () => {
-  cleanupAllTempFiles();
+  return cleanupAllTempFiles();
 });
 
 ipcMain.handle('remove-temp-file', (event, filePath: string) => {
@@ -1799,6 +1766,63 @@ ipcMain.handle('check-for-updates', async (event) => {
   } catch (error) {
     logger.error('手动检查更新失败:', error);
     return { success: false, message: '检查更新失败' };
+  }
+});
+
+// 手动下载更新
+ipcMain.handle('download-update', async (event) => {
+  try {
+    logger.log('手动触发下载更新');
+    if (!app.isPackaged) {
+      logger.log('开发模式下不支持下载更新');
+      return { success: false, message: '开发模式下不支持下载更新' };
+    }
+
+    try {
+      autoUpdater.downloadUpdate();
+      return { success: true, message: '已开始下载更新' };
+    } catch (err) {
+      logger.error('下载更新失败:', err);
+      return { success: false, message: '下载更新失败' };
+    }
+  } catch (error) {
+    logger.error('手动下载更新失败:', error);
+    return { success: false, message: '下载更新处理失败' };
+  }
+});
+
+// 重启并安装更新
+ipcMain.handle('quit-and-install', async (event) => {
+  try {
+    logger.log('手动触发重启安装');
+    if (!app.isPackaged) {
+      logger.log('开发模式下不支持安装更新');
+      return;
+    }
+
+    logger.log('用户选择立即重启安装更新');
+    isUpdating = true;
+    app.removeAllListeners('before-quit');
+    app.removeAllListeners('will-quit');
+    globalShortcut.unregisterAll();
+    screenshotWindows.forEach(window => {
+      if (!window.isDestroyed()) {
+        window.removeAllListeners();
+        window.close();
+      }
+    });
+    screenshotWindows.length = 0;
+    setTimeout(() => {
+      logger.log('正在执行quitAndInstall...');
+      try {
+        autoUpdater.quitAndInstall(false, true);
+      } catch (error) {
+        logger.error('执行quitAndInstall失败:', error);
+        app.quit();
+      }
+    }, 500);
+  } catch (error) {
+    logger.error('重启安装更新失败:', error);
   }
 });
 

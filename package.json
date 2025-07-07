@@ -1,6 +1,6 @@
 {
   "name": "latex-ocr-electron",
-  "version": "3.10.5",
+  "version": "3.10.6",
   "description": "LaTeX公式识别工具重构版",
   "author": "SimpleTex OCR",
   "main": "dist/electron/electron/main.js",

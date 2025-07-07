@@ -14,6 +14,7 @@ import ApiSettingsDialog from './components/ApiSettingsDialog';
 import ShortcutSettingsDialog from './components/ShortcutSettingsDialog';
 import HistoryDialog from './components/HistoryDialog';
 import AboutDialog from './components/AboutDialog';
+import UpdateDialog from './components/UpdateDialog';
 import * as path from 'path';
 
 const AppContainer = styled.div`
@@ -161,6 +162,19 @@ function App() {
     history: []
   });
 
+  // 添加更新状态管理
+  const [updateState, setUpdateState] = useState<{
+    showDialog: boolean;
+    status: 'checking' | 'no-update' | 'available' | 'downloading' | 'downloaded';
+    progress: number;
+    version: string;
+  }>({
+    showDialog: false,
+    status: 'checking',
+    progress: 0,
+    version: ''
+  });
+
   // 移除之前添加的防抖状态
   // const [isUploadInProgress, setIsUploadInProgress] = useState(false);
   // 使用useRef存储事件处理函数，避免创建多个实例
@@ -239,25 +253,38 @@ function App() {
     // 创建更新事件处理函数
     const handleCheckingForUpdate = () => {
       console.log('正在检查更新...');
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '🔄 正在检查更新...'
+      setUpdateState(prev => ({
+        ...prev,
+        showDialog: true,
+        status: 'checking'
       }));
     };
 
     const handleUpdateAvailable = (info: any) => {
       console.log('发现新版本:', info);
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: `✅ 发现新版本: ${info.version}`
+      setUpdateState(prev => ({
+        ...prev,
+        showDialog: true,
+        status: 'available',
+        version: info.version
       }));
     };
 
     const handleUpdateNotAvailable = (info: any) => {
       console.log('当前已是最新版本:', info);
+      setUpdateState(prev => ({
+        ...prev,
+        showDialog: true,
+        status: 'no-update'
+      }));
+    };
+
+    const handleUpdateError = (error: string) => {
+      console.error('更新检查失败:', error);
+      // 显示错误仍然放在状态栏
       setAppState(prev => ({ 
         ...prev, 
-        statusMessage: '✅ 当前已是最新版本'
+        statusMessage: `❌ 检查更新失败: ${error}`
       }));
       // 3秒后恢复状态
       setTimeout(() => {
@@ -265,37 +292,24 @@ function App() {
       }, 3000);
     };
 
-    const handleUpdateError = (error: string) => {
-      console.error('更新检查失败:', error);
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: `❌ 检查更新失败: ${error}`
-      }));
-      // 5秒后恢复状态
-      setTimeout(() => {
-        setAppState(prev => ({ ...prev, statusMessage: '⚡ 准备就绪' }));
-      }, 5000);
-    };
-
     const handleDownloadProgress = (progressObj: any) => {
       const percent = progressObj.percent.toFixed(2);
       console.log(`下载进度: ${percent}%`);
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: `⬇️ 正在下载更新: ${percent}%`
+      setUpdateState(prev => ({
+        ...prev,
+        showDialog: true,
+        status: 'downloading',
+        progress: parseFloat(percent)
       }));
     };
 
     const handleUpdateDownloaded = (info: any) => {
       console.log('更新下载完成:', info);
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '✅ 更新下载完成，将在重启后安装'
+      setUpdateState(prev => ({
+        ...prev,
+        showDialog: true,
+        status: 'downloaded'
       }));
-      // 5秒后恢复状态
-      setTimeout(() => {
-        setAppState(prev => ({ ...prev, statusMessage: '⚡ 准备就绪' }));
-      }, 5000);
     };
 
     // 注册自动更新事件处理程序
@@ -1278,25 +1292,16 @@ function App() {
     if (!window.electronAPI) {
       setAppState(prev => ({ 
         ...prev, 
-        statusMessage: '❌ 临时文件清理功能仅在 Electron 应用中可用'
+        statusMessage: '❌ 临时文件清理功能仅在桌面应用中可用'
       }));
       return;
     }
-
+    
     try {
-      const count = await window.electronAPI.getTempFilesCount();
-      if (count === 0) {
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: '✅ 没有需要清理的临时文件'
-        }));
-        return;
-      }
-
-      await window.electronAPI.cleanupTempFiles();
+      const result = await window.electronAPI.cleanupTempFiles();
       setAppState(prev => ({ 
         ...prev, 
-        statusMessage: `✅ 已清理 ${count} 个临时文件`
+        statusMessage: `✅ 已清理 ${result.count} 个临时文件`
       }));
       setTimeout(() => {
         setAppState(prev => ({ 
@@ -1310,6 +1315,12 @@ function App() {
         ...prev, 
         statusMessage: '❌ 清理临时文件失败'
       }));
+      setTimeout(() => {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '⚡ 准备就绪'
+        }));
+      }, 3000);
     }
   };
 
@@ -1324,16 +1335,17 @@ function App() {
     
     try {
       console.log('手动触发检查更新');
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '🔄 正在检查更新...'
+      // 打开更新对话框并显示检查中状态
+      setUpdateState(prev => ({
+        ...prev,
+        showDialog: true,
+        status: 'checking'
       }));
       
       const result = await window.electronAPI.checkForUpdates();
-      if (result.success) {
-        console.log('开始检查更新:', result.message);
-      } else {
+      if (!result.success) {
         console.error('检查更新失败:', result.message);
+        // 显示在状态栏
         setAppState(prev => ({ 
           ...prev, 
           statusMessage: `❌ ${result.message}`
@@ -1358,6 +1370,45 @@ function App() {
         }));
       }, 3000);
     }
+  };
+
+  // 处理下载更新
+  const handleDownloadUpdate = () => {
+    if (!window.electronAPI) return;
+    
+    try {
+      // 这个函数会发送IPC消息到主进程，让主进程开始下载更新
+      window.electronAPI.downloadUpdate();
+      
+      // 更新UI状态为"下载中"
+      setUpdateState(prev => ({
+        ...prev,
+        status: 'downloading',
+        progress: 0
+      }));
+    } catch (error) {
+      console.error('开始下载更新失败:', error);
+    }
+  };
+
+  // 处理重启并安装更新
+  const handleRestartAndInstall = () => {
+    if (!window.electronAPI) return;
+    
+    try {
+      // 这个函数会发送IPC消息到主进程，让主进程重启并安装更新
+      window.electronAPI.quitAndInstall();
+    } catch (error) {
+      console.error('重启安装更新失败:', error);
+    }
+  };
+
+  // 关闭更新对话框
+  const handleCloseUpdateDialog = () => {
+    setUpdateState(prev => ({
+      ...prev,
+      showDialog: false
+    }));
   };
 
   const handleExportFormula = async (format: 'svg' | 'png' | 'jpg') => {
@@ -1388,14 +1439,15 @@ function App() {
       if (result.success) {
         setAppState(prev => ({ 
           ...prev, 
-          statusMessage: `✅ ${result.message}`
+          statusMessage: `✅ ${result.message || `导出${format.toUpperCase()}成功`}`
         }));
       } else {
         setAppState(prev => ({ 
           ...prev, 
-          statusMessage: `❌ ${result.message}`
+          statusMessage: `❌ ${result.message || `导出${format.toUpperCase()}失败`}`
         }));
       }
+      
       setTimeout(() => {
         setAppState(prev => ({ 
           ...prev, 
@@ -1408,15 +1460,17 @@ function App() {
         ...prev, 
         statusMessage: `❌ 导出${format.toUpperCase()}失败`
       }));
+      setTimeout(() => {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '⚡ 准备就绪'
+        }));
+      }, 3000);
     }
   };
 
-  if (!settings) {
-    return <div>加载中...</div>;
-  }
-
   return (
-    <AppContainer {...getRootProps()} className="simpletex-app">
+    <AppContainer>
       <MenuBar
         onCapture={handleCapture}
         onUpload={handleUpload}
@@ -1429,28 +1483,25 @@ function App() {
         onCheckForUpdates={handleCheckForUpdates}
         isAlwaysOnTop={isAlwaysOnTop}
       />
-
       <MainContent>
         <TopSection>
-          <ImageDisplay 
+          <ImageDisplay
             imageUrl={appState.currentImage}
             isDragActive={isDragActive}
             onUpload={handleUpload}
           />
         </TopSection>
-
         <BottomSection>
           <PreviewAndEditorContainer>
             <EditorWrapper>
               <LatexEditor
                 value={appState.latexCode}
-                onChange={(value) => setAppState(prev => ({ ...prev, latexCode: value }))}
+                onChange={(code: string) => setAppState(prev => ({ ...prev, latexCode: code }))}
                 readOnly={appState.isRecognizing}
               />
             </EditorWrapper>
-            
             <PreviewWrapper>
-              <FormulaPreview 
+              <FormulaPreview
                 latex={appState.latexCode}
                 isLoading={appState.isRecognizing}
               />
@@ -1477,7 +1528,7 @@ function App() {
       {/* 对话框 */}
       {showApiSettings && (
         <ApiSettingsDialog
-          apiConfig={settings.apiConfig}
+          apiConfig={settings?.apiConfig || { appId: '', appSecret: '', endpoint: '' }}
           onSave={handleSaveApiSettings}
           onClose={() => setShowApiSettings(false)}
         />
@@ -1485,7 +1536,7 @@ function App() {
 
       {showShortcutSettings && (
         <ShortcutSettingsDialog
-          shortcuts={settings.shortcuts}
+          shortcuts={settings?.shortcuts || { capture: '', upload: '' }}
           onSave={handleSaveShortcutSettings}
           onClose={() => setShowShortcutSettings(false)}
         />
@@ -1504,6 +1555,16 @@ function App() {
       {showAbout && (
         <AboutDialog onClose={() => setShowAbout(false)} />
       )}
+
+      <UpdateDialog
+        isOpen={updateState.showDialog}
+        onClose={handleCloseUpdateDialog}
+        status={updateState.status}
+        progress={updateState.progress}
+        version={updateState.version}
+        onDownload={handleDownloadUpdate}
+        onRestart={handleRestartAndInstall}
+      />
     </AppContainer>
   );
 }

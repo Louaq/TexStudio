@@ -43,67 +43,84 @@ export interface ScreenshotArea {
   height: number;
 }
 
+// 添加RecognitionResult接口定义
+export interface RecognitionResult {
+  status: boolean;
+  message?: string;
+  error_code?: string;
+  res?: {
+    latex: string;
+    [key: string]: any;
+  };
+}
+
 // Electron API类型
 export interface ElectronAPI {
   selectFile: () => Promise<string | null>;
-  saveFile: (content: string, filename: string) => Promise<boolean>;
-  saveDocxFile: (content: string, filename: string) => Promise<boolean>;
+  saveFile: (content: string, filename: string) => Promise<{ success: boolean; filePath?: string; error?: string }>;
+  saveDocxFile: (content: string, filename: string) => Promise<{ success: boolean; filePath?: string; error?: string }>;
   saveTempFile: (buffer: Uint8Array, filename: string) => Promise<string>;
+  
   takeScreenshot: (area: ScreenshotArea) => Promise<string>;
   showScreenshotOverlay: () => Promise<void>;
-  forceTestSecondScreen: () => Promise<any>;
+  forceTestSecondScreen: () => Promise<void>;
   
-  copyToClipboard: (text: string) => Promise<void>;
+  copyToClipboard: (text: string) => Promise<boolean>;
+  
   getSettings: () => Promise<AppSettings>;
-  saveSettings: (settings: Partial<AppSettings>) => Promise<void>;
+  saveSettings: (settings: Partial<AppSettings>) => Promise<boolean>;
   saveApiToSettingsFile: (apiConfig: ApiConfig) => Promise<boolean>;
   clearApiConfig: () => Promise<boolean>;
   
-
-  recognizeFormula: (imagePath: string, apiConfig: ApiConfig) => Promise<SimpletexResponse>;
+  recognizeFormula: (imagePath: string, apiConfig: ApiConfig) => Promise<RecognitionResult>;
   
-
   registerGlobalShortcuts: (shortcuts: { capture: string; upload: string }) => Promise<boolean>;
-  unregisterGlobalShortcuts: () => Promise<void>;
+  unregisterGlobalShortcuts: () => Promise<boolean>;
   
-
   minimizeWindow: () => Promise<void>;
   closeWindow: () => Promise<void>;
-
+  
   onShortcutTriggered: (callback: (action: 'capture' | 'upload') => void) => void;
   removeShortcutTriggeredListener: (callback: (action: 'capture' | 'upload') => void) => void;
   
   onScreenshotComplete: (callback: (imagePath: string) => void) => void;
   removeScreenshotCompleteListener: (callback: (imagePath: string) => void) => void;
   
-  setMaxListeners: (count: number) => void;
-
-  cleanupTempFiles: () => Promise<void>;
+  // 自动更新相关
+  checkForUpdates: () => Promise<{ success: boolean; message: string }>;
+  downloadUpdate: () => Promise<{ success: boolean; message: string }>;
+  quitAndInstall: () => Promise<void>;
+  onCheckingForUpdate: (callback: () => void) => void;
+  onUpdateAvailable: (callback: (info: any) => void) => void;
+  onUpdateNotAvailable: (callback: (info: any) => void) => void;
+  onUpdateError: (callback: (error: string) => void) => void;
+  onDownloadProgress: (callback: (progressObj: any) => void) => void;
+  onUpdateDownloaded: (callback: (info: any) => void) => void;
+  removeUpdateListeners: () => void;
+  
+  cleanupTempFiles: () => Promise<{ success: boolean; count: number }>;
   removeTempFile: (filePath: string) => Promise<boolean>;
-  getTempFilesCount: () => Promise<number>;
+  getTempFilesCount: () => Promise<{ count: number }>;
+  
+  // 诊断屏幕相关
   getDisplayInfo: () => Promise<any>;
-  testDisplayScreenshot: (displayIndex: number, testArea?: ScreenshotArea) => Promise<any>;
+  testDisplayScreenshot: (displayIndex: number, testArea?: ScreenshotArea) => Promise<string>;
   diagnoseScreenSources: () => Promise<any>;
   testAllDisplays: () => Promise<any>;
-
+  
+  // 导出公式图片
   exportFormulaImage: (latexContent: string, format: 'svg' | 'png' | 'jpg') => Promise<{
     success: boolean;
     filePath?: string;
     message: string;
   }>;
-
-  setAlwaysOnTop: (alwaysOnTop: boolean) => Promise<{ success: boolean; alwaysOnTop?: boolean; message?: string }>;
+  
+  // 窗口置顶
+  setAlwaysOnTop: (alwaysOnTop: boolean) => Promise<{ success: boolean; alwaysOnTop: boolean }>;
   getAlwaysOnTop: () => Promise<{ success: boolean; alwaysOnTop: boolean }>;
   
-  // 自动更新相关API
-  checkForUpdates: () => Promise<{ success: boolean; message: string }>;
-  onCheckingForUpdate: (callback: () => void) => void;
-  onUpdateAvailable: (callback: (info: UpdateInfo) => void) => void;
-  onUpdateNotAvailable: (callback: (info: UpdateInfo) => void) => void;
-  onUpdateError: (callback: (error: string) => void) => void;
-  onDownloadProgress: (callback: (progressObj: ProgressInfo) => void) => void;
-  onUpdateDownloaded: (callback: (info: UpdateInfo) => void) => void;
-  removeUpdateListeners: () => void;
+  // IPC设置
+  setMaxListeners: (count: number) => void;
 }
 
 // 自动更新相关类型

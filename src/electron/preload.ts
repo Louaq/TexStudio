@@ -51,6 +51,8 @@ const electronAPI: ElectronAPI = {
   
   // 自动更新相关
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdate: () => ipcRenderer.invoke('download-update'),
+  quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
   onCheckingForUpdate: (callback: () => void) => {
     ipcRenderer.on('checking-for-update', () => callback());
   },
