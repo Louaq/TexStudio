@@ -293,13 +293,32 @@ function App() {
     };
 
     const handleDownloadProgress = (progressObj: any) => {
-      const percent = progressObj.percent.toFixed(2);
-      console.log(`下载进度: ${percent}%`);
+      // 确保progressObj和percent字段存在，并且是有效数字
+      const rawPercent = progressObj?.percent;
+      let percent = 0;
+      
+      if (typeof rawPercent === 'number' && !isNaN(rawPercent)) {
+        // 确保进度值在0-100之间
+        percent = Math.max(0, Math.min(100, rawPercent));
+      } else if (typeof rawPercent === 'string') {
+        const parsed = parseFloat(rawPercent);
+        if (!isNaN(parsed)) {
+          percent = Math.max(0, Math.min(100, parsed));
+        }
+      }
+      
+      console.log(`下载进度: ${percent.toFixed(1)}%`, { 
+        原始数据: rawPercent, 
+        处理后: percent,
+        transferred: progressObj?.transferred,
+        total: progressObj?.total 
+      });
+      
       setUpdateState(prev => ({
         ...prev,
         showDialog: true,
         status: 'downloading',
-        progress: parseFloat(percent)
+        progress: percent
       }));
     };
 

@@ -107,8 +107,8 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
   }
 `;
 
-// 圆环进度条组件
-const CircleProgress = styled.div<{ progress: number }>`
+// 圆环进度条组件 - 使用SVG实现
+const CircleProgressContainer = styled.div`
   width: 120px;
   height: 120px;
   position: relative;
@@ -116,29 +116,29 @@ const CircleProgress = styled.div<{ progress: number }>`
   display: flex;
   align-items: center;
   justify-content: center;
+`;
 
-  &::before {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 6px solid #e1e8ed;
-  }
+const CircleProgressSVG = styled.svg`
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+  position: absolute;
+`;
 
-  &::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 6px solid transparent;
-    border-top-color: #4a90e2;
-    transform: rotate(${props => (props.progress * 3.6 - 90)}deg);
-    transform-origin: center;
-    transition: transform 0.3s ease;
-    clip: ${props => props.progress > 50 ? 'auto' : 'rect(0px, 120px, 120px, 60px)'};
-  }
+const CircleProgressBg = styled.circle`
+  fill: none;
+  stroke: #e1e8ed;
+  stroke-width: 6;
+`;
+
+const CircleProgressBar = styled.circle<{ progress: number; circumference: number }>`
+  fill: none;
+  stroke: #4a90e2;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: ${props => props.circumference};
+  stroke-dashoffset: ${props => props.circumference - (props.progress / 100) * props.circumference};
+  transition: stroke-dashoffset 0.3s ease;
 `;
 
 const ProgressText = styled.div`
@@ -146,7 +146,37 @@ const ProgressText = styled.div`
   font-size: 24px;
   font-weight: bold;
   color: #2c3e50;
+  z-index: 1;
 `;
+
+// 新的进度条组件
+const CircleProgress: React.FC<{ progress: number }> = ({ progress }) => {
+  const radius = 54; // SVG圆的半径 (120/2 - 6/2 = 54)
+  const circumference = 2 * Math.PI * radius;
+  
+  // 确保进度值在0-100之间
+  const clampedProgress = Math.max(0, Math.min(100, progress));
+  
+  return (
+    <CircleProgressContainer>
+      <CircleProgressSVG>
+        <CircleProgressBg
+          cx="60"
+          cy="60"
+          r={radius}
+        />
+        <CircleProgressBar
+          cx="60"
+          cy="60"
+          r={radius}
+          progress={clampedProgress}
+          circumference={circumference}
+        />
+      </CircleProgressSVG>
+      <ProgressText>{clampedProgress.toFixed(0)}%</ProgressText>
+    </CircleProgressContainer>
+  );
+};
 
 interface UpdateDialogProps {
   isOpen: boolean;
@@ -214,9 +244,7 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
         return (
           <>
             <Title>下载更新中</Title>
-            <CircleProgress progress={progress}>
-              <ProgressText>{progress.toFixed(0)}%</ProgressText>
-            </CircleProgress>
+            <CircleProgress progress={progress} />
             <Message>正在下载新版本，请稍候...</Message>
             <ButtonContainer>
               <Button onClick={onClose}>后台下载</Button>
