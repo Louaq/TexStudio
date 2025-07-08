@@ -7,6 +7,7 @@ import MenuBar from './components/MenuBar';
 import ImageDisplay from './components/ImageDisplay';
 import LatexEditor from './components/LatexEditor';
 import FormulaPreview from './components/FormulaPreview';
+import FormulaExplanation from './components/FormulaExplanation';
 import StatusBar from './components/StatusBar';
 import CopyButton from './components/CopyButton';
 import ExportButton from './components/ExportButton';
@@ -101,9 +102,14 @@ const PreviewAndEditorContainer = styled.div`
   height: 220px; /* 固定高度，包含标题和内容区域 */
   margin-bottom: 0; /* 移除下方间距 */
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     flex-direction: column;
     height: auto;
+    gap: 8px;
+  }
+  
+  @media (max-width: 768px) {
+    gap: 6px;
   }
   
   /* 在大屏幕上自适应调整高度 */
@@ -126,6 +132,14 @@ const EditorWrapper = styled.div`
 `;
 
 const PreviewWrapper = styled.div`
+  flex: 1;
+  min-width: 0;
+  height: 220px;
+  overflow: hidden;
+  position: relative;
+`;
+
+const ExplanationWrapper = styled.div`
   flex: 1;
   min-width: 0;
   height: 220px;
@@ -197,6 +211,15 @@ function App() {
   const [showAbout, setShowAbout] = useState(false);
 
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
+  
+  // 添加AI解释重置控制
+  const [explanationResetKey, setExplanationResetKey] = useState(0);
+  
+  // 重置AI解释的函数
+  const resetAIExplanation = () => {
+    setExplanationResetKey(prev => prev + 1);
+  };
+
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -214,7 +237,11 @@ function App() {
             apiConfig: {
               appId: '',
               appSecret: '',
-              endpoint: 'https://server.simpletex.cn/api/latex_ocr'
+              endpoint: 'https://server.simpletex.cn/api/latex_ocr',
+              deepSeek: {
+                apiKey: '',
+                enabled: false
+              }
             },
             shortcuts: {
               capture: 'Alt+C',
@@ -232,6 +259,17 @@ function App() {
                 console.log('从settings.json加载API配置成功');
               } else {
                 console.warn('settings.json中未找到有效的API配置');
+              }
+              
+              // 加载DeepSeek配置
+              if (settings.deepseek_api_key !== undefined || settings.deepseek_enabled !== undefined) {
+                defaultSettings.apiConfig.deepSeek = {
+                  apiKey: settings.deepseek_api_key || '',
+                  enabled: settings.deepseek_enabled || false
+                };
+                console.log('从settings.json加载DeepSeek配置成功');
+              } else {
+                console.log('settings.json中使用默认DeepSeek配置');
               }
             } else {
               console.warn('无法加载settings.json文件');
@@ -422,6 +460,9 @@ function App() {
             }));
             
             if (settings) {
+              // 清空AI解释区域
+              resetAIExplanation();
+              
               setAppState(prev => ({ 
                 ...prev, 
                 isRecognizing: true, 
@@ -528,6 +569,9 @@ function App() {
         const currentSettings = settings;
         console.log('当前使用的设置:', currentSettings);
         if (currentSettings) {
+          // 清空AI解释区域
+          resetAIExplanation();
+          
           // 现有的识别逻辑...
           setAppState(prev => ({ 
             ...prev, 
@@ -683,6 +727,9 @@ function App() {
                 const taskId = Date.now();
                 console.log(`开始拖拽识别任务 ID: ${taskId}`);
                 
+                // 清空AI解释区域
+                resetAIExplanation();
+                
                 setAppState(prev => ({ 
                   ...prev, 
                   isRecognizing: true, 
@@ -787,7 +834,7 @@ function App() {
         }));
       }
     }
-  }, [settings]);
+  }, [settings, resetAIExplanation]);
 
   const { getRootProps, isDragActive } = useDropzone({
     onDrop,
@@ -848,6 +895,9 @@ function App() {
           
           const taskId = Date.now();
           console.log(`开始上传识别任务 ID: ${taskId}`);
+          
+          // 清空AI解释区域
+          resetAIExplanation();
           
           setAppState(prev => ({ 
             ...prev, 
@@ -983,6 +1033,9 @@ function App() {
     const taskId = Date.now();
     console.log(`开始通用识别任务 ID: ${taskId}`);
 
+    // 清空AI解释区域
+    resetAIExplanation();
+
     setAppState(prev => ({ 
       ...prev, 
       isRecognizing: true, 
@@ -1063,7 +1116,7 @@ function App() {
         statusMessage: '❌ 识别出错'
       }));
     }
-  }, [settings]);
+  }, [settings, resetAIExplanation]);
   const handleCopy = async (mode: CopyMode = 'normal') => {
     if (!appState.latexCode.trim()) return;
 
@@ -1131,6 +1184,9 @@ function App() {
   const handleUseHistory = (latex: string) => {
     try {
       console.log('使用历史记录项:', latex);
+      
+      // 清空AI解释区域
+      resetAIExplanation();
       
       // 先关闭历史记录对话框
       setShowHistory(false);
@@ -1525,6 +1581,13 @@ function App() {
                 isLoading={appState.isRecognizing}
               />
             </PreviewWrapper>
+            <ExplanationWrapper>
+              <FormulaExplanation
+                latex={appState.latexCode}
+                deepSeekConfig={settings?.apiConfig?.deepSeek}
+                resetKey={explanationResetKey}
+              />
+            </ExplanationWrapper>
           </PreviewAndEditorContainer>
           
           <StatusBarWrapper>

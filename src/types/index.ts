@@ -3,6 +3,29 @@ export interface HistoryItem {
   date: string;
   latex: string;
 }
+
+// DeepSeek API 配置
+export interface DeepSeekConfig {
+  apiKey: string;
+  enabled: boolean;
+}
+
+// 扩展 API 配置，支持 DeepSeek
+export interface ApiConfig {
+  appId: string;
+  appSecret: string;
+  endpoint?: string;
+  deepSeek?: DeepSeekConfig;
+}
+
+// 公式解释结果
+export interface FormulaExplanation {
+  content: string;
+  timestamp: string;
+  isLoading: boolean;
+  error?: string;
+}
+
 export interface SimpletexResponse {
   status: boolean;
   message?: string;
@@ -12,11 +35,6 @@ export interface SimpletexResponse {
     latex: string;
     conf?: number;
   };
-}
-export interface ApiConfig {
-  appId: string;
-  appSecret: string;
-  endpoint?: string;
 }
 export interface AppSettings {
   apiConfig: ApiConfig;

@@ -13,11 +13,12 @@
 
 - 📸 **截图识别** - 支持全局快捷键截图识别公式
 - 📁 **文件上传** - 支持拖拽或选择图片文件进行识别
+- 🤖 **AI 公式解释** - 集成 DeepSeek R1 大模型，智能解释数学公式含义和应用场景
 - 📋 **多格式复制** - 支持复制原始代码、行内公式(\$...\$)、显示公式(\$$...\$$)格式
 - 📁 **公式导出** - 支持导出为svg、png和jpg三种格式的图片
 - 📚 **历史记录** - 自动保存识别历史，方便查看和复用
 - ⌨️ **全局快捷键** - 可自定义快捷键，支持后台运行
-- 🔑 **API配置** - 支持自定义[SimpleTex API](https://simpletex.cn/)配置 
+- 🔑 **API配置** - 支持自定义[SimpleTex API](https://simpletex.cn/)配置和 DeepSeek API 配置
 - 🎨 **现代化界面** - 基于 Styled Components 的美观界面设计
 - 🔄 **自动更新** - 支持检测和安装新版本，无需手动下载
 
@@ -27,7 +28,8 @@
 - **桌面应用**: Electron 27
 - **样式方案**: Styled Components
 - **状态管理**: React Hooks
-- **API服务**: SimpleTex OCR API
+- **API服务**: SimpleTex OCR API + DeepSeek R1 API
+- **AI集成**: OpenAI SDK（用于 DeepSeek API 调用）
 - **构建工具**: Create React App + Electron Builder
 - **自动更新**: electron-updater
 
@@ -116,11 +118,20 @@
    - 点击"复制LaTeX"按钮的下拉菜单
    - 选择需要的格式进行复制
 
+4. **AI 公式解释**
+   - 识别公式后，在右侧的"AI 公式解释"区域点击"解释公式"按钮
+   - AI 会详细解释公式的含义、用途和相关概念
+   - 需要先在API设置中配置 DeepSeek API 密钥
+
 ### 设置配置
 
 1. **API设置**
    - 点击菜单"API设置"
-   - 配置你的 SimpleTex API 密钥
+   - 配置你的 SimpleTex API 密钥（用于公式识别）
+   - 配置 DeepSeek API 密钥（用于 AI 公式解释）
+     - 访问 [DeepSeek 官网](https://platform.deepseek.com) 注册账号
+     - 在控制台创建 API Key
+     - 在设置中启用 DeepSeek 功能并填入 API Key
 
 2. **快捷键设置**
    - 点击菜单""快捷键设置"
@@ -149,6 +160,8 @@ src/
 │   ├── MenuBar.tsx    # 菜单栏组件
 │   ├── ImageDisplay.tsx # 图片显示组件
 │   ├── LatexEditor.tsx  # LaTeX编辑器组件
+│   ├── FormulaPreview.tsx # 公式预览组件
+│   ├── FormulaExplanation.tsx # AI公式解释组件
 │   ├── CopyButton.tsx   # 复制按钮组件
 │   ├── StatusBar.tsx    # 状态栏组件
 │   └── dialogs/         # 对话框组件
@@ -170,6 +183,7 @@ src/
   "react-dom": "^18.2.0",
   "styled-components": "^6.0.0",
   "axios": "^1.5.0",
+  "openai": "^4.0.0",
   "crypto-js": "^4.1.1",
   "electron-store": "^8.1.0",
   "electron-updater": "^6.6.2",

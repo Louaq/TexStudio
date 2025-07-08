@@ -154,10 +154,14 @@ function checkForUpdates() {
 }
 
 // 定义API配置读取函数
-function loadApiConfigFromSettings(): { appId: string; appSecret: string } {
+function loadApiConfigFromSettings(): { appId: string; appSecret: string; deepSeek?: { apiKey: string; enabled: boolean } } {
   const config = {
     appId: '',
-    appSecret: ''
+    appSecret: '',
+    deepSeek: {
+      apiKey: '',
+      enabled: false
+    }
   };
 
   try {
@@ -171,6 +175,17 @@ function loadApiConfigFromSettings(): { appId: string; appSecret: string } {
         logger.log('成功从settings.json加载API配置');
       } else {
         logger.log('settings.json中未找到有效的API配置');
+      }
+      
+      // 加载DeepSeek配置
+      if (settings.deepseek_api_key !== undefined || settings.deepseek_enabled !== undefined) {
+        config.deepSeek = {
+          apiKey: settings.deepseek_api_key || '',
+          enabled: settings.deepseek_enabled || false
+        };
+        logger.log('成功从settings.json加载DeepSeek配置');
+      } else {
+        logger.log('settings.json中使用默认DeepSeek配置');
       }
     } else {
       logger.log('未找到settings.json文件，将使用空的API配置');
@@ -194,6 +209,10 @@ interface ApiConfig {
   appId: string;
   appSecret: string;
   endpoint: string;
+  deepSeek?: {
+    apiKey: string;
+    enabled: boolean;
+  };
 }
 
 interface HistoryItem {
@@ -216,7 +235,11 @@ interface SimpletexResponse {
 let DEFAULT_API_CONFIG: ApiConfig = {
   appId: '',
   appSecret: '',
-  endpoint: 'https://server.simpletex.cn/api/latex_ocr'
+  endpoint: 'https://server.simpletex.cn/api/latex_ocr',
+  deepSeek: {
+    apiKey: '',
+    enabled: false
+  }
 };
 
 const TEMP_FILE_PREFIX = 'simpletex-';
@@ -814,7 +837,9 @@ if (!gotTheLock) {
 
         const defaultSettings = {
           app_id: '',
-          app_secret: ''
+          app_secret: '',
+          deepseek_api_key: '',
+          deepseek_enabled: false
         };
         fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2), 'utf8');
       } catch (error) {
@@ -830,6 +855,14 @@ if (!gotTheLock) {
 
       DEFAULT_API_CONFIG.appId = '';
       DEFAULT_API_CONFIG.appSecret = '';
+    }
+    
+    // 应用 DeepSeek 配置
+    if (apiConfig.deepSeek) {
+      DEFAULT_API_CONFIG.deepSeek = {
+        apiKey: apiConfig.deepSeek.apiKey,
+        enabled: apiConfig.deepSeek.enabled
+      };
     }
 
 
@@ -1556,10 +1589,20 @@ ipcMain.handle('test-display-screenshot', async (event, displayIndex: number) =>
 ipcMain.handle('save-api-to-settings-file', async (event, apiConfig: ApiConfig) => {
   try {
     const settingsPath = path.join(app.getAppPath(), 'settings.json');
-    const settings = {
+    const settings: any = {
       app_id: apiConfig.appId,
       app_secret: apiConfig.appSecret
     };
+    
+    // 保存DeepSeek配置
+    if (apiConfig.deepSeek) {
+      settings.deepseek_api_key = apiConfig.deepSeek.apiKey;
+      settings.deepseek_enabled = apiConfig.deepSeek.enabled;
+    } else {
+      settings.deepseek_api_key = '';
+      settings.deepseek_enabled = false;
+    }
+    
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
     return true;
   } catch (error) {
@@ -1572,17 +1615,27 @@ ipcMain.handle('clear-api-config', async (event) => {
   try {
     DEFAULT_API_CONFIG.appId = '';
     DEFAULT_API_CONFIG.appSecret = '';
+    if (DEFAULT_API_CONFIG.deepSeek) {
+      DEFAULT_API_CONFIG.deepSeek.apiKey = '';
+      DEFAULT_API_CONFIG.deepSeek.enabled = false;
+    }
     store.set('apiConfig', {
       appId: '',
       appSecret: '',
-      endpoint: DEFAULT_API_CONFIG.endpoint
+      endpoint: DEFAULT_API_CONFIG.endpoint,
+      deepSeek: {
+        apiKey: '',
+        enabled: false
+      }
     });
 
     const settingsPath = path.join(app.getAppPath(), 'settings.json');
     if (fs.existsSync(settingsPath)) {
       const settings = {
         app_id: '',
-        app_secret: ''
+        app_secret: '',
+        deepseek_api_key: '',
+        deepseek_enabled: false
       };
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
     }

@@ -100,3 +100,76 @@ export function getCurrentTimestamp(): string {
     second: '2-digit'
   });
 } 
+
+// DeepSeek API 调用函数
+export const explainFormulaWithDeepSeek = async (latex: string, apiKey: string): Promise<string> => {
+  try {
+    // 动态导入 OpenAI SDK 以避免在 Electron 渲染进程中的问题
+    const { default: OpenAI } = await import('openai');
+    
+    const openai = new OpenAI({
+      baseURL: 'https://api.deepseek.com',
+      apiKey: apiKey,
+      dangerouslyAllowBrowser: true // 允许在浏览器环境中使用
+    });
+
+    const prompt = `请详细解释以下数学公式的含义、用途和相关概念。请用中文回答，回答要通俗易懂，并使用 Markdown 格式：
+
+**LaTeX公式：** $${latex}$$
+
+请从以下几个方面进行解释：
+
+## 基本含义
+公式的核心含义和表达的数学关系
+
+## 符号说明
+公式中各个符号和变量的具体作用
+
+## 应用场景
+这个公式在实际中的应用领域和使用场景
+
+## 相关概念
+相关的数学概念、定理或公式
+
+## 示例说明
+如果可能，请举一个简单的数值例子
+
+**注意：**
+- 请使用 Markdown 格式回答
+- 数学公式请用 $...$ 包围（行内公式）或 $$...$$ 包围（块级公式）
+- 使用标题、粗体、列表等 Markdown 语法使内容更清晰
+- 保持回答简洁明了，大约250-350字`;
+
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { 
+          role: "system", 
+          content: "你是一位优秀的数学教师，擅长用通俗易懂的语言解释复杂的数学概念。请用中文回答，语言要生动有趣，容易理解。请使用标准的 Markdown 格式来组织回答，包括标题、列表、粗体等格式。数学公式请使用 LaTeX 语法并用 $ 或 $$ 包围。" 
+        },
+        { 
+          role: "user", 
+          content: prompt 
+        }
+      ],
+      model: "deepseek-chat",
+      max_tokens: 1200,
+      temperature: 0.7
+    });
+
+    return completion.choices[0]?.message?.content || '抱歉，无法获取公式解释。';
+  } catch (error) {
+    console.error('DeepSeek API 调用失败:', error);
+    
+    if (error instanceof Error) {
+      if (error.message.includes('401')) {
+        throw new Error('API 密钥无效，请检查 DeepSeek API 密钥设置');
+      } else if (error.message.includes('429')) {
+        throw new Error('API 调用频率超限，请稍后再试');
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        throw new Error('网络连接失败，请检查网络连接');
+      }
+    }
+    
+    throw new Error(`调用 DeepSeek API 失败: ${error instanceof Error ? error.message : '未知错误'}`);
+  }
+}; 

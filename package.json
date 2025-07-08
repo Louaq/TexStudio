@@ -1,6 +1,6 @@
 {
   "name": "latex-ocr-electron",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "LaTeX公式识别工具重构版",
   "author": "SimpleTex OCR",
   "main": "dist/electron/electron/main.js",
@@ -31,10 +31,14 @@
     "mathjax-node": "^2.1.1",
     "office-document-properties": "^1.1.0",
     "officegen": "^0.6.5",
+    "openai": "^5.8.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
     "react-katex": "^3.1.0",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
     "sharp": "^0.34.2",
     "styled-components": "^6.0.0"
   },

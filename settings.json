@@ -1,4 +1,6 @@
 {
   "app_id": "",
-  "app_secret": ""
+  "app_secret": "",
+  "deepseek_api_key": "",
+  "deepseek_enabled": false
 }
