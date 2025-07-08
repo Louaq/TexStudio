@@ -96,17 +96,70 @@ const DragText = styled.div`
   background: rgba(255, 255, 255, 0.9);
 `;
 
+const ManualRecognizeButton = styled.button`
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(74, 144, 226, 0.3);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover {
+    background: linear-gradient(135deg, #5ba0f2 0%, #458bcd 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(149, 165, 166, 0.2);
+  }
+`;
+
 interface ImageDisplayProps {
   imageUrl: string | null;
   isDragActive: boolean;
+  isAutoRecognition: boolean;
+  isRecognizing: boolean;
   onUpload?: () => void;
+  onManualRecognize?: () => void;
 }
 
-const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageUrl, isDragActive, onUpload }) => {
+const ImageDisplay: React.FC<ImageDisplayProps> = ({ 
+  imageUrl, 
+  isDragActive, 
+  isAutoRecognition, 
+  isRecognizing,
+  onUpload,
+  onManualRecognize 
+}) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onUpload) {
       onUpload();
+    }
+  };
+
+  const handleManualRecognize = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onManualRecognize) {
+      onManualRecognize();
     }
   };
 
@@ -117,7 +170,22 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({ imageUrl, isDragActive, onU
       </Label>
       <ImageContainer isDragActive={isDragActive} onClick={handleClick}>
         {imageUrl ? (
-          <Image src={imageUrl} alt="待识别的图片" />
+          <>
+            <Image src={imageUrl} alt="待识别的图片" />
+            {/* 只在手动模式且有图片时显示识别按钮 */}
+            {!isAutoRecognition && imageUrl && (
+              <ManualRecognizeButton 
+                onClick={handleManualRecognize}
+                disabled={isRecognizing}
+              >
+                {isRecognizing ? (
+                  <>🔄 识别中...</>
+                ) : (
+                  <>🤖 开始识别</>
+                )}
+              </ManualRecognizeButton>
+            )}
+          </>
         ) : (
           <PlaceholderText>
             📷 将在此处显示识别的图片

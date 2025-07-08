@@ -2,24 +2,15 @@ import React from 'react';
 import styled from 'styled-components';
 
 const StatusContainer = styled.div`
-  padding: 10px 14px;
-  background: linear-gradient(135deg, #f7f9fc 0%, #edf2f7 100%);
-  border: 1px solid #dce1e8;
-  border-radius: 6px;
-  /* 作为内嵌状态显示 */
+  padding: 8px 14px;
+  /* 移除背景和边框 */
   flex-shrink: 0;
   min-height: 38px;
   display: flex;
   align-items: center;
   position: relative;
-  z-index: 10; /* 提高层级，确保可见 */
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  z-index: 10;
   transition: all 0.2s ease;
-  
-  &:hover {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-    border-color: #cfd9e6;
-  }
 `;
 
 const StatusContent = styled.div`

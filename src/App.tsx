@@ -9,13 +9,13 @@ import LatexEditor from './components/LatexEditor';
 import FormulaPreview from './components/FormulaPreview';
 import FormulaExplanation from './components/FormulaExplanation';
 import StatusBar from './components/StatusBar';
-import CopyButton from './components/CopyButton';
-import ExportButton from './components/ExportButton';
 import ApiSettingsDialog from './components/ApiSettingsDialog';
 import ShortcutSettingsDialog from './components/ShortcutSettingsDialog';
 import HistoryDialog from './components/HistoryDialog';
 import AboutDialog from './components/AboutDialog';
 import UpdateDialog from './components/UpdateDialog';
+import CopyOptionsDialog from './components/CopyOptionsDialog';
+import ExportOptionsDialog from './components/ExportOptionsDialog';
 import * as path from 'path';
 
 const AppContainer = styled.div`
@@ -84,23 +84,23 @@ const TopSection = styled.div`
 const BottomSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  /* 保持固定高度，自适应内容大小 */
-  min-height: 300px;
-  max-height: 340px;
+  gap: 12px;
+  /* 移除底部按钮后，减少高度 */
+  min-height: 450px;
+  max-height: 500px;
   height: auto;
   /* 确保不会覆盖图片区域的虚线 */
   z-index: 1;
   background-color: rgba(255, 255, 255, 0.6);
   border-radius: 8px;
-  padding: 10px 10px 6px 10px; /* 减少底部内边距 */
+  padding: 10px 10px 6px 10px;
 `;
 
 const PreviewAndEditorContainer = styled.div`
   display: flex;
   gap: 12px;
-  height: 220px; /* 固定高度，包含标题和内容区域 */
-  margin-bottom: 0; /* 移除下方间距 */
+  height: 200px; /* 减少高度，为AI解释区域腾出空间 */
+  margin-bottom: 0;
 
   @media (max-width: 1024px) {
     flex-direction: column;
@@ -114,49 +114,68 @@ const PreviewAndEditorContainer = styled.div`
   
   /* 在大屏幕上自适应调整高度 */
   @media (min-height: 900px) {
-    height: 240px;
+    height: 220px;
   }
   
   /* 在更大屏幕上进一步调整高度 */
   @media (min-height: 1080px) {
-    height: 260px;
+    height: 240px;
   }
 `;
 
 const EditorWrapper = styled.div`
   flex: 1;
   min-width: 0;
-  height: 220px;
+  height: 200px;
   overflow: hidden;
   position: relative;
+  
+  @media (min-height: 900px) {
+    height: 220px;
+  }
+  
+  @media (min-height: 1080px) {
+    height: 240px;
+  }
 `;
 
 const PreviewWrapper = styled.div`
   flex: 1;
   min-width: 0;
-  height: 220px;
+  height: 200px;
   overflow: hidden;
   position: relative;
+  
+  @media (min-height: 900px) {
+    height: 220px;
+  }
+  
+  @media (min-height: 1080px) {
+    height: 240px;
+  }
 `;
 
-const ExplanationWrapper = styled.div`
-  flex: 1;
-  min-width: 0;
-  height: 220px;
-  overflow: hidden;
-  position: relative;
-`;
-
-// 需要调整ButtonContainer的样式，确保按钮区域紧凑
-const ButtonContainer = styled.div`
+// 新增：AI解释区域独立容器
+const ExplanationSection = styled.div`
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 2px;
-  margin-bottom: 0;
-  padding: 0;
-  height: 36px; /* 固定高度，避免计算错误 */
+  flex-direction: column;
+  height: 200px; /* 稍微减少高度以适应更紧凑的窗口 */
+  background-color: rgba(248, 250, 252, 0.8);
+  border-radius: 8px;
+  padding: 8px;
+  border: 1px solid rgba(203, 213, 225, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  
+  @media (min-height: 900px) {
+    height: 220px;
+  }
+  
+  @media (min-height: 1080px) {
+    height: 240px;
+  }
 `;
+
+
 
 // 修改StatusBarWrapper样式，减少边距
 const StatusBarWrapper = styled.div`
@@ -209,8 +228,13 @@ function App() {
   const [showShortcutSettings, setShowShortcutSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showCopyOptions, setShowCopyOptions] = useState(false);
+  const [showExportOptions, setShowExportOptions] = useState(false);
 
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
+  
+  // 添加自动识别模式控制
+  const [isAutoRecognition, setIsAutoRecognition] = useState(true);
   
   // 添加AI解释重置控制
   const [explanationResetKey, setExplanationResetKey] = useState(0);
@@ -218,6 +242,41 @@ function App() {
   // 重置AI解释的函数
   const resetAIExplanation = () => {
     setExplanationResetKey(prev => prev + 1);
+  };
+
+  // 切换识别模式的函数
+  const handleToggleRecognitionMode = () => {
+    const newMode = !isAutoRecognition;
+    setIsAutoRecognition(newMode);
+    setAppState(prev => ({ 
+      ...prev, 
+      statusMessage: newMode ? '🤖 已切换到自动识别模式' : '✋ 已切换到手动识别模式'
+    }));
+    setTimeout(() => {
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '⚡ 准备就绪'
+      }));
+    }, 2000);
+  };
+
+  // 手动识别函数
+  const handleManualRecognize = async () => {
+    if (!appState.currentImage) {
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '❌ 请先上传或截图'
+      }));
+      return;
+    }
+
+    // 从URL中提取文件路径
+    let imagePath = appState.currentImage;
+    if (imagePath.startsWith('file://')) {
+      imagePath = imagePath.substring(7); // 移除 'file://' 前缀
+    }
+
+    await recognizeFormula(imagePath);
   };
 
   useEffect(() => {
@@ -565,83 +624,18 @@ function App() {
         }));
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        console.log('开始识别截图...');
-        const currentSettings = settings;
-        console.log('当前使用的设置:', currentSettings);
-        if (currentSettings) {
-          // 清空AI解释区域
-          resetAIExplanation();
-          
-          // 现有的识别逻辑...
-          setAppState(prev => ({ 
-            ...prev, 
-            isRecognizing: true, 
-            latexCode: '',
-            statusMessage: '🤖 正在识别公式...'
-          }));
-
-          try {
-            const apiConfig = currentSettings.apiConfig;
-            if (!validateApiConfig(apiConfig)) {
-              console.log(`任务 ${taskId}: API配置无效，无法识别`);
-              setAppState(prev => ({ 
-                ...prev, 
-                latexCode: '',
-                isRecognizing: false,
-                statusMessage: '❌ 请先在设置中配置API密钥'
-              }));
-              return;
-            }
-            
-            console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
-            const result = await window.electronAPI.recognizeFormula(imagePath, currentSettings.apiConfig);
-            console.log(`任务 ${taskId}: API识别结果:`, result);
-            
-            if (result.status && result.res?.latex) {
-              const latex = result.res.latex;
-              console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
-              
-              setAppState(prev => {
-                const newItem = {
-                  date: getCurrentTimestamp(),
-                  latex: latex.trim()
-                };
-                
-                let newHistory = prev.history;
-                const exists = prev.history.some(item => item.latex === newItem.latex);
-                if (!exists) {
-                  newHistory = [newItem, ...prev.history.slice(0, 4)];
-                  if (window.electronAPI) {
-                    window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
-                  }
-                }
-                
-                return { 
-                  ...prev, 
-                  latexCode: latex,
-                  isRecognizing: false,
-                  statusMessage: '✅ 识别完成！',
-                  history: newHistory
-                };
-              });
-            } else {
-              console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
-              setAppState(prev => ({ 
-                ...prev, 
-                latexCode: '',
-                isRecognizing: false,
-                statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
-              }));
-            }
-          } catch (error) {
-            console.error(`任务 ${taskId}: 公式识别失败:`, error);
-            setAppState(prev => ({ 
-              ...prev, 
-              latexCode: '',
-              isRecognizing: false,
-              statusMessage: '❌ 识别出错'
-            }));
-          }
+        // 清空AI解释区域
+        resetAIExplanation();
+        
+        setAppState(prev => ({ 
+          ...prev, 
+          latexCode: '',
+          statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '📷 截图完成，点击识别按钮开始识别'
+        }));
+        
+        // 根据识别模式决定是否自动开始识别
+        if (isAutoRecognition) {
+          await recognizeFormula(imagePath);
         }
       } else {
         console.error('无效的图片路径或electronAPI不可用');
@@ -683,7 +677,7 @@ function App() {
         }
       }
     };
-  }, [settings]); // 只依赖于settings
+  }, [settings, isAutoRecognition]); // 依赖于settings和isAutoRecognition
 
   // 拖拽上传
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -719,103 +713,20 @@ function App() {
                const uint8Array = new Uint8Array(arrayBuffer);
                const tempPath = await window.electronAPI.saveTempFile(uint8Array, file.name);
                console.log('临时文件保存到:', tempPath);
-              
-              if (settings) {
-                const currentSettings = settings;
-                console.log('当前使用的设置:', currentSettings);
-                
-                const taskId = Date.now();
-                console.log(`开始拖拽识别任务 ID: ${taskId}`);
-                
-                // 清空AI解释区域
-                resetAIExplanation();
-                
-                setAppState(prev => ({ 
-                  ...prev, 
-                  isRecognizing: true, 
-                  latexCode: '',
-                  statusMessage: '🤖 正在识别公式...'
-                }));
-
-                try {
-                  const apiConfig = currentSettings.apiConfig;
-                  if (!validateApiConfig(apiConfig)) {
-                    console.log(`任务 ${taskId}: API配置无效，无法识别`);
-                    setAppState(prev => ({ 
-                      ...prev, 
-                      latexCode: '',
-                      isRecognizing: false,
-                      statusMessage: '❌ 请先在设置中配置API密钥'
-                    }));
-                    return;
-                  }
-                  
-                  console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
-                  const result = await window.electronAPI.recognizeFormula(tempPath, currentSettings.apiConfig);
-                  console.log(`任务 ${taskId}: API识别结果:`, result);
-                  
-                  if (result.status && result.res?.latex) {
-                    const latex = result.res.latex;
-                    console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
-                    
-                    setAppState(prev => {
-                      const newItem = {
-                        date: getCurrentTimestamp(),
-                        latex: latex.trim()
-                      };
-                      
-                      let newHistory = prev.history;
-                      const exists = prev.history.some(item => item.latex === newItem.latex);
-                      if (!exists) {
-                        newHistory = [newItem, ...prev.history.slice(0, 4)];
-                        if (window.electronAPI) {
-                          window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
-                        }
-                      }
-                      
-                      return { 
-                        ...prev, 
-                        latexCode: latex,
-                        isRecognizing: false,
-                        statusMessage: '✅ 识别完成！',
-                        history: newHistory
-                      };
-                    });
-                  } else {
-                    console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
-                    
-                    if (result.error_code === 'NO_API_CONFIG') {
-                      setAppState(prev => ({ 
-                        ...prev, 
-                        latexCode: '',
-                        isRecognizing: false,
-                        statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
-                      }));
-                    } else {
-                      setAppState(prev => ({ 
-                        ...prev, 
-                        latexCode: '',
-                        isRecognizing: false,
-                        statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
-                      }));
-                    }
-                  }
-                } catch (error) {
-                  console.error(`任务 ${taskId}: 公式识别失败:`, error);
-                  setAppState(prev => ({ 
-                    ...prev, 
-                    latexCode: '',
-                    isRecognizing: false,
-                    statusMessage: '❌ 识别出错'
-                  }));
-                }
-              } else {
-                console.error('settings未加载，无法进行识别');
-                setAppState(prev => ({ 
-                  ...prev, 
-                  statusMessage: '❌ 设置未加载，请稍后重试'
-                }));
-              }
+               
+               // 清空AI解释区域
+               resetAIExplanation();
+               
+               setAppState(prev => ({ 
+                 ...prev, 
+                 latexCode: '',
+                 statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '📷 图片已拖拽上传，点击识别按钮开始识别'
+               }));
+               
+               // 根据识别模式决定是否自动开始识别
+               if (isAutoRecognition) {
+                 await recognizeFormula(tempPath);
+               }
             } catch (error) {
               console.error('处理拖拽图片失败:', error);
               setAppState(prev => ({ 
@@ -834,7 +745,7 @@ function App() {
         }));
       }
     }
-  }, [settings, resetAIExplanation]);
+  }, [settings, resetAIExplanation, isAutoRecognition]);
 
   const { getRootProps, isDragActive } = useDropzone({
     onDrop,
@@ -881,103 +792,19 @@ function App() {
     try {
       const filePath = await window.electronAPI.selectFile();
       if (filePath) {
-        const taskId = Date.now();
+        // 清空AI解释区域
+        resetAIExplanation();
         
         setAppState(prev => ({ 
           ...prev, 
           currentImage: `file://${filePath}`,
-          statusMessage: '🔄 准备识别...'
+          latexCode: '',
+          statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '📷 图片已上传，点击识别按钮开始识别'
         }));
         
-        if (settings) {
-          const currentSettings = settings;
-          console.log('当前使用的设置:', currentSettings);
-          
-          const taskId = Date.now();
-          console.log(`开始上传识别任务 ID: ${taskId}`);
-          
-          // 清空AI解释区域
-          resetAIExplanation();
-          
-          setAppState(prev => ({ 
-            ...prev, 
-            isRecognizing: true, 
-            latexCode: '',
-            statusMessage: '🤖 正在识别公式...'
-          }));
-
-          try {
-            const apiConfig = currentSettings.apiConfig;
-            if (!validateApiConfig(apiConfig)) {
-              console.log(`任务 ${taskId}: API配置无效，无法识别`);
-              setAppState(prev => ({ 
-                ...prev, 
-                latexCode: '',
-                isRecognizing: false,
-                statusMessage: '❌ 请先在设置中配置API密钥'
-              }));
-              return;
-            }
-            
-            console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
-            const result = await window.electronAPI.recognizeFormula(filePath, currentSettings.apiConfig);
-            console.log(`任务 ${taskId}: API识别结果:`, result);
-            
-            if (result.status && result.res?.latex) {
-              const latex = result.res.latex;
-              console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
-              
-              setAppState(prev => {
-                const newItem = {
-                  date: getCurrentTimestamp(),
-                  latex: latex.trim()
-                };
-                
-                let newHistory = prev.history;
-                const exists = prev.history.some(item => item.latex === newItem.latex);
-                if (!exists) {
-                  newHistory = [newItem, ...prev.history.slice(0, 4)];
-                  if (window.electronAPI) {
-                    window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
-                  }
-                }
-                
-                return { 
-                  ...prev, 
-                  latexCode: latex,
-                  isRecognizing: false,
-                  statusMessage: '✅ 识别完成！',
-                  history: newHistory
-                };
-              });
-            } else {
-              console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
-              
-              if (result.error_code === 'NO_API_CONFIG') {
-                setAppState(prev => ({ 
-                  ...prev, 
-                  latexCode: '',
-                  isRecognizing: false,
-                  statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
-                }));
-              } else {
-                setAppState(prev => ({ 
-                  ...prev, 
-                  latexCode: '',
-                  isRecognizing: false,
-                  statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
-                }));
-              }
-            }
-          } catch (error) {
-            console.error(`任务 ${taskId}: 公式识别失败:`, error);
-            setAppState(prev => ({ 
-              ...prev, 
-              latexCode: '',
-              isRecognizing: false,
-              statusMessage: '❌ 识别出错'
-            }));
-          }
+        // 根据识别模式决定是否自动开始识别
+        if (isAutoRecognition) {
+          await recognizeFormula(filePath);
         }
       }
     } catch (error) {
@@ -1549,6 +1376,17 @@ function App() {
       <MenuBar
         onCapture={handleCapture}
         onUpload={handleUpload}
+        onCopy={() => {
+          if (appState.latexCode.trim() && !appState.isRecognizing) {
+            setShowCopyOptions(true);
+          }
+        }}
+        onExport={() => {
+          if (appState.latexCode.trim() && !appState.isRecognizing) {
+            setShowExportOptions(true);
+          }
+        }}
+        onToggleRecognitionMode={handleToggleRecognitionMode}
         onShowApiSettings={() => setShowApiSettings(true)}
         onShowShortcutSettings={() => setShowShortcutSettings(true)}
         onShowHistory={() => setShowHistory(true)}
@@ -1557,13 +1395,19 @@ function App() {
         onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
         onCheckForUpdates={handleCheckForUpdates}
         isAlwaysOnTop={isAlwaysOnTop}
+        isAutoRecognition={isAutoRecognition}
+        copyDisabled={!appState.latexCode.trim() || appState.isRecognizing}
+        exportDisabled={!appState.latexCode.trim() || appState.isRecognizing}
       />
       <MainContent>
         <TopSection>
           <ImageDisplay
             imageUrl={appState.currentImage}
             isDragActive={isDragActive}
+            isAutoRecognition={isAutoRecognition}
+            isRecognizing={appState.isRecognizing}
             onUpload={handleUpload}
+            onManualRecognize={handleManualRecognize}
           />
         </TopSection>
         <BottomSection>
@@ -1581,29 +1425,19 @@ function App() {
                 isLoading={appState.isRecognizing}
               />
             </PreviewWrapper>
-            <ExplanationWrapper>
-              <FormulaExplanation
-                latex={appState.latexCode}
-                deepSeekConfig={settings?.apiConfig?.deepSeek}
-                resetKey={explanationResetKey}
-              />
-            </ExplanationWrapper>
           </PreviewAndEditorContainer>
+          
+          <ExplanationSection>
+            <FormulaExplanation
+              latex={appState.latexCode}
+              deepSeekConfig={settings?.apiConfig?.deepSeek}
+              resetKey={explanationResetKey}
+            />
+          </ExplanationSection>
           
           <StatusBarWrapper>
             <StatusBar message={appState.statusMessage} />
           </StatusBarWrapper>
-          
-          <ButtonContainer>
-            <CopyButton 
-              onCopy={handleCopy}
-              disabled={!appState.latexCode.trim() || appState.isRecognizing}
-            />
-            <ExportButton 
-              onExport={handleExportFormula}
-              disabled={!appState.latexCode.trim() || appState.isRecognizing}
-            />
-          </ButtonContainer>
         </BottomSection>
       </MainContent>
 
@@ -1637,6 +1471,18 @@ function App() {
       {showAbout && (
         <AboutDialog onClose={() => setShowAbout(false)} />
       )}
+
+      <CopyOptionsDialog
+        isOpen={showCopyOptions}
+        onClose={() => setShowCopyOptions(false)}
+        onCopy={handleCopy}
+      />
+
+      <ExportOptionsDialog
+        isOpen={showExportOptions}
+        onClose={() => setShowExportOptions(false)}
+        onExport={handleExportFormula}
+      />
 
       <UpdateDialog
         isOpen={updateState.showDialog}

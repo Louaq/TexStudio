@@ -27,6 +27,12 @@ const Header = styled.div`
   min-height: 20px;
 `;
 
+const ButtonGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
 const Label = styled.h3`
   font-size: 14px;
   font-weight: 600;
@@ -69,11 +75,42 @@ const ExplainButton = styled.button<{ disabled: boolean }>`
   }
 `;
 
+const ClearButton = styled.button<{ disabled: boolean }>`
+  padding: 2px 8px;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  height: 20px;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  transition: all 0.3s ease;
+  background: ${props => props.disabled 
+    ? 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)'
+    : 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)'
+  };
+  color: white;
+  opacity: ${props => props.disabled ? 0.6 : 1};
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #ec7063 0%, #e74c3c 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+`;
+
 const ContentArea = styled.div`
   flex: 1;
   padding: 12px;
-  min-height: 180px;
-  height: 180px;
+  min-height: 150px;
+  height: auto; /* 改为自动高度，让它充分利用父容器的空间 */
   border: 1px solid #dce1e8;
   border-radius: 8px;
   background: linear-gradient(135deg, #fefefe 0%, #f9fafb 100%);
@@ -82,16 +119,8 @@ const ContentArea = styled.div`
   position: relative;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
   
-  @media (min-height: 900px) {
-    height: 200px;
-    min-height: 200px;
-  }
+  /* 由于现在是独立布局，移除固定高度的媒体查询 */
   
-  @media (min-height: 1080px) {
-    height: 220px;
-    min-height: 220px;
-  }
-
   &::-webkit-scrollbar {
     width: 6px;
   }
@@ -254,7 +283,6 @@ const Timestamp = styled.div`
 `;
 
 const ConfigMissingText = styled.div`
-  color: #f39c12;
   font-size: 13px;
   text-align: center;
   display: flex;
@@ -262,10 +290,8 @@ const ConfigMissingText = styled.div`
   justify-content: center;
   height: 100%;
   line-height: 1.5;
-  background: rgba(243, 156, 18, 0.1);
   border-radius: 6px;
   padding: 12px;
-  border-left: 4px solid #f39c12;
 `;
 
 interface FormulaExplanationProps {
@@ -333,6 +359,15 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
         error: error instanceof Error ? error.message : '解释公式时发生未知错误'
       });
     }
+  };
+
+  const handleClear = () => {
+    setExplanation({
+      content: '',
+      timestamp: '',
+      isLoading: false,
+      error: undefined
+    });
   };
 
   const renderContent = () => {
@@ -412,10 +447,14 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
     );
   };
 
-  const isButtonDisabled = !latex.trim() || 
-                          !deepSeekConfig?.apiKey || 
-                          !deepSeekConfig.enabled || 
-                          explanation.isLoading;
+  const isExplainDisabled = !latex.trim() || 
+                           !deepSeekConfig?.apiKey || 
+                           !deepSeekConfig.enabled || 
+                           explanation.isLoading;
+
+  const isClearDisabled = !explanation.content && 
+                         !explanation.error && 
+                         !explanation.isLoading;
 
   return (
     <Container>
@@ -423,12 +462,21 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
         <Label>
           🤖 AI 公式解释
         </Label>
-        <ExplainButton 
-          onClick={handleExplain}
-          disabled={isButtonDisabled}
-        >
-          {explanation.isLoading ? '解释中...' : '解释公式'}
-        </ExplainButton>
+        <ButtonGroup>
+          <ExplainButton 
+            onClick={handleExplain}
+            disabled={isExplainDisabled}
+          >
+            {explanation.isLoading ? '解释中...' : '解释公式'}
+          </ExplainButton>
+          <ClearButton 
+            onClick={handleClear}
+            disabled={isClearDisabled}
+            title="清除解释内容"
+          >
+            清除
+          </ClearButton>
+        </ButtonGroup>
       </Header>
       <ContentArea>
         {renderContent()}

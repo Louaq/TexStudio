@@ -15,12 +15,12 @@ const MenuContainer = styled.div`
   align-items: center;
 `;
 
-const MenuItem = styled.div`
+const MenuItem = styled.div<{ disabled?: boolean }>`
   padding: 8px;
-  cursor: pointer;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   border-radius: 6px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  color: #3a4a5b;
+  color: ${props => props.disabled ? '#95a5a6' : '#3a4a5b'};
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -29,17 +29,22 @@ const MenuItem = styled.div`
   width: 34px;
   height: 34px;
   position: relative;
+  opacity: ${props => props.disabled ? 0.5 : 1};
 
   &:hover {
-    background: #edf2f7;
-    color: #4375b9;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    ${props => !props.disabled && `
+      background: #edf2f7;
+      color: #4375b9;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    `}
   }
   
   &:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    ${props => !props.disabled && `
+      transform: translateY(0);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    `}
   }
 `;
 
@@ -55,6 +60,10 @@ const Divider = styled.div`
 const MenuIcon = {
   capture: "📷",   // 截图
   upload: "📤",    // 上传图片
+  copy: "📋",      // 复制
+  export: "💾",    // 导出图片
+  autoMode: "🤖",  // 自动识别模式
+  manualMode: "✋", // 手动识别模式
   history: "🕒",   // 历史记录
   api: "🔐",       // API设置
   shortcut: "⌨️",  // 快捷键
@@ -67,6 +76,9 @@ const MenuIcon = {
 interface MenuBarProps {
   onCapture: () => void;
   onUpload: () => void;
+  onCopy: () => void;
+  onExport: () => void;
+  onToggleRecognitionMode: () => void;
   onShowApiSettings: () => void;
   onShowShortcutSettings: () => void;
   onShowHistory: () => void;
@@ -75,11 +87,17 @@ interface MenuBarProps {
   onToggleAlwaysOnTop: () => void;
   onCheckForUpdates?: () => void;
   isAlwaysOnTop: boolean;
+  isAutoRecognition: boolean;
+  copyDisabled?: boolean;
+  exportDisabled?: boolean;
 }
 
 const MenuBar: React.FC<MenuBarProps> = ({
   onCapture,
   onUpload,
+  onCopy,
+  onExport,
+  onToggleRecognitionMode,
   onShowApiSettings,
   onShowShortcutSettings,
   onShowHistory,
@@ -87,7 +105,10 @@ const MenuBar: React.FC<MenuBarProps> = ({
   onCleanupTempFiles,
   onToggleAlwaysOnTop,
   onCheckForUpdates,
-  isAlwaysOnTop
+  isAlwaysOnTop,
+  isAutoRecognition,
+  copyDisabled = false,
+  exportDisabled = false
 }) => {
   return (
     <MenuContainer onClick={(e) => e.stopPropagation()}>
@@ -99,6 +120,37 @@ const MenuBar: React.FC<MenuBarProps> = ({
       {/* 上传图片 */}
       <MenuItem onClick={onUpload} title="上传图片">
         {MenuIcon.upload}
+      </MenuItem>
+      
+      <Divider />
+      
+      {/* 复制LaTeX */}
+      <MenuItem 
+        onClick={copyDisabled ? undefined : onCopy} 
+        title={copyDisabled ? "请先识别或输入数学公式" : "复制LaTeX代码"}
+        disabled={copyDisabled}
+      >
+        {MenuIcon.copy}
+      </MenuItem>
+      
+      {/* 导出图片 */}
+      <MenuItem 
+        onClick={exportDisabled ? undefined : onExport} 
+        title={exportDisabled ? "请先识别或输入数学公式" : "导出为图片"}
+        disabled={exportDisabled}
+      >
+        {MenuIcon.export}
+      </MenuItem>
+      
+      <Divider />
+      
+      {/* 识别模式切换 */}
+      <MenuItem 
+        onClick={onToggleRecognitionMode} 
+        title={isAutoRecognition ? "当前：自动识别模式，点击切换到手动识别" : "当前：手动识别模式，点击切换到自动识别"}
+        style={isAutoRecognition ? { color: '#4a90e2', background: '#edf2f7' } : {}}
+      >
+        {isAutoRecognition ? MenuIcon.autoMode : MenuIcon.manualMode}
       </MenuItem>
       
       <Divider />

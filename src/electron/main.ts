@@ -448,9 +448,9 @@ let mainWindow: BrowserWindow | null = null;
 async function createMainWindow(): Promise<void> {
   mainWindow = new BrowserWindow({
     width: 1051,
-    height: 780,
+    height: 820,
     minWidth: 1051,
-    minHeight: 780,
+    minHeight: 820,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
