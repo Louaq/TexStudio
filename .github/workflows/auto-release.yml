@@ -112,9 +112,9 @@ jobs:
           # 重命名安装程序
           $version = "${{ steps.package_version.outputs.version }}"
           Write-Host "`n=== 重命名安装程序 ==="
-          $setupFile = Get-ChildItem -Path "release" -Filter "*.exe" | Where-Object { $_.Name -like "LaTeX*" -or $_.Name -like "*-setup-*.exe" } | Select-Object -First 1
+          $setupFile = Get-ChildItem -Path "release" -Filter "*.exe" | Where-Object { $_.Name -like "TexStudio*" -or $_.Name -like "*-setup-*.exe" } | Select-Object -First 1
           if ($setupFile) {
-            $newName = "LaTeX-$version.exe"
+            $newName = "LaTeX-latest.exe"
             $newPath = Join-Path -Path "release" -ChildPath $newName
             Rename-Item -Path $setupFile.FullName -NewName $newName -Force
             Write-Host "已将 $($setupFile.Name) 重命名为: $newName"
@@ -123,18 +123,12 @@ jobs:
             Get-ChildItem -Path "release" -File | ForEach-Object { Write-Host " - $($_.Name)" }
           }
           
-          # 复制安装程序用于发布
-          Copy-Item -Path "release\LaTeX-$version.exe" -Destination "release\LaTeX-latest.exe" -Force
-          Write-Host "创建了latest版本副本: LaTeX-latest.exe"
-          
-          # 复制并重命名latest.yml文件
+          # 修改latest.yml文件
           if (Test-Path -Path "release\latest.yml") {
-            Copy-Item -Path "release\latest.yml" -Destination "release\latest-$version.yml" -Force
-            
             # 修改latest.yml文件内容，更新文件名
             $ymlContent = Get-Content -Path "release\latest.yml" -Raw
-            $ymlContent = $ymlContent -replace "latex-ocr-electron-setup-$version.exe", "LaTeX-$version.exe"
-            $ymlContent = $ymlContent -replace "path: latex-ocr-electron-setup-$version.exe", "path: LaTeX-$version.exe"
+            $ymlContent = $ymlContent -replace "TexStudio-$version.exe", "LaTeX-latest.exe"
+            $ymlContent = $ymlContent -replace "path: TexStudio-$version.exe", "path: LaTeX-latest.exe"
             Set-Content -Path "release\latest.yml" -Value $ymlContent
             
             Write-Host "已处理latest.yml文件"
@@ -145,10 +139,8 @@ jobs:
           # 删除不需要的文件
           Write-Host "`n=== 删除多余文件 ==="
           Get-ChildItem -Path "release" -File | Where-Object { 
-            $_.Name -ne "LaTeX-$version.exe" -and 
             $_.Name -ne "LaTeX-latest.exe" -and 
-            $_.Name -ne "latest.yml" -and
-            $_.Name -ne "latest-$version.yml"
+            $_.Name -ne "latest.yml"
           } | ForEach-Object {
             Remove-Item -Path $_.FullName -Force
             Write-Host "已删除文件: $($_.Name)"
@@ -166,10 +158,8 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./release/LaTeX-${{ steps.package_version.outputs.version }}.exe
             ./release/LaTeX-latest.exe
             ./release/latest.yml
-            ./release/latest-${{ steps.package_version.outputs.version }}.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
@@ -178,7 +168,7 @@ jobs:
         with:
           name: LaTeX-installer
           path: |
-            release/LaTeX-${{ steps.package_version.outputs.version }}.exe
+            release/LaTeX-latest.exe
 
   notify:
     needs: [check-version, build-and-release]
