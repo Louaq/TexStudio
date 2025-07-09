@@ -1,6 +1,6 @@
 {
-  "short_name": "SimpleTex OCR",
-  "name": "SimpleTex OCR - 数学公式识别应用",
+  "short_name": "TexStudio",
+  "name": "TexStudio OCR",
   "icons": [
     {
       "src": "favicon.ico",

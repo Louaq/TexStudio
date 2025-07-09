@@ -250,7 +250,7 @@ function App() {
     setIsAutoRecognition(newMode);
     setAppState(prev => ({ 
       ...prev, 
-      statusMessage: newMode ? '🤖 已切换到自动识别模式' : '✋ 已切换到手动识别模式'
+      statusMessage: newMode ? '🤖 已切换到自动识别模式' : '已切换到手动识别模式'
     }));
     setTimeout(() => {
       setAppState(prev => ({ 
@@ -270,9 +270,39 @@ function App() {
       return;
     }
 
-    // 从URL中提取文件路径
     let imagePath = appState.currentImage;
-    if (imagePath.startsWith('file://')) {
+    
+    // 如果是 data URL（拖拽上传的情况），需要重新保存为临时文件
+    if (imagePath.startsWith('data:')) {
+      if (!window.electronAPI) {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '❌ 手动识别功能仅在 Electron 应用中可用'
+        }));
+        return;
+      }
+
+      try {
+        // 将 data URL 转换为 Blob
+        const response = await fetch(imagePath);
+        const blob = await response.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        // 保存为临时文件
+        const tempFileName = `manual-recognize-${Date.now()}.png`;
+        imagePath = await window.electronAPI.saveTempFile(uint8Array, tempFileName);
+        console.log('手动识别：将 data URL 保存为临时文件:', imagePath);
+      } catch (error) {
+        console.error('转换 data URL 为临时文件失败:', error);
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '❌ 处理图片失败'
+        }));
+        return;
+      }
+    } else if (imagePath.startsWith('file://')) {
+      // 从文件URL中提取文件路径
       imagePath = imagePath.substring(7); // 移除 'file://' 前缀
     }
 
@@ -630,7 +660,7 @@ function App() {
         setAppState(prev => ({ 
           ...prev, 
           latexCode: '',
-          statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '📷 截图完成，点击识别按钮开始识别'
+          statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '截图完成，点击识别按钮开始识别'
         }));
         
         // 根据识别模式决定是否自动开始识别
@@ -691,52 +721,50 @@ function App() {
       console.log('文件大小:', file.size);
       
       if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          if (reader.result) {
-            console.log('文件读取完成，设置图片显示');
-            setAppState(prev => ({ ...prev, currentImage: reader.result as string }));
+        const handleDraggedFile = async () => {
+          if (!window.electronAPI) {
+            setAppState(prev => ({ 
+              ...prev, 
+              statusMessage: '❌ 拖拽识别功能仅在 Electron 应用中可用'
+            }));
+            return;
+          }
+
+          console.log('开始处理拖拽图片识别...');
+          console.log('当前settings:', settings);
+
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            const tempPath = await window.electronAPI.saveTempFile(uint8Array, file.name);
+            console.log('临时文件保存到:', tempPath);
             
-            if (!window.electronAPI) {
-              setAppState(prev => ({ 
-                ...prev, 
-                statusMessage: '❌ 拖拽识别功能仅在 Electron 应用中可用'
-              }));
-              return;
+            // 使用文件路径而不是 data URL
+            setAppState(prev => ({ ...prev, currentImage: `file://${tempPath}` }));
+            
+            // 清空AI解释区域
+            resetAIExplanation();
+            
+            setAppState(prev => ({ 
+              ...prev, 
+              latexCode: '',
+              statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '图片已拖拽上传，点击识别按钮开始识别'
+            }));
+            
+            // 根据识别模式决定是否自动开始识别
+            if (isAutoRecognition) {
+              await recognizeFormula(tempPath);
             }
-
-            console.log('开始处理拖拽图片识别...');
-            console.log('当前settings:', settings);
-
-            try {
-               const arrayBuffer = await file.arrayBuffer();
-               const uint8Array = new Uint8Array(arrayBuffer);
-               const tempPath = await window.electronAPI.saveTempFile(uint8Array, file.name);
-               console.log('临时文件保存到:', tempPath);
-               
-               // 清空AI解释区域
-               resetAIExplanation();
-               
-               setAppState(prev => ({ 
-                 ...prev, 
-                 latexCode: '',
-                 statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '📷 图片已拖拽上传，点击识别按钮开始识别'
-               }));
-               
-               // 根据识别模式决定是否自动开始识别
-               if (isAutoRecognition) {
-                 await recognizeFormula(tempPath);
-               }
-            } catch (error) {
-              console.error('处理拖拽图片失败:', error);
-              setAppState(prev => ({ 
-                ...prev, 
-                statusMessage: '❌ 处理图片失败'
-              }));
-            }
+          } catch (error) {
+            console.error('处理拖拽图片失败:', error);
+            setAppState(prev => ({ 
+              ...prev, 
+              statusMessage: '❌ 处理图片失败'
+            }));
           }
         };
-        reader.readAsDataURL(file);
+        
+        handleDraggedFile();
       } else {
         console.log('文件类型不支持:', file.type);
         setAppState(prev => ({ 
@@ -799,7 +827,7 @@ function App() {
           ...prev, 
           currentImage: `file://${filePath}`,
           latexCode: '',
-          statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '📷 图片已上传，点击识别按钮开始识别'
+          statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '图片已上传，点击识别按钮开始识别'
         }));
         
         // 根据识别模式决定是否自动开始识别
@@ -1399,7 +1427,7 @@ function App() {
         copyDisabled={!appState.latexCode.trim() || appState.isRecognizing}
         exportDisabled={!appState.latexCode.trim() || appState.isRecognizing}
       />
-      <MainContent>
+      <MainContent {...getRootProps()}>
         <TopSection>
           <ImageDisplay
             imageUrl={appState.currentImage}

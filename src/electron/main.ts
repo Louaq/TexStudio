@@ -463,7 +463,7 @@ async function createMainWindow(): Promise<void> {
       enableWebSQL: false,
       experimentalFeatures: false
     },
-    title: 'SimpleTex OCR - 数学公式识别工具',
+            title: 'TexStudio OCR',
     show: false,
     autoHideMenuBar: true
   });
@@ -810,7 +810,7 @@ if (process.platform === 'win32') {
 }
 
 
-app.setPath('userData', path.join(app.getPath('appData'), 'SimpleTex-OCR'));
+    app.setPath('userData', path.join(app.getPath('appData'), 'TexStudio'));
 
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -1670,7 +1670,7 @@ function terminateAllProcesses(): void {
       const possibleProcessNames = [
         'LaTeX公式识别工具.exe',
         'electron.exe',
-        'SimpleTex-OCR.exe',
+        'TexStudio.exe',
         'node.exe'
       ];
       for (const processName of possibleProcessNames) {
@@ -1694,7 +1694,7 @@ function killZombieProcesses(): void {
       const possibleProcessNames = [
         'LaTeX公式识别工具.exe',
         'electron.exe',
-        'SimpleTex-OCR.exe'
+        'TexStudio.exe'
       ];
       const currentPid = process.pid;
       for (const processName of possibleProcessNames) {

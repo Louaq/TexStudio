@@ -98,37 +98,48 @@ const DragText = styled.div`
 
 const ManualRecognizeButton = styled.button`
   position: absolute;
-  bottom: 12px;
+  top: 12px;
   right: 12px;
-  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
+  border-radius: 12px;
+  padding: 12px 20px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 3px 8px rgba(74, 144, 226, 0.3);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(46, 204, 113, 0.25);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+  z-index: 10;
+  min-width: 120px;
+  justify-content: center;
+  letter-spacing: 0.5px;
 
   &:hover {
-    background: linear-gradient(135deg, #5ba0f2 0%, #458bcd 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+    background: linear-gradient(135deg, #58d68d 0%, #2ecc71 100%);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(46, 204, 113, 0.35);
   }
 
   &:active {
-    transform: translateY(0);
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
   }
 
   &:disabled {
-    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 2px 4px rgba(149, 165, 166, 0.2);
+    box-shadow: 0 2px 8px rgba(149, 165, 166, 0.15);
+    
+    &:hover {
+      transform: none;
+      box-shadow: 0 2px 8px rgba(149, 165, 166, 0.15);
+    }
   }
 `;
 

@@ -18,7 +18,7 @@
 - 📁 **公式导出** - 支持导出为svg、png和jpg三种格式的图片
 - 📚 **历史记录** - 自动保存识别历史，方便查看和复用
 - ⌨️ **全局快捷键** - 可自定义快捷键，支持后台运行
-- 🔑 **API配置** - 支持自定义[SimpleTex API](https://simpletex.cn/)配置和 DeepSeek API 配置
+- 🔑 **API配置** - 支持自定义[SimpleTex API](https://simpletex.cn/)配置和 [DeepSeek API](https://platform.deepseek.com/) 配置
 - 🎨 **现代化界面** - 基于 Styled Components 的美观界面设计
 - 🔄 **自动更新** - 支持检测和安装新版本，无需手动下载
 

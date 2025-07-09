@@ -209,7 +209,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
       <Dialog onClick={handleDialogClick}>
         <Header>
           <AppIcon>∑</AppIcon>
-          <AppTitle>SimpleTex OCR</AppTitle>
+                          <AppTitle>TexStudio</AppTitle>
           <Subtitle>数学公式识别工具</Subtitle>
           <Version>v3.10.5</Version>
         </Header>
@@ -240,7 +240,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
 
         <Footer>
           <Copyright>
-            © 2025 SimpleTex Team. All Rights Reserved.<br/>
+                            © 2025 TexStudio Team. All Rights Reserved.<br/>
             本软件受知识产权法保护，未经授权不得复制或分发
           </Copyright>
           
