@@ -202,7 +202,6 @@ const Description = styled.p`
   background: rgba(255, 255, 255, 0.6);
   padding: 12px;
   border-radius: 8px;
-  border-left: 4px solid #4a90e2;
 `;
 
 const SuccessMessage = styled.div`
@@ -417,7 +416,7 @@ const ShortcutSettingsDialog: React.FC<ShortcutSettingsDialogProps> = ({
           </SuccessMessage>
         ) : (
           <Description>
-            点击下方按钮，然后按住您想要设置的快捷键组合（如 Ctrl+C 或 Alt+S）。
+            点击下方按钮，然后按住您想要设置的快捷键组合（不要设置为Alt+其他键）。
           </Description>
         )}
 
