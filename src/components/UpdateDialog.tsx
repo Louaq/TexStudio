@@ -180,7 +180,7 @@ const CircleProgress: React.FC<{ progress: number }> = ({ progress }) => {
 
 interface UpdateDialogProps {
   isOpen: boolean;
-  status: 'checking' | 'no-update' | 'available' | 'downloading' | 'downloaded';
+  status: 'checking' | 'no-update' | 'available' | 'downloading' | 'downloaded' | 'error';
   progress?: number;
   version?: string;
   onClose: () => void;
@@ -257,15 +257,29 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
       case 'downloaded':
         return (
           <>
-            <IconContainer style={{ backgroundColor: '#4cd964' }}>✓</IconContainer>
+            <IconContainer style={{ backgroundColor: '#4cd964' }}>🎉</IconContainer>
             <Title>下载完成</Title>
-            <Message>更新已下载完成，需要重启应用以完成安装</Message>
+            <Message>新版本 {version} 已准备就绪，重启以完成安装。</Message>
             <ButtonContainer>
-              <Button onClick={onClose}>稍后重启</Button>
               <Button variant="primary" onClick={onRestart}>立即重启</Button>
             </ButtonContainer>
           </>
         );
+
+      case 'error':
+        return (
+          <>
+            <IconContainer style={{ backgroundColor: '#d9534f' }}>❌</IconContainer>
+            <Title>更新失败</Title>
+            <Message>检查更新时遇到错误，请检查网络连接或稍后再试。</Message>
+            <ButtonContainer>
+              <Button onClick={onClose}>关闭</Button>
+            </ButtonContainer>
+          </>
+        );
+
+      default:
+        return null;
     }
   };
 

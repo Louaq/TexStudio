@@ -187,6 +187,15 @@ const StatusBarWrapper = styled.div`
   height: 38px; /* 固定状态栏高度 */
 `;
 
+type UpdateStatus = 'idle' | 'checking' | 'available' | 'no-update' | 'downloading' | 'downloaded' | 'error';
+
+interface UpdateInfoState {
+  showDialog: boolean;
+  showIndicator: boolean;
+  status: UpdateStatus;
+  version: string;
+}
+
 function App() {
   const [appState, setAppState] = useState<AppState>({
     currentImage: null,
@@ -197,17 +206,13 @@ function App() {
   });
 
   // 添加更新状态管理
-  const [updateState, setUpdateState] = useState<{
-    showDialog: boolean;
-    status: 'checking' | 'no-update' | 'available' | 'downloading' | 'downloaded';
-    progress: number;
-    version: string;
-  }>({
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfoState>({
     showDialog: false,
-    status: 'checking',
-    progress: 0,
-    version: ''
+    showIndicator: false,
+    status: 'idle', // 'checking', 'available', 'no-update', 'downloading', 'downloaded', 'error'
+    version: '',
   });
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   // 移除之前添加的防抖状态
   // const [isUploadInProgress, setIsUploadInProgress] = useState(false);
@@ -232,9 +237,6 @@ function App() {
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
-  const [showBackgroundUpdateProgress, setShowBackgroundUpdateProgress] = useState(false);
-
-  // 添加自动识别模式控制
   const [isAutoRecognition, setIsAutoRecognition] = useState(true);
   
   // 添加AI解释重置控制
@@ -381,84 +383,42 @@ function App() {
     // 创建更新事件处理函数
     const handleCheckingForUpdate = () => {
       console.log('正在检查更新...');
-      setUpdateState(prev => ({
-        ...prev,
-        showDialog: true,
-        status: 'checking'
-      }));
+      setUpdateInfo({ showDialog: true, showIndicator: false, status: 'checking', version: '' });
+      setDownloadProgress(0);
     };
 
     const handleUpdateAvailable = (info: any) => {
       console.log('发现新版本:', info);
-      setUpdateState(prev => ({
-        ...prev,
-        showDialog: true,
-        status: 'available',
-        version: info.version
-      }));
+      setUpdateInfo(prev => ({ ...prev, showDialog: true, showIndicator: false, status: 'available', version: info.version }));
     };
 
     const handleUpdateNotAvailable = (info: any) => {
-      console.log('当前已是最新版本:', info);
-      setUpdateState(prev => ({
-        ...prev,
-        showDialog: true,
-        status: 'no-update'
-      }));
+      console.log('已是最新版本:', info);
+      setUpdateInfo(prev => ({ ...prev, status: 'no-update' }));
     };
 
     const handleUpdateError = (error: string) => {
-      console.error('更新检查失败:', error);
-      // 显示错误仍然放在状态栏
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: `❌ 检查更新失败: ${error}`
+      console.error('更新失败:', error);
+      setAppState(prev => ({
+        ...prev,
+        statusMessage: `❌ 更新失败: ${error}`
       }));
-      // 3秒后恢复状态
-      setTimeout(() => {
-        setAppState(prev => ({ ...prev, statusMessage: '⚡ 准备就绪' }));
-      }, 3000);
+      setUpdateInfo(prev => ({ ...prev, status: 'error' }));
     };
 
     const handleDownloadProgress = (progressObj: any) => {
-      // 确保progressObj和percent字段存在，并且是有效数字
-      const rawPercent = progressObj?.percent;
-      let percent = 0;
-      
-      if (typeof rawPercent === 'number' && !isNaN(rawPercent)) {
-        // 确保进度值在0-100之间
-        percent = Math.max(0, Math.min(100, rawPercent));
-      } else if (typeof rawPercent === 'string') {
-        const parsed = parseFloat(rawPercent);
-        if (!isNaN(parsed)) {
-          percent = Math.max(0, Math.min(100, parsed));
-        }
-      }
-      
-      console.log(`下载进度: ${percent.toFixed(1)}%`, { 
-        原始数据: rawPercent, 
-        处理后: percent,
-        transferred: progressObj?.transferred,
-        total: progressObj?.total 
-      });
-      
-      setUpdateState(prev => ({
-        ...prev,
-        showDialog: true,
-        status: 'downloading',
-        progress: percent
-      }));
+      console.log(`下载进度: ${progressObj.percent}%`);
+      setDownloadProgress(progressObj.percent);
     };
 
     const handleUpdateDownloaded = (info: any) => {
-      setUpdateState(prev => ({
-        ...prev,
-        showDialog: true, // Re-open the dialog
+      setDownloadProgress(100);
+      setUpdateInfo({
+        showDialog: true,
+        showIndicator: false,
         status: 'downloaded',
         version: info.version,
-        progress: 100,
-      }));
-      setShowBackgroundUpdateProgress(false);
+      });
     };
 
     // 注册自动更新事件处理程序
@@ -1267,64 +1227,39 @@ function App() {
     }
     
     try {
-      console.log('手动触发检查更新');
-      // 打开更新对话框并显示检查中状态
-      setUpdateState(prev => ({
-        ...prev,
-        showDialog: true,
-        status: 'checking'
-      }));
-      
-      const result = await window.electronAPI.checkForUpdates();
-      if (!result.success) {
-        console.error('检查更新失败:', result.message);
-        // 显示在状态栏
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: `❌ ${result.message}`
-        }));
-        setTimeout(() => {
-          setAppState(prev => ({ 
-            ...prev, 
-            statusMessage: '⚡ 准备就绪'
-          }));
-        }, 3000);
-      }
+      setUpdateInfo({ showDialog: true, showIndicator: false, status: 'checking', version: '' });
+      setDownloadProgress(0);
+      await window.electronAPI.checkForUpdates();
     } catch (error) {
-      console.error('检查更新出错:', error);
-      setAppState(prev => ({ 
-        ...prev, 
+      console.error('检查更新失败:', error);
+      setAppState(prev => ({
+        ...prev,
         statusMessage: '❌ 检查更新失败'
       }));
-      setTimeout(() => {
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: '⚡ 准备就绪'
-        }));
-      }, 3000);
+      setUpdateInfo(prev => ({ ...prev, status: 'error' }));
     }
   };
 
-  // 处理下载更新
   const handleDownloadUpdate = () => {
     if (!window.electronAPI) return;
     
     try {
-      // 这个函数会发送IPC消息到主进程，让主进程开始下载更新
+      // 触发主进程下载更新
       window.electronAPI.downloadUpdate();
-      
-      // 更新UI状态为"下载中"
-      setUpdateState(prev => ({
+      // 更新UI状态为“下载中”
+      setUpdateInfo(prev => ({
         ...prev,
-        status: 'downloading',
-        progress: 0
+        status: 'downloading'
       }));
     } catch (error) {
-      console.error('开始下载更新失败:', error);
+      console.error('下载更新失败:', error);
+      setAppState(prev => ({
+        ...prev,
+        statusMessage: '❌ 下载更新失败'
+      }));
     }
   };
 
-  // 处理重启并安装更新
   const handleRestartAndInstall = () => {
     if (!window.electronAPI) return;
     
@@ -1336,17 +1271,20 @@ function App() {
     }
   };
 
-  // 关闭更新对话框
   const handleCloseUpdateDialog = () => {
-    setUpdateState(prev => ({
+    // 只关闭对话框，不改变更新状态，除非是'no-update'或'checking'
+    setUpdateInfo(prev => ({
       ...prev,
       showDialog: false
     }));
   };
 
   const handleBackgroundDownload = () => {
-    handleCloseUpdateDialog();
-    setShowBackgroundUpdateProgress(true);
+    setUpdateInfo(prev => ({
+      ...prev,
+      showDialog: false,
+      showIndicator: true,
+    }));
   };
 
   const handleExportFormula = async (format: 'svg' | 'png' | 'jpg') => {
@@ -1521,19 +1459,19 @@ function App() {
       />
 
       <UpdateDialog
-        isOpen={updateState.showDialog}
+        isOpen={updateInfo.showDialog}
         onClose={handleCloseUpdateDialog}
-        status={updateState.status}
-        progress={updateState.progress}
-        version={updateState.version}
+        status={updateInfo.status as Exclude<UpdateStatus, 'idle'>}
+        progress={downloadProgress}
+        version={updateInfo.version}
         onDownload={handleDownloadUpdate}
         onRestart={handleRestartAndInstall}
         onBackgroundDownload={handleBackgroundDownload}
       />
 
       <UpdateProgressIndicator
-        isVisible={showBackgroundUpdateProgress}
-        progress={updateState.progress}
+        isVisible={updateInfo.showIndicator}
+        progress={downloadProgress}
       />
     </AppContainer>
   );
