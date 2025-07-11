@@ -211,7 +211,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
           <AppIcon>∑</AppIcon>
                           <AppTitle>TexStudio</AppTitle>
           <Subtitle>数学公式识别工具</Subtitle>
-          <Version>v3.10.5</Version>
+          <Version>v4.1.7</Version>
         </Header>
 
         <Description>

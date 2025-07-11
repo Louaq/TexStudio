@@ -1,11 +1,12 @@
 # LaTeX公式识别工具 - TypeScript版
 
 ## ✨ 界面截图
-![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-04_09-16-07.png)
-![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-04_09-15-57.png)
-![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-04_09-16-22.png)
-![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-04_09-16-30.png)
-
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-11_08-46-46.png)
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-11_08-47-43.png)
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-11_08-47-52.png)
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-11_08-48-00.png)
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-11_08-48-10.png)
+![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-11_08-48-18.png)
 一个基于 Electron + React + TypeScript 的现代化 LaTeX 公式识别桌面应用程序。
 
 
