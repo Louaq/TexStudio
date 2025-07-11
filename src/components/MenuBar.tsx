@@ -70,7 +70,8 @@ const MenuIcon = {
   cleanup: "🧹",   // 清理临时文件
   update: "🔄",    // 检查更新
   pin: "📌",       // 窗口置顶
-  about: "ℹ️"      // 关于
+  about: "ℹ️",      // 关于
+  help: "💡"       // 帮助
 };
 
 interface MenuBarProps {
@@ -83,6 +84,7 @@ interface MenuBarProps {
   onShowShortcutSettings: () => void;
   onShowHistory: () => void;
   onShowAbout: () => void;
+  onShowHelp: () => void; // 新增
   onCleanupTempFiles: () => void;
   onToggleAlwaysOnTop: () => void;
   onCheckForUpdates?: () => void;
@@ -102,6 +104,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
   onShowShortcutSettings,
   onShowHistory,
   onShowAbout,
+  onShowHelp, // 新增
   onCleanupTempFiles,
   onToggleAlwaysOnTop,
   onCheckForUpdates,
@@ -197,6 +200,11 @@ const MenuBar: React.FC<MenuBarProps> = ({
       
       <Divider />
       
+      {/* 帮助 */}
+      <MenuItem onClick={onShowHelp} title="使用帮助">
+        {MenuIcon.help}
+      </MenuItem>
+
       {/* 关于 */}
       <MenuItem onClick={onShowAbout} title="关于">
         {MenuIcon.about}

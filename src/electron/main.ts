@@ -436,7 +436,7 @@ const store = new Store<AppSettings>({
     apiConfig: DEFAULT_API_CONFIG,
     shortcuts: {
       capture: 'Alt+C',
-      upload: 'Alt+S'  // 修改为Alt+S代替Alt+U
+      upload: 'Alt+S' 
     },
     history: []
   }

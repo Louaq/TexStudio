@@ -151,7 +151,7 @@ const ButtonGroup = styled.div`
   margin-top: 24px;
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>`
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
@@ -161,32 +161,50 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
   transition: all 0.3s ease;
   min-width: 100px;
 
-  ${props => props.variant === 'primary' ? `
-    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-    color: white;
+  ${props => {
+    switch (props.variant) {
+      case 'primary':
+        return `
+          background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+          color: white;
 
-    &:hover {
-      background: linear-gradient(135deg, #5ba0f2 0%, #458bcd 100%);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-    }
+          &:hover {
+            background: linear-gradient(135deg, #5ba0f2 0%, #458bcd 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+          }
 
-    &:disabled {
-      background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-  ` : `
-    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-    color: white;
+          &:disabled {
+            background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+          }
+        `;
+      case 'tertiary':
+        return `
+          background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+          color: white;
 
-    &:hover {
-      background: linear-gradient(135deg, #a4b3b6 0%, #8e9b9d 100%);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(127, 140, 141, 0.2);
+          &:hover {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(230, 126, 34, 0.2);
+          }
+        `;
+      default: // secondary
+        return `
+          background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+          color: white;
+
+          &:hover {
+            background: linear-gradient(135deg, #a4b3b6 0%, #8e9b9d 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(127, 140, 141, 0.2);
+          }
+        `;
     }
-  `}
+  }}
 
   &:active {
     transform: translateY(0);
@@ -238,6 +256,16 @@ const ShortcutSettingsDialog: React.FC<ShortcutSettingsDialogProps> = ({
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
   const [showSuccess, setShowSuccess] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+
+  const handleReset = () => {
+    const defaultShortcuts = { capture: 'Alt+A', upload: 'Alt+S' };
+    setFormData(defaultShortcuts);
+    onSave(defaultShortcuts);
+    setShowSuccess(true);
+    setTimeout(() => {
+      setShowSuccess(false);
+    }, 2000);
+  };
 
   // 将按键转换为Electron格式
   const formatShortcut = (keys: Set<string>): string => {
@@ -467,6 +495,14 @@ const ShortcutSettingsDialog: React.FC<ShortcutSettingsDialogProps> = ({
               disabled={!!listeningFor}
             >
               取消
+            </Button>
+            <Button 
+              type="button" 
+              variant="tertiary" 
+              onClick={handleReset}
+              disabled={!!listeningFor}
+            >
+              重置
             </Button>
             <Button 
               type="submit" 

@@ -17,6 +17,7 @@ import UpdateDialog from './components/UpdateDialog';
 import UpdateProgressIndicator from './components/UpdateProgressIndicator';
 import CopyOptionsDialog from './components/CopyOptionsDialog';
 import ExportOptionsDialog from './components/ExportOptionsDialog';
+import HelpDialog from './components/HelpDialog'; // 新增
 import * as path from 'path';
 
 const AppContainer = styled.div`
@@ -234,6 +235,7 @@ function App() {
   const [showShortcutSettings, setShowShortcutSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showHelp, setShowHelp] = useState(false); // 新增
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
@@ -1365,6 +1367,7 @@ function App() {
         onShowShortcutSettings={() => setShowShortcutSettings(true)}
         onShowHistory={() => setShowHistory(true)}
         onShowAbout={() => setShowAbout(true)}
+        onShowHelp={() => setShowHelp(true)} // 新增
         onCleanupTempFiles={handleCleanupTempFiles}
         onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
         onCheckForUpdates={handleCheckForUpdates}
@@ -1444,6 +1447,11 @@ function App() {
 
       {showAbout && (
         <AboutDialog onClose={() => setShowAbout(false)} />
+      )}
+
+      {/* 新增帮助对话框 */}
+      {showHelp && (
+        <HelpDialog onClose={() => setShowHelp(false)} />
       )}
 
       <CopyOptionsDialog

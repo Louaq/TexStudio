@@ -130,9 +130,9 @@ const FeatureIcon = styled.div`
 `;
 
 const Footer = styled.div`
-  text-align: center;
-  padding-top: 20px;
+  padding-top: 16px;
   border-top: 1px solid #e2e8f0;
+  margin-top: 12px;
 `;
 
 const Copyright = styled.div`
@@ -141,10 +141,16 @@ const Copyright = styled.div`
   margin-bottom: 16px;
   font-style: italic;
   line-height: 1.4;
+  text-align: center;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  justify-content: flex-end;
 `;
 
 const CloseButton = styled.button`
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
   color: white;
   border: none;
   padding: 10px 24px;
@@ -244,9 +250,11 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
             本软件受知识产权法保护，未经授权不得复制或分发
           </Copyright>
           
-          <CloseButton onClick={onClose}>
-            关闭
-          </CloseButton>
+          <ButtonGroup>
+            <CloseButton onClick={onClose}>
+              关闭
+            </CloseButton>
+          </ButtonGroup>
         </Footer>
       </Dialog>
     </Overlay>
