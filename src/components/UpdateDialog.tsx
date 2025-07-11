@@ -186,6 +186,7 @@ interface UpdateDialogProps {
   onClose: () => void;
   onDownload?: () => void;
   onRestart?: () => void;
+  onBackgroundDownload?: () => void;
 }
 
 const UpdateDialog: React.FC<UpdateDialogProps> = ({
@@ -195,7 +196,8 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
   version = '',
   onClose,
   onDownload,
-  onRestart
+  onRestart,
+  onBackgroundDownload
 }) => {
   // 如果不显示，直接返回null
   if (!isOpen) return null;
@@ -247,7 +249,7 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
             <CircleProgress progress={progress} />
             <Message>正在下载新版本，请稍候...</Message>
             <ButtonContainer>
-              <Button onClick={onClose}>后台下载</Button>
+              <Button onClick={onBackgroundDownload}>后台下载</Button>
             </ButtonContainer>
           </>
         );

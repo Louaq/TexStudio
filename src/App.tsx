@@ -14,6 +14,7 @@ import ShortcutSettingsDialog from './components/ShortcutSettingsDialog';
 import HistoryDialog from './components/HistoryDialog';
 import AboutDialog from './components/AboutDialog';
 import UpdateDialog from './components/UpdateDialog';
+import UpdateProgressIndicator from './components/UpdateProgressIndicator';
 import CopyOptionsDialog from './components/CopyOptionsDialog';
 import ExportOptionsDialog from './components/ExportOptionsDialog';
 import * as path from 'path';
@@ -230,9 +231,9 @@ function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
-
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
-  
+  const [showBackgroundUpdateProgress, setShowBackgroundUpdateProgress] = useState(false);
+
   // 添加自动识别模式控制
   const [isAutoRecognition, setIsAutoRecognition] = useState(true);
   
@@ -450,12 +451,14 @@ function App() {
     };
 
     const handleUpdateDownloaded = (info: any) => {
-      console.log('更新下载完成:', info);
       setUpdateState(prev => ({
         ...prev,
-        showDialog: true,
-        status: 'downloaded'
+        showDialog: true, // Re-open the dialog
+        status: 'downloaded',
+        version: info.version,
+        progress: 100,
       }));
+      setShowBackgroundUpdateProgress(false);
     };
 
     // 注册自动更新事件处理程序
@@ -1341,6 +1344,11 @@ function App() {
     }));
   };
 
+  const handleBackgroundDownload = () => {
+    handleCloseUpdateDialog();
+    setShowBackgroundUpdateProgress(true);
+  };
+
   const handleExportFormula = async (format: 'svg' | 'png' | 'jpg') => {
     if (!appState.latexCode.trim()) {
       setAppState(prev => ({ 
@@ -1520,6 +1528,12 @@ function App() {
         version={updateState.version}
         onDownload={handleDownloadUpdate}
         onRestart={handleRestartAndInstall}
+        onBackgroundDownload={handleBackgroundDownload}
+      />
+
+      <UpdateProgressIndicator
+        isVisible={showBackgroundUpdateProgress}
+        progress={updateState.progress}
       />
     </AppContainer>
   );
