@@ -129,12 +129,6 @@ const FeatureIcon = styled.div`
   font-weight: 600;
 `;
 
-const Footer = styled.div`
-  padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
-  margin-top: 12px;
-`;
-
 const Copyright = styled.div`
   color: #64748b;
   font-size: 12px;
@@ -142,34 +136,6 @@ const Copyright = styled.div`
   font-style: italic;
   line-height: 1.4;
   text-align: center;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  justify-content: flex-end;
-`;
-
-const CloseButton = styled.button`
-  background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
-  color: white;
-  border: none;
-  padding: 10px 24px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-
-  &:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
 `;
 
 interface AboutDialogProps {
@@ -244,18 +210,10 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
           </FeatureItem>
         </FeatureList>
 
-        <Footer>
-          <Copyright>
-                            © 2025 TexStudio Team. All Rights Reserved.<br/>
-            本软件受知识产权法保护，未经授权不得复制或分发
-          </Copyright>
-          
-          <ButtonGroup>
-            <CloseButton onClick={onClose}>
-              关闭
-            </CloseButton>
-          </ButtonGroup>
-        </Footer>
+        <Copyright>
+          © 2025 TexStudio Team. All Rights Reserved.<br/>
+          本软件受知识产权法保护，未经授权不得复制或分发
+        </Copyright>
       </Dialog>
     </Overlay>
   );

@@ -211,9 +211,6 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
             <IconContainer style={{ backgroundColor: '#f0ad4e' }}>🔄</IconContainer>
             <Title>版本检查中</Title>
             <Message>正在检查更新，请稍候...</Message>
-            <ButtonContainer>
-              <Button onClick={onClose}>关闭</Button>
-            </ButtonContainer>
           </>
         );
         
@@ -223,9 +220,6 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
             <IconContainer>✓</IconContainer>
             <Title>版本检测成功</Title>
             <Message>已是最新版本，无需更新！</Message>
-            <ButtonContainer>
-              <Button onClick={onClose}>关闭</Button>
-            </ButtonContainer>
           </>
         );
         
@@ -272,9 +266,6 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
             <IconContainer style={{ backgroundColor: '#d9534f' }}>❌</IconContainer>
             <Title>更新失败</Title>
             <Message>检查更新时遇到错误，请检查网络连接或稍后再试。</Message>
-            <ButtonContainer>
-              <Button onClick={onClose}>关闭</Button>
-            </ButtonContainer>
           </>
         );
 

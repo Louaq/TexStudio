@@ -119,12 +119,6 @@ const ManualRecognizeButton = styled.button`
   justify-content: center;
   letter-spacing: 0.5px;
 
-  &:hover {
-    background: linear-gradient(135deg, #58d68d 0%, #2ecc71 100%);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(46, 204, 113, 0.35);
-  }
-
   &:active {
     transform: translateY(-1px) scale(1.01);
     box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);

@@ -44,6 +44,45 @@ const Dialog = styled.div`
   }
 `;
 
+const CloseIcon = styled.div`
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+  
+  &:before,
+  &:after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 2px;
+    background-color: #94a3b8;
+    border-radius: 1px;
+    transition: background-color 0.2s;
+  }
+  
+  &:before {
+    transform: rotate(45deg);
+  }
+  
+  &:after {
+    transform: rotate(-45deg);
+  }
+  
+  &:hover:before,
+  &:hover:after {
+    background-color: #475569;
+  }
+`;
+
 const Header = styled.div`
   text-align: center;
   margin-bottom: 20px;
@@ -123,38 +162,6 @@ const Key = styled.kbd`
   font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
 `;
 
-
-const Footer = styled.div`
-  padding-top: 12px;
-  margin-top: 20px;
-  border-top: 1px solid #e2e8f0;
-  flex-shrink: 0;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  justify-content: flex-end;
-`;
-
-const CloseButton = styled.button`
-  background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
-  color: white;
-  border: none;
-  padding: 10px 24px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-
-  &:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
-  }
-`;
-
 interface HelpDialogProps {
   onClose: () => void;
 }
@@ -183,6 +190,7 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
       onMouseUp={() => setTimeout(() => setIsDragging(false), 10)}
     >
       <Dialog onClick={handleDialogClick}>
+        <CloseIcon onClick={onClose} />
         <Header>
           <Title>
             <span role="img" aria-label="light-bulb">💡</span>
@@ -244,13 +252,6 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
             </InstructionList>
           </Section>
         </Content>
-        <Footer>
-          <ButtonGroup>
-            <CloseButton onClick={onClose}>
-              关闭
-            </CloseButton>
-          </ButtonGroup>
-        </Footer>
       </Dialog>
     </Overlay>
   );
