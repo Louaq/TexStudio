@@ -75,28 +75,30 @@ export interface RecognitionResult {
 // Electron API类型
 export interface ElectronAPI {
   selectFile: () => Promise<string | null>;
-  saveFile: (content: string, filename: string) => Promise<{ success: boolean; filePath?: string; error?: string }>;
-  saveDocxFile: (content: string, filename: string) => Promise<{ success: boolean; filePath?: string; error?: string }>;
+  saveFile: (content: string, filename: string) => Promise<boolean>;
+  saveDocxFile: (content: string, filename: string) => Promise<boolean>;
   saveTempFile: (buffer: Uint8Array, filename: string) => Promise<string>;
   
   takeScreenshot: (area: ScreenshotArea) => Promise<string>;
   showScreenshotOverlay: () => Promise<void>;
-  forceTestSecondScreen: () => Promise<void>;
+  forceTestSecondScreen: () => Promise<any>;
   
-  copyToClipboard: (text: string) => Promise<boolean>;
+  copyToClipboard: (text: string) => Promise<void>;
   
   getSettings: () => Promise<AppSettings>;
-  saveSettings: (settings: Partial<AppSettings>) => Promise<boolean>;
+  saveSettings: (settings: Partial<AppSettings>) => Promise<void>;
   saveApiToSettingsFile: (apiConfig: ApiConfig) => Promise<boolean>;
   clearApiConfig: () => Promise<boolean>;
   
-  recognizeFormula: (imagePath: string, apiConfig: ApiConfig) => Promise<RecognitionResult>;
+  recognizeFormula: (imagePath: string, apiConfig: ApiConfig) => Promise<SimpletexResponse>;
+  recognizeHandwriting: (imageData: string, apiConfig: ApiConfig) => Promise<SimpletexResponse>;
+  saveHandwritingImage: (imageData: string) => Promise<string>;
   
   registerGlobalShortcuts: (shortcuts: { capture: string; upload: string }) => Promise<boolean>;
-  unregisterGlobalShortcuts: () => Promise<boolean>;
+  unregisterGlobalShortcuts: () => Promise<void>;
   
   minimizeWindow: () => Promise<void>;
-  closeWindow: () => Promise<void>;
+  closeWindow: () => Promise<boolean>;
   
   onShortcutTriggered: (callback: (action: 'capture' | 'upload') => void) => void;
   removeShortcutTriggeredListener: (callback: (action: 'capture' | 'upload') => void) => void;

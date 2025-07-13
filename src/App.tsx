@@ -17,7 +17,8 @@ import UpdateDialog from './components/UpdateDialog';
 import UpdateProgressIndicator from './components/UpdateProgressIndicator';
 import CopyOptionsDialog from './components/CopyOptionsDialog';
 import ExportOptionsDialog from './components/ExportOptionsDialog';
-import HelpDialog from './components/HelpDialog'; // 新增
+import HelpDialog from './components/HelpDialog';
+import HandwritingDialog from './components/HandwritingDialog'; // 导入手写公式组件
 import * as path from 'path';
 
 const AppContainer = styled.div`
@@ -238,6 +239,7 @@ function App() {
   const [showHelp, setShowHelp] = useState(false); // 新增
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
+  const [showHandwriting, setShowHandwriting] = useState(false); // 添加手写公式对话框状态
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
   const [isAutoRecognition, setIsAutoRecognition] = useState(true);
   
@@ -1347,11 +1349,133 @@ function App() {
     }
   };
 
+  // 处理手写公式识别
+  const handleHandwriting = () => {
+    setShowHandwriting(true);
+  };
+
+  // 处理手写公式识别提交
+  const handleHandwritingRecognize = async (imageData: string) => {
+    if (!settings) {
+      console.log('settings未加载');
+      return;
+    }
+
+    const currentSettings = settings;
+    console.log('当前使用的设置:', currentSettings);
+
+    if (!window.electronAPI) {
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '❌ 公式识别功能仅在 Electron 应用中可用'
+      }));
+      return;
+    }
+
+    // 清空AI解释区域
+    resetAIExplanation();
+
+    // 立即关闭手写对话框
+    setShowHandwriting(false);
+
+    setAppState(prev => ({ 
+      ...prev, 
+      isRecognizing: true, 
+      latexCode: '',
+      statusMessage: '🤖 正在识别手写公式...'
+    }));
+
+    try {
+      // 先保存手写图像为临时文件，以便显示
+      const tempFilePath = await window.electronAPI.saveHandwritingImage(imageData);
+      
+      // 设置当前图像
+      setAppState(prev => ({ 
+        ...prev, 
+        currentImage: `file://${tempFilePath}`
+      }));
+      
+      // 调用手写公式识别API
+      const apiConfig = currentSettings.apiConfig;
+      if (!validateApiConfig(apiConfig)) {
+        console.log('API配置无效，无法识别');
+        setAppState(prev => ({ 
+          ...prev, 
+          latexCode: '',
+          isRecognizing: false,
+          statusMessage: '❌ 请先在设置中配置API密钥'
+        }));
+        return;
+      }
+      
+      console.log('调用手写公式识别API，配置:', currentSettings.apiConfig);
+      const result = await window.electronAPI.recognizeHandwriting(imageData, currentSettings.apiConfig);
+      console.log('手写公式识别结果:', result);
+      
+      if (result.status && result.res?.latex) {
+        const latex = result.res.latex;
+        console.log('识别成功，LaTeX:', latex);
+        
+        setAppState(prev => {
+          let newHistory = prev.history;
+          if (latex.trim()) {
+            const newItem = {
+              date: getCurrentTimestamp(),
+              latex: latex.trim()
+            };
+            
+            const exists = prev.history.some(item => item.latex === newItem.latex);
+            if (!exists) {
+              newHistory = [newItem, ...prev.history.slice(0, 4)];
+              if (window.electronAPI) {
+                window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
+              }
+            }
+          }
+          
+          return { 
+            ...prev, 
+            latexCode: latex,
+            isRecognizing: false,
+            statusMessage: '✅ 手写公式识别完成！',
+            history: newHistory
+          };
+        });
+      } else {
+        console.log('识别失败，错误信息:', result.message);
+        if (result.error_code === 'NO_API_CONFIG') {
+          setAppState(prev => ({ 
+            ...prev, 
+            latexCode: '',
+            isRecognizing: false,
+            statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
+          }));
+        } else {
+          setAppState(prev => ({ 
+            ...prev, 
+            latexCode: '',
+            isRecognizing: false,
+            statusMessage: `❌ 手写公式识别失败: ${result.message || '未知错误'}`
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('手写公式识别失败:', error);
+      setAppState(prev => ({ 
+        ...prev, 
+        latexCode: '',
+        isRecognizing: false,
+        statusMessage: '❌ 手写公式识别出错'
+      }));
+    }
+  };
+
   return (
     <AppContainer>
       <MenuBar
         onCapture={handleCapture}
         onUpload={handleUpload}
+        onHandwriting={handleHandwriting} // 添加手写公式处理函数
         onCopy={() => {
           if (appState.latexCode.trim() && !appState.isRecognizing) {
             setShowCopyOptions(true);
@@ -1367,7 +1491,7 @@ function App() {
         onShowShortcutSettings={() => setShowShortcutSettings(true)}
         onShowHistory={() => setShowHistory(true)}
         onShowAbout={() => setShowAbout(true)}
-        onShowHelp={() => setShowHelp(true)} // 新增
+        onShowHelp={() => setShowHelp(true)}
         onCleanupTempFiles={handleCleanupTempFiles}
         onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
         onCheckForUpdates={handleCheckForUpdates}
@@ -1452,6 +1576,15 @@ function App() {
       {/* 新增帮助对话框 */}
       {showHelp && (
         <HelpDialog onClose={() => setShowHelp(false)} />
+      )}
+
+      {/* 手写公式对话框 */}
+      {showHandwriting && (
+        <HandwritingDialog
+          onClose={() => setShowHandwriting(false)}
+          onRecognize={handleHandwritingRecognize}
+          isRecognizing={appState.isRecognizing}
+        />
       )}
 
       <CopyOptionsDialog

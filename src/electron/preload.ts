@@ -21,6 +21,10 @@ const electronAPI: ElectronAPI = {
 
   recognizeFormula: (imagePath: string, apiConfig: ApiConfig) => 
     ipcRenderer.invoke('recognize-formula', imagePath, apiConfig),
+  recognizeHandwriting: (imageData: string, apiConfig: ApiConfig) =>
+    ipcRenderer.invoke('recognize-handwriting', imageData, apiConfig),
+  saveHandwritingImage: (imageData: string) =>
+    ipcRenderer.invoke('save-handwriting-image', imageData),
 
   registerGlobalShortcuts: (shortcuts: { capture: string; upload: string }) => 
     ipcRenderer.invoke('register-global-shortcuts', shortcuts),

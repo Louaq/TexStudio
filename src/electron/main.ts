@@ -1300,7 +1300,52 @@ ipcMain.handle('save-settings', (event, settings: Partial<AppSettings>) => {
     registerGlobalShortcuts();
   }
 });
-ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: ApiConfig): Promise<SimpletexResponse> => {
+// 处理手写公式识别
+ipcMain.handle('recognize-handwriting', async (event, dataUrl: string, apiConfig: ApiConfig): Promise<SimpletexResponse> => {
+  const MAX_RETRIES = 2;
+  let retryCount = 0;
+  let lastError: any = null;
+  let imageBuffer: Buffer | null = null;
+  let tempFilePath: string | null = null;
+
+  try {
+    // 将 Data URL 转换为临时文件
+    const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+    imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    // 创建临时文件
+    tempFilePath = path.join(app.getPath('temp'), `${TEMP_FILE_PREFIX}handwriting-${Date.now()}.png`);
+    fs.writeFileSync(tempFilePath, imageBuffer);
+    addTempFile(tempFilePath);
+    
+    logger.log('手写公式图像已保存到临时文件:', tempFilePath);
+    
+    // 直接调用函数，而不是通过IPC
+    return await tryRecognizeFormula(tempFilePath, apiConfig);
+  } catch (error) {
+    logger.error('手写公式识别失败:', error);
+    return {
+      status: false,
+      res: { latex: '', conf: 0 },
+      request_id: '',
+      message: error instanceof Error ? error.message : '未知错误'
+    };
+  } finally {
+    // 释放资源
+    imageBuffer = null;
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
+      try {
+        removeTempFile(tempFilePath);
+      } catch (e) {
+        // 忽略删除临时文件的错误
+      }
+    }
+    forceGarbageCollection();
+  }
+});
+
+// 封装公式识别逻辑为可复用函数
+async function tryRecognizeFormula(imagePath: string, apiConfig: ApiConfig): Promise<SimpletexResponse> {
   const MAX_RETRIES = 2;
   let retryCount = 0;
   let lastError: any = null;
@@ -1441,6 +1486,31 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
   } finally {
     imageBuffer = null;
     forceGarbageCollection();
+  }
+}
+
+// 修改原来的recognize-formula处理函数，使用共享逻辑
+ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: ApiConfig): Promise<SimpletexResponse> => {
+  return await tryRecognizeFormula(imagePath, apiConfig);
+});
+
+// 保存手写公式为临时文件
+ipcMain.handle('save-handwriting-image', async (event, dataUrl: string): Promise<string> => {
+  try {
+    // 将 Data URL 转换为 Buffer
+    const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    // 创建临时文件
+    const tempFilePath = path.join(app.getPath('temp'), `${TEMP_FILE_PREFIX}handwriting-${Date.now()}.png`);
+    fs.writeFileSync(tempFilePath, buffer);
+    addTempFile(tempFilePath);
+    
+    logger.log('手写公式图像已保存到临时文件:', tempFilePath);
+    return tempFilePath;
+  } catch (error) {
+    logger.error('保存手写公式图像失败:', error);
+    throw error;
   }
 });
 

@@ -60,6 +60,7 @@ const Divider = styled.div`
 const MenuIcon = {
   capture: "📷",   // 截图
   upload: "📤",    // 上传图片
+  handwriting: "✏️", // 手写公式
   copy: "📋",      // 复制
   export: "💾",    // 导出图片
   autoMode: "🤖",  // 自动识别模式
@@ -77,6 +78,7 @@ const MenuIcon = {
 interface MenuBarProps {
   onCapture: () => void;
   onUpload: () => void;
+  onHandwriting: () => void; // 新增
   onCopy: () => void;
   onExport: () => void;
   onToggleRecognitionMode: () => void;
@@ -84,7 +86,7 @@ interface MenuBarProps {
   onShowShortcutSettings: () => void;
   onShowHistory: () => void;
   onShowAbout: () => void;
-  onShowHelp: () => void; // 新增
+  onShowHelp: () => void;
   onCleanupTempFiles: () => void;
   onToggleAlwaysOnTop: () => void;
   onCheckForUpdates?: () => void;
@@ -97,6 +99,7 @@ interface MenuBarProps {
 const MenuBar: React.FC<MenuBarProps> = ({
   onCapture,
   onUpload,
+  onHandwriting, // 新增
   onCopy,
   onExport,
   onToggleRecognitionMode,
@@ -104,7 +107,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
   onShowShortcutSettings,
   onShowHistory,
   onShowAbout,
-  onShowHelp, // 新增
+  onShowHelp,
   onCleanupTempFiles,
   onToggleAlwaysOnTop,
   onCheckForUpdates,
@@ -123,6 +126,11 @@ const MenuBar: React.FC<MenuBarProps> = ({
       {/* 上传图片 */}
       <MenuItem onClick={onUpload} title="上传图片">
         {MenuIcon.upload}
+      </MenuItem>
+      
+      {/* 手写公式 */}
+      <MenuItem onClick={onHandwriting} title="手写公式">
+        {MenuIcon.handwriting}
       </MenuItem>
       
       <Divider />
