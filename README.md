@@ -224,10 +224,5 @@ src/
 
 欢迎提交 Issue 和 Pull Request！
 
-## 📄 许可证
-
-MIT License
-**注意**: 本应用需要网络连接来使用 SimpleTex API 进行公式识别。首次使用时可能需要配置防火墙允许网络访问。
-
 
 
