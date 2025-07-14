@@ -213,6 +213,10 @@ const HelpDialog: React.FC<HelpDialogProps> = ({ onClose }) => {
                 <Icon>🤖</Icon>
                 <div><b>识别模式</b>: 点击图标可在“自动识别”和“手动识别”模式间切换 (程序默认自动识别)。自动模式下，图片上传后立即识别；手动模式下，需要点击“开始识别”按钮。</div>
               </InstructionItem>
+              <InstructionItem>
+                <Icon>✍️</Icon>
+                <div><b>手写识别</b>: 点击菜单栏的“手写识别”按钮启动手写识别。</div>  
+              </InstructionItem>
             </InstructionList>
           </Section>
 
