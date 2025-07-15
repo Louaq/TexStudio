@@ -1,6 +1,6 @@
 {
-  "app_id": "1uH4ODy0jlqLLd9hYvSbstnk",
-  "app_secret": "xc0ti9FBS0FCXLTX3YLh3euB2rpXQsIO",
-  "deepseek_api_key": "sk-f3448f7ee233474da993b5d4460177b7",
-  "deepseek_enabled": true
+  "app_id": "",
+  "app_secret": "",
+  "deepseek_api_key": "",
+  "deepseek_enabled": false
 }
