@@ -115,7 +115,6 @@ const ClearButton = styled.button<{ disabled: boolean }>`
 
 const ContentArea = styled.div`
   flex: 1;
-  padding: 12px;
   min-height: 150px;
   max-height: calc(100% - 30px); /* 确保不超出父容器高度，减去头部高度 */
   height: auto; /* 自动高度，让它充分利用父容器的空间 */
@@ -123,7 +122,6 @@ const ContentArea = styled.div`
   overflow-y: auto;
   box-sizing: border-box;
   position: relative;
-  margin-top: 4px; /* 增加与头部的间距 */
   
   /* 修改滚动条样式，确保滚动条在容器内部 */
   &::-webkit-scrollbar {
@@ -160,8 +158,6 @@ const PlaceholderText = styled.div`
   font-size: 13px;
   text-align: center;
   display: flex;
-  align-items: center;
-  justify-content: center;
   height: 100%;
   line-height: 1.5;
   width: 100%; /* 确保宽度不超过父容器 */
