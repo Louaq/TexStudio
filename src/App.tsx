@@ -87,23 +87,23 @@ const TopSection = styled.div`
 const BottomSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  /* 移除底部按钮后，减少高度 */
-  min-height: 450px;
-  max-height: 500px;
+  gap: 20px; /* 进一步增加组件之间的间距 */
+  /* 调整高度以容纳所有组件 */
+  min-height: 540px;
+  max-height: 600px;
   height: auto;
   /* 确保不会覆盖图片区域的虚线 */
   z-index: 1;
   background-color: rgba(255, 255, 255, 0.6);
   border-radius: 8px;
-  padding: 10px 10px 6px 10px;
+  padding: 15px 15px 15px 15px; /* 增加内边距 */
 `;
 
 const PreviewAndEditorContainer = styled.div`
   display: flex;
   gap: 12px;
-  height: 200px; /* 减少高度，为AI解释区域腾出空间 */
-  margin-bottom: 0;
+  height: 245px; /* 进一步增加高度以确保边框完全可见 */
+  margin-bottom: 22px; /* 增加底部间距，确保边框完全可见 */
 
   @media (max-width: 1024px) {
     flex-direction: column;
@@ -117,24 +117,25 @@ const PreviewAndEditorContainer = styled.div`
   
   /* 在大屏幕上自适应调整高度 */
   @media (min-height: 900px) {
-    height: 220px;
+    height: 245px;
   }
   
   /* 在更大屏幕上进一步调整高度 */
   @media (min-height: 1080px) {
-    height: 240px;
+    height: 245px;
   }
 `;
 
 const EditorWrapper = styled.div`
   flex: 1;
   min-width: 0;
-  height: 200px;
-  overflow: hidden;
+  height: 240px;
+  overflow: visible; /* 修改为visible，确保边框可见 */
   position: relative;
+  padding-bottom: 2px; /* 添加底部内边距 */
   
   @media (min-height: 900px) {
-    height: 220px;
+    height: 240px;
   }
   
   @media (min-height: 1080px) {
@@ -145,12 +146,13 @@ const EditorWrapper = styled.div`
 const PreviewWrapper = styled.div`
   flex: 1;
   min-width: 0;
-  height: 200px;
-  overflow: hidden;
+  height: 240px;
+  overflow: visible; /* 修改为visible，确保边框可见 */
   position: relative;
+  padding-bottom: 2px; /* 添加底部内边距 */
   
   @media (min-height: 900px) {
-    height: 220px;
+    height: 240px;
   }
   
   @media (min-height: 1080px) {
@@ -162,27 +164,29 @@ const PreviewWrapper = styled.div`
 const ExplanationSection = styled.div`
   display: flex;
   flex-direction: column;
-  height: 200px; /* 稍微减少高度以适应更紧凑的窗口 */
+  height: 180px; /* 保持适中的高度 */
   background-color: rgba(248, 250, 252, 0.8);
   border-radius: 8px;
   padding: 8px;
-  border: 1px solid rgba(203, 213, 225, 0.5);
+  border: 2px solid rgba(203, 213, 225, 0.7); /* 增加边框宽度和对比度 */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-top: 5px; /* 减少顶部间距，因为我们已经增加了PreviewAndEditorContainer的底部间距 */
+  margin-bottom: 10px; /* 增加底部间距，避免与状态栏重叠 */
   
   @media (min-height: 900px) {
-    height: 220px;
+    height: 190px;
   }
   
   @media (min-height: 1080px) {
-    height: 240px;
+    height: 200px;
   }
 `;
 
 
 
-// 修改StatusBarWrapper样式，减少边距
+// 修改StatusBarWrapper样式
 const StatusBarWrapper = styled.div`
-  margin: 0;
+  margin: 0; /* 移除顶部间距，因为ExplanationSection已经有底部间距 */
   position: relative;
   z-index: 10; /* 确保状态栏位于较高层级 */
   flex-shrink: 0; /* 防止被压缩 */

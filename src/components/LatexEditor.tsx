@@ -6,9 +6,9 @@ const Container = styled.div`
   flex-direction: column;
   height: 100%;
   position: relative;
-  background-color: rgba(250, 250, 252, 0.7);
   border-radius: 6px;
-  padding: 5px;
+  padding: 5px 5px 7px 5px; /* 增加底部内边距 */
+  overflow: visible; /* 确保内容不被裁剪 */
 `;
 
 const Label = styled.h3`
@@ -23,16 +23,12 @@ const Label = styled.h3`
 `;
 
 const TextArea = styled.textarea<{ readOnly: boolean }>`
-  height: 180px; /* 固定高度 */
-  min-height: 180px;
-  max-height: 180px;
+  height: 226px; /* 略微减少高度，为边框留出空间 */
+  min-height: 226px;
+  max-height: 226px;
   padding: 12px;
-  border: 1px solid #dce1e8;
+  border: 2px solid #dce1e8; /* 增加边框宽度使其更明显 */
   border-radius: 8px;
-  background: ${props => props.readOnly 
-    ? 'linear-gradient(135deg, #f8f9fa 0%, #f5f7fa 100%)'
-    : 'linear-gradient(135deg, #ffffff 0%, #fafbfc 100%)'
-  };
   color: #2c3e50;
   font-family: "Cascadia Code", "Consolas", "Monaco", monospace;
   font-size: 13px;
@@ -44,18 +40,19 @@ const TextArea = styled.textarea<{ readOnly: boolean }>`
   overflow-y: auto;
   box-sizing: border-box;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2px; /* 添加底部边距 */
   
   /* 在不同大小的屏幕上调整高度 */
   @media (min-height: 900px) {
-    height: 200px;
-    min-height: 200px;
-    max-height: 200px;
+    height: 226px;
+    min-height: 226px;
+    max-height: 226px;
   }
   
   @media (min-height: 1080px) {
-    height: 220px;
-    min-height: 220px;
-    max-height: 220px;
+    height: 226px;
+    min-height: 226px;
+    max-height: 226px;
   }
 
   &:focus {
@@ -131,7 +128,8 @@ const EditorContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden; /* 防止超出容器 */
+  overflow: visible; /* 修改为visible，确保边框可见 */
+  margin-bottom: 2px; /* 添加底部边距 */
 `;
 
 interface LatexEditorProps {

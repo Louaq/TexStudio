@@ -12,7 +12,6 @@ const Container = styled.div`
   flex-direction: column;
   height: 100%;
   position: relative;
-  background-color: rgba(250, 250, 252, 0.7);
   border-radius: 6px;
   padding: 5px;
 `;
@@ -21,10 +20,10 @@ const Header = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   padding: 0 3px 0 0;
-  height: 20px;
-  min-height: 20px;
+  height: 24px;
+  min-height: 24px;
 `;
 
 const ButtonGroup = styled.div`
@@ -53,10 +52,6 @@ const ExplainButton = styled.button<{ disabled: boolean }>`
   height: 20px;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   transition: all 0.3s ease;
-  background: ${props => props.disabled 
-    ? 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)'
-    : 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)'
-  };
   color: white;
   opacity: ${props => props.disabled ? 0.6 : 1};
   line-height: 1;
@@ -110,16 +105,13 @@ const ContentArea = styled.div`
   flex: 1;
   padding: 12px;
   min-height: 150px;
-  height: auto; /* 改为自动高度，让它充分利用父容器的空间 */
-  border: 1px solid #dce1e8;
+  max-height: calc(100% - 30px); /* 确保不超出父容器高度，减去头部高度 */
+  height: auto; /* 自动高度，让它充分利用父容器的空间 */
   border-radius: 8px;
-  background: linear-gradient(135deg, #fefefe 0%, #f9fafb 100%);
   overflow-y: auto;
   box-sizing: border-box;
   position: relative;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-  
-  /* 由于现在是独立布局，移除固定高度的媒体查询 */
+  margin-top: 4px; /* 增加与头部的间距 */
   
   &::-webkit-scrollbar {
     width: 6px;
@@ -146,8 +138,6 @@ const PlaceholderText = styled.div`
   font-size: 13px;
   text-align: center;
   display: flex;
-  align-items: center;
-  justify-content: center;
   height: 100%;
   line-height: 1.5;
 `;

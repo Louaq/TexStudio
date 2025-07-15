@@ -8,9 +8,9 @@ const Container = styled.div`
   flex-direction: column;
   height: 100%;
   position: relative;
-  background-color: rgba(250, 250, 252, 0.7);
   border-radius: 6px;
-  padding: 5px;
+  padding: 5px 5px 7px 5px; /* 增加底部内边距 */
+  overflow: visible; /* 确保内容不被裁剪 */
 `;
 
 const Label = styled.h3`
@@ -26,28 +26,27 @@ const Label = styled.h3`
 
 const PreviewArea = styled.div`
   padding: 12px;
-  min-height: 180px;
-  height: 180px; /* 固定高度 */
-  border: 1px solid #dce1e8;
+  min-height: 226px; /* 与LatexEditor保持一致 */
+  height: 226px; /* 与LatexEditor保持一致 */
+  border: 2px solid #dce1e8; /* 增加边框宽度使其更明显 */
   border-radius: 8px;
   background: linear-gradient(135deg, #fefefe 0%, #f9fafb 100%);
   display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: auto;
   box-sizing: border-box;
   position: relative;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2px; /* 添加底部边距 */
   
   /* 在不同大小的屏幕上调整高度 */
   @media (min-height: 900px) {
-    height: 200px;
-    min-height: 200px;
+    height: 226px;
+    min-height: 226px;
   }
   
   @media (min-height: 1080px) {
-    height: 220px;
-    min-height: 220px;
+    height: 226px;
+    min-height: 226px;
   }
 
   /* 添加淡色数学元素背景 */
