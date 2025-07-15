@@ -51,7 +51,6 @@ export interface AppState {
   currentImage: string | null;
   latexCode: string;
   isRecognizing: boolean;
-  statusMessage: string;
   history: HistoryItem[];
 }
 export interface ScreenshotArea {

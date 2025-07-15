@@ -8,7 +8,6 @@ import ImageDisplay from './components/ImageDisplay';
 import LatexEditor from './components/LatexEditor';
 import FormulaPreview from './components/FormulaPreview';
 import FormulaExplanation from './components/FormulaExplanation';
-import StatusBar from './components/StatusBar';
 import ApiSettingsDialog from './components/ApiSettingsDialog';
 import ShortcutSettingsDialog from './components/ShortcutSettingsDialog';
 import HistoryDialog from './components/HistoryDialog';
@@ -171,7 +170,6 @@ const ExplanationSection = styled.div`
   border: 2px solid rgba(203, 213, 225, 0.7); /* 增加边框宽度和对比度 */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   margin-top: 5px; /* 减少顶部间距，因为我们已经增加了PreviewAndEditorContainer的底部间距 */
-  margin-bottom: 10px; /* 增加底部间距，避免与状态栏重叠 */
   
   @media (min-height: 900px) {
     height: 190px;
@@ -184,14 +182,7 @@ const ExplanationSection = styled.div`
 
 
 
-// 修改StatusBarWrapper样式
-const StatusBarWrapper = styled.div`
-  margin: 0; /* 移除顶部间距，因为ExplanationSection已经有底部间距 */
-  position: relative;
-  z-index: 10; /* 确保状态栏位于较高层级 */
-  flex-shrink: 0; /* 防止被压缩 */
-  height: 38px; /* 固定状态栏高度 */
-`;
+// 删除StatusBarWrapper样式定义
 
 type UpdateStatus = 'idle' | 'checking' | 'available' | 'no-update' | 'downloading' | 'downloaded' | 'error';
 
@@ -207,7 +198,6 @@ function App() {
     currentImage: null,
     latexCode: '',
     isRecognizing: false,
-    statusMessage: '⚡ 准备就绪',
     history: []
   });
 
@@ -259,25 +249,13 @@ function App() {
   const handleToggleRecognitionMode = () => {
     const newMode = !isAutoRecognition;
     setIsAutoRecognition(newMode);
-    setAppState(prev => ({ 
-      ...prev, 
-      statusMessage: newMode ? '🤖 已切换到自动识别模式' : '已切换到手动识别模式'
-    }));
-    setTimeout(() => {
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '⚡ 准备就绪'
-      }));
-    }, 2000);
+    // 移除状态消息的设置
   };
 
   // 手动识别函数
   const handleManualRecognize = async () => {
     if (!appState.currentImage) {
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '❌ 请先上传或截图'
-      }));
+      // 移除状态消息的设置
       return;
     }
 
@@ -286,10 +264,7 @@ function App() {
     // 如果是 data URL（拖拽上传的情况），需要重新保存为临时文件
     if (imagePath.startsWith('data:')) {
       if (!window.electronAPI) {
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: '❌ 手动识别功能仅在 Electron 应用中可用'
-        }));
+        // 移除状态消息的设置
         return;
       }
 
@@ -306,10 +281,7 @@ function App() {
         console.log('手动识别：将 data URL 保存为临时文件:', imagePath);
       } catch (error) {
         console.error('转换 data URL 为临时文件失败:', error);
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: '❌ 处理图片失败'
-        }));
+        // 移除状态消息的设置
         return;
       }
     } else if (imagePath.startsWith('file://')) {
@@ -406,12 +378,14 @@ function App() {
     };
 
     const handleUpdateError = (error: string) => {
-      console.error('更新失败:', error);
-      setAppState(prev => ({
-        ...prev,
-        statusMessage: `❌ 更新失败: ${error}`
-      }));
-      setUpdateInfo(prev => ({ ...prev, status: 'error' }));
+      console.error('更新错误:', error);
+      setUpdateInfo({
+        showDialog: true,
+        showIndicator: false,
+        status: 'error',
+        version: ''
+      });
+      setDownloadProgress(0);
     };
 
     const handleDownloadProgress = (progressObj: any) => {
@@ -849,57 +823,52 @@ function App() {
     console.log('当前使用的设置:', currentSettings);
 
     if (!window.electronAPI) {
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '❌ 公式识别功能仅在 Electron 应用中可用'
-      }));
+      console.error('公式识别功能仅在 Electron 应用中可用');
       return;
     }
 
-    const taskId = Date.now();
-    console.log(`开始通用识别任务 ID: ${taskId}`);
-
-    // 清空AI解释区域
-    resetAIExplanation();
+    // 检查API配置
+    if (!currentSettings?.apiConfig?.appId || !currentSettings?.apiConfig?.appSecret) {
+      console.error('请先在设置中配置API密钥');
+      return;
+    }
 
     setAppState(prev => ({ 
       ...prev, 
-      isRecognizing: true, 
-      latexCode: '',
-      statusMessage: '🤖 正在识别公式...'
+      isRecognizing: true
     }));
 
+    // 调用API识别公式
     try {
-      const apiConfig = currentSettings.apiConfig;
-      if (!validateApiConfig(apiConfig)) {
-        console.log(`任务 ${taskId}: API配置无效，无法识别`);
-        setAppState(prev => ({ 
-          ...prev, 
-          latexCode: '',
-          isRecognizing: false,
-          statusMessage: '❌ 请先在设置中配置API密钥'
-        }));
-        return;
-      }
-      
-      console.log(`任务 ${taskId}: 调用API识别，配置:`, currentSettings.apiConfig);
-      const result = await window.electronAPI.recognizeFormula(imagePath, currentSettings.apiConfig);
-      console.log(`任务 ${taskId}: API识别结果:`, result);
+      const result = await window.electronAPI.recognizeFormula(
+        imagePath,
+        currentSettings.apiConfig
+      );
+
+      console.log('识别结果:', result);
+
       if (result.status && result.res?.latex) {
-        const latex = result.res.latex;
-        console.log(`任务 ${taskId}: 识别成功，LaTeX:`, latex);
+        // 格式化LaTeX代码
+        const formattedLatex = formatLatex(result.res.latex);
         
+        // 更新状态并添加到历史记录
         setAppState(prev => {
           let newHistory = prev.history;
-          if (latex.trim()) {
+          
+          // 只有在识别成功且有结果时才添加到历史记录
+          if (formattedLatex.trim()) {
             const newItem = {
               date: getCurrentTimestamp(),
-              latex: latex.trim()
+              latex: formattedLatex.trim()
             };
             
+            // 检查是否已存在相同的公式，避免重复
             const exists = prev.history.some(item => item.latex === newItem.latex);
             if (!exists) {
+              // 添加到历史记录的开头，并保留最多5条记录
               newHistory = [newItem, ...prev.history.slice(0, 4)];
+              
+              // 保存到设置
               if (window.electronAPI) {
                 window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
               }
@@ -908,38 +877,36 @@ function App() {
           
           return { 
             ...prev, 
-            latexCode: latex,
+            latexCode: formattedLatex,
             isRecognizing: false,
-            statusMessage: '✅ 识别完成！',
             history: newHistory
           };
         });
-      } else {
-        console.log(`任务 ${taskId}: 识别失败，错误信息:`, result.message);
         
+        // 重置AI解释区域
+        resetAIExplanation();
+      } else {
+        console.log('识别失败，错误信息:', result.message);
         if (result.error_code === 'NO_API_CONFIG') {
           setAppState(prev => ({ 
             ...prev, 
             latexCode: '',
-            isRecognizing: false,
-            statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
+            isRecognizing: false
           }));
         } else {
           setAppState(prev => ({ 
             ...prev, 
             latexCode: '',
-            isRecognizing: false,
-            statusMessage: `❌ 识别失败: ${result.message || '未知错误'}`
+            isRecognizing: false
           }));
         }
       }
     } catch (error) {
-      console.error(`任务 ${taskId}: 公式识别失败:`, error);
+      console.error('识别出错:', error);
       setAppState(prev => ({ 
         ...prev, 
         latexCode: '',
-        isRecognizing: false,
-        statusMessage: '❌ 识别出错'
+        isRecognizing: false
       }));
     }
   }, [settings, resetAIExplanation]);
@@ -1539,10 +1506,6 @@ function App() {
               resetKey={explanationResetKey}
             />
           </ExplanationSection>
-          
-          <StatusBarWrapper>
-            <StatusBar message={appState.statusMessage} />
-          </StatusBarWrapper>
         </BottomSection>
       </MainContent>
 

@@ -14,6 +14,9 @@ const Container = styled.div`
   position: relative;
   border-radius: 6px;
   padding: 5px;
+  box-sizing: border-box;
+  overflow: hidden; /* 防止内容溢出 */
+  max-width: 100%; /* 确保容器不超出父元素宽度 */
 `;
 
 const Header = styled.div`
@@ -24,12 +27,15 @@ const Header = styled.div`
   padding: 0 3px 0 0;
   height: 24px;
   min-height: 24px;
+  width: 100%; /* 确保头部宽度与容器一致 */
+  box-sizing: border-box;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0; /* 防止按钮组被压缩 */
 `;
 
 const Label = styled.h3`
@@ -58,6 +64,11 @@ const ExplainButton = styled.button<{ disabled: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0; /* 防止按钮被压缩 */
+  background: ${props => props.disabled 
+    ? 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)'
+    : 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)'
+  };
 
   &:hover:not(:disabled) {
     background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
@@ -89,6 +100,7 @@ const ClearButton = styled.button<{ disabled: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0; /* 防止按钮被压缩 */
 
   &:hover:not(:disabled) {
     background: linear-gradient(135deg, #ec7063 0%, #e74c3c 100%);
@@ -113,13 +125,16 @@ const ContentArea = styled.div`
   position: relative;
   margin-top: 4px; /* 增加与头部的间距 */
   
+  /* 修改滚动条样式，确保滚动条在容器内部 */
   &::-webkit-scrollbar {
     width: 6px;
+    height: 6px; /* 添加水平滚动条高度 */
   }
 
   &::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 3px;
+    margin: 2px; /* 给滚动条轨道添加边距 */
   }
 
   &::-webkit-scrollbar-thumb {
@@ -130,6 +145,13 @@ const ContentArea = styled.div`
   &::-webkit-scrollbar-thumb:hover {
     background: #a0aec0;
   }
+  
+  /* 确保KaTeX公式正确显示 */
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 5px;
+  }
 `;
 
 const PlaceholderText = styled.div`
@@ -138,8 +160,13 @@ const PlaceholderText = styled.div`
   font-size: 13px;
   text-align: center;
   display: flex;
+  align-items: center;
+  justify-content: center;
   height: 100%;
   line-height: 1.5;
+  width: 100%; /* 确保宽度不超过父容器 */
+  box-sizing: border-box;
+  padding: 0 10px; /* 添加水平内边距 */
 `;
 
 const ExplanationContent = styled.div`
@@ -147,6 +174,8 @@ const ExplanationContent = styled.div`
   font-size: 13px;
   line-height: 1.6;
   word-wrap: break-word;
+  overflow-x: hidden; /* 防止水平溢出 */
+  width: 100%; /* 确保内容宽度不超过父容器 */
 
   /* Markdown 样式 */
   h1, h2, h3, h4, h5, h6 {
@@ -202,6 +231,7 @@ const ExplanationContent = styled.div`
     border-radius: 4px;
     overflow-x: auto;
     margin: 8px 0;
+    max-width: 100%; /* 确保不超出父容器宽度 */
   }
 
   blockquote {
@@ -215,17 +245,32 @@ const ExplanationContent = styled.div`
   /* KaTeX 数学公式样式 */
   .katex {
     font-size: 1em;
+    max-width: 100%;
   }
 
   .katex-display {
     margin: 12px 0;
     text-align: center;
+    overflow-x: auto; /* 允许数学公式水平滚动 */
+    max-width: 100%; /* 限制最大宽度 */
+    padding: 0 2px; /* 添加一点内边距，防止贴边 */
+    display: block; /* 确保公式独占一行 */
   }
 
   /* 确保数学公式在容器内正确显示 */
   .katex-html {
     overflow-x: auto;
     overflow-y: visible;
+    max-width: 100%; /* 限制最大宽度 */
+    padding-bottom: 5px; /* 添加底部内边距，防止滚动条遮挡 */
+  }
+  
+  /* 包装长公式 */
+  .math-display {
+    max-width: 100%;
+    overflow-x: auto;
+    margin: 10px 0;
+    padding-bottom: 5px;
   }
 `;
 
@@ -237,6 +282,8 @@ const LoadingIndicator = styled.div`
   color: #3498db;
   font-size: 13px;
   gap: 10px;
+  width: 100%; /* 确保宽度不超过父容器 */
+  box-sizing: border-box;
 `;
 
 const Spinner = styled.div`
@@ -246,6 +293,7 @@ const Spinner = styled.div`
   border-top: 2px solid #3498db;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+  flex-shrink: 0; /* 防止spinner被压缩 */
 
   @keyframes spin {
     0% { transform: rotate(0deg); }
@@ -262,6 +310,9 @@ const ErrorMessage = styled.div`
   border-radius: 6px;
   border-left: 4px solid #e74c3c;
   margin: 8px 0;
+  width: calc(100% - 24px); /* 计算实际宽度，考虑内边距 */
+  box-sizing: border-box;
+  word-wrap: break-word; /* 确保长文本可以换行 */
 `;
 
 const Timestamp = styled.div`
@@ -270,6 +321,9 @@ const Timestamp = styled.div`
   text-align: right;
   margin-top: 8px;
   font-style: italic;
+  padding-right: 2px; /* 添加右侧内边距，防止贴边 */
+  box-sizing: border-box;
+  width: 100%; /* 确保宽度不超过父容器 */
 `;
 
 const ConfigMissingText = styled.div`
@@ -282,6 +336,9 @@ const ConfigMissingText = styled.div`
   line-height: 1.5;
   border-radius: 6px;
   padding: 12px;
+  width: calc(100% - 24px); /* 计算实际宽度，考虑内边距 */
+  box-sizing: border-box;
+  color: #7f8c8d;
 `;
 
 interface FormulaExplanationProps {
@@ -416,8 +473,9 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
                 ol: ({ children }) => <ol>{children}</ol>,
                 li: ({ children }) => <li>{children}</li>,
                 code: ({ children }) => <code>{children}</code>,
-                pre: ({ children }) => <pre>{children}</pre>,
+                pre: ({ children }) => <pre style={{ maxWidth: '100%', overflowX: 'auto' }}>{children}</pre>,
                 blockquote: ({ children }) => <blockquote>{children}</blockquote>,
+                // 移除不支持的math和inlineMath组件
               }}
             >
               {explanation.content}

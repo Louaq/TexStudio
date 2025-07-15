@@ -22,12 +22,11 @@ export interface ShortcutConfig {
     capture: string;
     upload: string;
 }
-export type CopyMode = 'normal' | 'inline' | 'display';
+export type CopyMode = 'normal' | 'inline' | 'display' | 'equation' | 'mathml';
 export interface AppState {
     currentImage: string | null;
     latexCode: string;
     isRecognizing: boolean;
-    statusMessage: string;
     history: HistoryItem[];
 }
 export interface ScreenshotArea {
