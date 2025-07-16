@@ -326,12 +326,9 @@ const ConfigMissingText = styled.div`
   font-size: 13px;
   text-align: center;
   display: flex;
-  align-items: center;
-  justify-content: center;
   height: 100%;
   line-height: 1.5;
   border-radius: 6px;
-  padding: 12px;
   width: calc(100% - 24px); /* 计算实际宽度，考虑内边距 */
   box-sizing: border-box;
   color: #7f8c8d;
