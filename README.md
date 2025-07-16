@@ -4,7 +4,6 @@
 ![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-13_14-37-03.png)
 ![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-13_14-37-19.png)
 ![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-13_14-37-27.png)
-![](https://yangyang666.oss-cn-chengdu.aliyuncs.com/images/Snipaste_2025-07-13_14-37-35.png)
 一个基于 Electron + React + TypeScript 的现代化 LaTeX 公式识别桌面应用程序。
 
 
@@ -156,6 +155,7 @@
 1. 应用启动后会自动检查更新
 2. 如果发现新版本，会提示用户下载
 3. 下载完成后，可选择立即重启应用安装新版本或稍后安装
+
 
 
 
