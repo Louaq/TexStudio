@@ -18,6 +18,7 @@ import CopyOptionsDialog from './components/CopyOptionsDialog';
 import ExportOptionsDialog from './components/ExportOptionsDialog';
 import HelpDialog from './components/HelpDialog';
 import HandwritingDialog from './components/HandwritingDialog'; // 导入手写公式组件
+import NotificationBar from './components/NotificationBar'; // 导入通知栏组件
 import * as path from 'path';
 
 const AppContainer = styled.div`
@@ -198,7 +199,8 @@ function App() {
     currentImage: null,
     latexCode: '',
     isRecognizing: false,
-    history: []
+    history: [],
+    statusMessage: '欢迎使用 SimpleTex-OCR'
   });
 
   // 添加更新状态管理
@@ -249,13 +251,16 @@ function App() {
   const handleToggleRecognitionMode = () => {
     const newMode = !isAutoRecognition;
     setIsAutoRecognition(newMode);
-    // 移除状态消息的设置
+    setAppState(prev => ({ 
+      ...prev, 
+      statusMessage: newMode ? 'ℹ️ 已开启自动识别模式' : 'ℹ️ 已切换为手动识别模式' 
+    }));
   };
 
   // 手动识别函数
   const handleManualRecognize = async () => {
     if (!appState.currentImage) {
-      // 移除状态消息的设置
+      setAppState(prev => ({ ...prev, statusMessage: '⚠️ 请先上传或截取图片' }));
       return;
     }
 
@@ -264,7 +269,7 @@ function App() {
     // 如果是 data URL（拖拽上传的情况），需要重新保存为临时文件
     if (imagePath.startsWith('data:')) {
       if (!window.electronAPI) {
-        // 移除状态消息的设置
+        setAppState(prev => ({ ...prev, statusMessage: '❌ 浏览器模式不支持此操作' }));
         return;
       }
 
@@ -816,6 +821,10 @@ function App() {
     
     if (!settings) {
       console.log('settings未加载');
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '❌ 设置未加载，请重试'
+      }));
       return;
     }
 
@@ -824,18 +833,27 @@ function App() {
 
     if (!window.electronAPI) {
       console.error('公式识别功能仅在 Electron 应用中可用');
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '❌ 公式识别功能仅在桌面应用中可用'
+      }));
       return;
     }
 
     // 检查API配置
     if (!currentSettings?.apiConfig?.appId || !currentSettings?.apiConfig?.appSecret) {
       console.error('请先在设置中配置API密钥');
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '⚠️ 请先在设置中配置API密钥'
+      }));
       return;
     }
 
     setAppState(prev => ({ 
       ...prev, 
-      isRecognizing: true
+      isRecognizing: true,
+      statusMessage: '🔄 正在识别公式...'
     }));
 
     // 调用API识别公式
@@ -879,7 +897,8 @@ function App() {
             ...prev, 
             latexCode: formattedLatex,
             isRecognizing: false,
-            history: newHistory
+            history: newHistory,
+            statusMessage: '✅ 公式识别成功！'
           };
         });
         
@@ -891,13 +910,15 @@ function App() {
           setAppState(prev => ({ 
             ...prev, 
             latexCode: '',
-            isRecognizing: false
+            isRecognizing: false,
+            statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
           }));
         } else {
           setAppState(prev => ({ 
             ...prev, 
             latexCode: '',
-            isRecognizing: false
+            isRecognizing: false,
+            statusMessage: `❌ 公式识别失败: ${result.message || '未知错误'}`
           }));
         }
       }
@@ -906,7 +927,8 @@ function App() {
       setAppState(prev => ({ 
         ...prev, 
         latexCode: '',
-        isRecognizing: false
+        isRecognizing: false,
+        statusMessage: '❌ 公式识别出错，请重试'
       }));
     }
   }, [settings, resetAIExplanation]);
@@ -939,7 +961,7 @@ function App() {
       setTimeout(() => {
         setAppState(prev => ({ 
           ...prev, 
-          statusMessage: '⚡ 准备就绪'
+          statusMessage: null
         }));
       }, 2000);
       return;
@@ -969,7 +991,7 @@ function App() {
     setTimeout(() => {
       setAppState(prev => ({ 
         ...prev, 
-        statusMessage: '⚡ 准备就绪'
+        statusMessage: null
       }));
     }, 2000);
   };
@@ -993,11 +1015,11 @@ function App() {
           statusMessage: '✅ 已加载历史公式'
         }));
           
-        // 2秒后恢复状态消息
+        // 2秒后清除状态消息
         setTimeout(() => {
           setAppState(prev => ({ 
             ...prev, 
-            statusMessage: '⚡ 准备就绪'
+            statusMessage: null
           }));
         }, 2000);
       } else {
@@ -1081,7 +1103,7 @@ function App() {
         setTimeout(() => {
           setAppState(prev => ({ 
             ...prev, 
-            statusMessage: isClearing ? '⚡ 请先设置API密钥' : '⚡ 准备就绪，请重新截图或上传图片' 
+            statusMessage: isClearing ? '请先设置API密钥' : '请重新截图或上传图片' 
           }));
         }, 2000);
       } catch (error) {
@@ -1139,7 +1161,7 @@ function App() {
         setTimeout(() => {
           setAppState(prev => ({ 
             ...prev, 
-            statusMessage: '⚡ 准备就绪'
+            statusMessage: null
           }));
         }, 2000);
       } else {
@@ -1174,7 +1196,7 @@ function App() {
       setTimeout(() => {
         setAppState(prev => ({ 
           ...prev, 
-          statusMessage: '⚡ 准备就绪'
+          statusMessage: null
         }));
       }, 3000);
     } catch (error) {
@@ -1186,7 +1208,7 @@ function App() {
       setTimeout(() => {
         setAppState(prev => ({ 
           ...prev, 
-          statusMessage: '⚡ 准备就绪'
+          statusMessage: null
         }));
       }, 3000);
     }
@@ -1302,7 +1324,7 @@ function App() {
       setTimeout(() => {
         setAppState(prev => ({ 
           ...prev, 
-          statusMessage: '⚡ 准备就绪'
+          statusMessage: null
         }));
       }, 3000);
     } catch (error) {
@@ -1314,7 +1336,7 @@ function App() {
       setTimeout(() => {
         setAppState(prev => ({ 
           ...prev, 
-          statusMessage: '⚡ 准备就绪'
+          statusMessage: null
         }));
       }, 3000);
     }
@@ -1323,6 +1345,10 @@ function App() {
   // 处理手写公式识别
   const handleHandwriting = () => {
     setShowHandwriting(true);
+    setAppState(prev => ({ 
+      ...prev, 
+      statusMessage: 'ℹ️ 请在手写板上绘制数学公式'
+    }));
   };
 
   // 处理手写公式识别提交
@@ -1471,6 +1497,12 @@ function App() {
         copyDisabled={!appState.latexCode.trim() || appState.isRecognizing}
         exportDisabled={!appState.latexCode.trim() || appState.isRecognizing}
       />
+      
+      {/* 添加通知栏 */}
+      <NotificationBar 
+        message={appState.statusMessage}
+        onClose={() => setAppState(prev => ({ ...prev, statusMessage: null }))}
+      />
       <MainContent {...getRootProps()}>
         <TopSection>
           <ImageDisplay
@@ -1487,7 +1519,18 @@ function App() {
             <EditorWrapper>
               <LatexEditor
                 value={appState.latexCode}
-                onChange={(code: string) => setAppState(prev => ({ ...prev, latexCode: code }))}
+                onChange={(code: string) => {
+                  setAppState(prev => ({ 
+                    ...prev, 
+                    latexCode: code,
+                    // 仅当从无内容变为有内容时显示通知
+                    statusMessage: (!prev.latexCode && code) ? 'ℹ️ 正在手动编辑LaTeX代码' : prev.statusMessage
+                  }));
+                  // 重置AI解释区域
+                  if (code !== appState.latexCode) {
+                    resetAIExplanation();
+                  }
+                }}
                 readOnly={appState.isRecognizing}
               />
             </EditorWrapper>

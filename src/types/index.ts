@@ -52,6 +52,7 @@ export interface AppState {
   latexCode: string;
   isRecognizing: boolean;
   history: HistoryItem[];
+  statusMessage: string | null;
 }
 export interface ScreenshotArea {
   x: number;
