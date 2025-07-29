@@ -1815,15 +1815,6 @@ function forceQuitApp(): void {
   });
 
   cleanupAllTempFiles();
-
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    try {
-      mainWindow.webContents.session.clearCache();
-      mainWindow.webContents.session.clearStorageData();
-    } catch (e) {
-    }
-  }
-
   app.removeAllListeners();
   app.releaseSingleInstanceLock();
 
