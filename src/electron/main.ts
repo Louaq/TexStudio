@@ -846,27 +846,43 @@ if (!gotTheLock) {
       }
     }
 
+    // 优先从electron-store加载配置，如果store中没有配置，则从settings.json加载
+    let currentApiConfig = store.get('apiConfig');
 
-    const apiConfig = loadApiConfigFromSettings();
-    if (apiConfig.appId && apiConfig.appSecret) {
-      DEFAULT_API_CONFIG.appId = apiConfig.appId;
-      DEFAULT_API_CONFIG.appSecret = apiConfig.appSecret;
+    // 检查store中是否有有效的API配置
+    const hasValidStoreConfig = currentApiConfig &&
+      currentApiConfig.appId &&
+      currentApiConfig.appSecret &&
+      currentApiConfig.appId.trim() !== '' &&
+      currentApiConfig.appSecret.trim() !== '';
+
+    if (!hasValidStoreConfig) {
+      // 如果store中没有有效配置，尝试从settings.json加载
+      const apiConfig = loadApiConfigFromSettings();
+      if (apiConfig.appId && apiConfig.appSecret) {
+        DEFAULT_API_CONFIG.appId = apiConfig.appId;
+        DEFAULT_API_CONFIG.appSecret = apiConfig.appSecret;
+        logger.log('从settings.json加载API配置到store');
+      } else {
+        DEFAULT_API_CONFIG.appId = '';
+        DEFAULT_API_CONFIG.appSecret = '';
+      }
+
+      // 应用 DeepSeek 配置
+      if (apiConfig.deepSeek) {
+        DEFAULT_API_CONFIG.deepSeek = {
+          apiKey: apiConfig.deepSeek.apiKey,
+          enabled: apiConfig.deepSeek.enabled
+        };
+      }
+
+      // 只有在store中没有有效配置时才更新store
+      store.set('apiConfig', DEFAULT_API_CONFIG);
     } else {
-
-      DEFAULT_API_CONFIG.appId = '';
-      DEFAULT_API_CONFIG.appSecret = '';
+      // 使用store中的配置更新DEFAULT_API_CONFIG
+      DEFAULT_API_CONFIG = { ...currentApiConfig };
+      logger.log('使用electron-store中的API配置');
     }
-    
-    // 应用 DeepSeek 配置
-    if (apiConfig.deepSeek) {
-      DEFAULT_API_CONFIG.deepSeek = {
-        apiKey: apiConfig.deepSeek.apiKey,
-        enabled: apiConfig.deepSeek.enabled
-      };
-    }
-
-
-    store.set('apiConfig', DEFAULT_API_CONFIG);
     killZombieProcesses();
     await createMainWindow();
     registerGlobalShortcuts();
@@ -1291,10 +1307,36 @@ ipcMain.handle('copy-to-clipboard', (event, text: string) => {
 ipcMain.handle('get-settings', () => {
   return store.store;
 });
-ipcMain.handle('save-settings', (event, settings: Partial<AppSettings>) => {
+ipcMain.handle('save-settings', async (event, settings: Partial<AppSettings>) => {
   for (const [key, value] of Object.entries(settings)) {
     store.set(key as keyof AppSettings, value);
   }
+
+  // 如果保存的是API配置，同时更新settings.json文件
+  if (settings.apiConfig) {
+    try {
+      const settingsPath = path.join(app.getAppPath(), 'settings.json');
+      const fileSettings: any = {
+        app_id: settings.apiConfig.appId,
+        app_secret: settings.apiConfig.appSecret
+      };
+
+      // 保存DeepSeek配置
+      if (settings.apiConfig.deepSeek) {
+        fileSettings.deepseek_api_key = settings.apiConfig.deepSeek.apiKey;
+        fileSettings.deepseek_enabled = settings.apiConfig.deepSeek.enabled;
+      } else {
+        fileSettings.deepseek_api_key = '';
+        fileSettings.deepseek_enabled = false;
+      }
+
+      fs.writeFileSync(settingsPath, JSON.stringify(fileSettings, null, 2), 'utf8');
+      logger.log('API配置已同步保存到settings.json');
+    } catch (error) {
+      logger.error('同步保存API配置到settings.json失败:', error);
+    }
+  }
+
   if (settings.shortcuts) {
     globalShortcut.unregisterAll();
     registerGlobalShortcuts();
@@ -1683,13 +1725,16 @@ ipcMain.handle('save-api-to-settings-file', async (event, apiConfig: ApiConfig) 
 // 清除API配置
 ipcMain.handle('clear-api-config', async (event) => {
   try {
+    // 清除内存中的配置
     DEFAULT_API_CONFIG.appId = '';
     DEFAULT_API_CONFIG.appSecret = '';
     if (DEFAULT_API_CONFIG.deepSeek) {
       DEFAULT_API_CONFIG.deepSeek.apiKey = '';
       DEFAULT_API_CONFIG.deepSeek.enabled = false;
     }
-    store.set('apiConfig', {
+
+    // 清除electron-store中的配置
+    const clearedConfig = {
       appId: '',
       appSecret: '',
       endpoint: DEFAULT_API_CONFIG.endpoint,
@@ -1697,8 +1742,10 @@ ipcMain.handle('clear-api-config', async (event) => {
         apiKey: '',
         enabled: false
       }
-    });
+    };
+    store.set('apiConfig', clearedConfig);
 
+    // 清除settings.json中的配置
     const settingsPath = path.join(app.getAppPath(), 'settings.json');
     if (fs.existsSync(settingsPath)) {
       const settings = {
@@ -1709,8 +1756,11 @@ ipcMain.handle('clear-api-config', async (event) => {
       };
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
     }
+
+    logger.log('API配置已清除，同时更新了electron-store和settings.json');
     return true;
   } catch (error) {
+    logger.error('清除API配置失败:', error);
     return false;
   }
 });
