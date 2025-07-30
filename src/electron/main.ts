@@ -1709,19 +1709,6 @@ ipcMain.handle('clear-api-config', async (event) => {
       };
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
     }
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      try {
-        await mainWindow.webContents.session.clearStorageData({
-          storages: ['localstorage', 'cookies', 'indexdb', 'websql', 'serviceworkers', 'cachestorage']
-        });
-        await mainWindow.webContents.session.clearCache();
-        await mainWindow.webContents.session.clearHostResolverCache();
-        await mainWindow.webContents.session.clearAuthCache();
-        mainWindow.webContents.reloadIgnoringCache();
-      } catch (e) {
-        logger.error('清除缓存失败:', e);
-      }
-    }
     return true;
   } catch (error) {
     return false;
