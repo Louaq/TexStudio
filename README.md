@@ -134,7 +134,7 @@
 
 1. **API设置**
    - 点击菜单"API设置"
-   - 配置你的 SimpleTex API 密钥（用于公式识别）
+   - 配置你的 [SimpleTex API](https://simpletex.cn/) 密钥（用于公式识别）
    - 配置 DeepSeek API 密钥（用于 AI 公式解释）
      - 访问 [DeepSeek 官网](https://platform.deepseek.com) 注册账号
      - 在控制台创建 API Key
