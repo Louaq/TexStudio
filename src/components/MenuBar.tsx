@@ -56,23 +56,27 @@ const Divider = styled.div`
   opacity: 0.5;
 `;
 
-// 替换emoji图标为更现代的表示方式
+// 使用 Material Symbols Outlined 字体图标
+const Icon = (name: string) => (
+  <span className="material-symbols-outlined" style={{ fontSize: 20, lineHeight: 1 }} aria-hidden="true">{name}</span>
+);
+
 const MenuIcon = {
-  capture: "📷",   // 截图
-  upload: "📤",    // 上传图片
-  handwriting: "✏️", // 手写公式
-  copy: "📋",      // 复制
-  export: "💾",    // 导出图片
-  autoMode: "🤖",  // 自动识别模式
-  manualMode: "✋", // 手动识别模式
-  history: "🕒",   // 历史记录
-  api: "🔐",       // API设置
-  shortcut: "⌨️",  // 快捷键
-  cleanup: "🧹",   // 清理临时文件
-  update: "🔄",    // 检查更新
-  pin: "📌",       // 窗口置顶
-  about: "ℹ️",      // 关于
-  help: "💡"       // 帮助
+  capture: Icon("photo_camera"),
+  upload: Icon("file_upload"),
+  handwriting: Icon("edit"),
+  copy: Icon("content_copy"),
+  export: Icon("download"),
+  autoMode: Icon("smart_toy"),
+  manualMode: Icon("back_hand"),
+  history: Icon("history"),
+  api: Icon("vpn_key"),
+  shortcut: Icon("keyboard"),
+  cleanup: Icon("cleaning_services"),
+  update: Icon("new_releases"),
+  pin: Icon("push_pin"),
+  about: Icon("info"),
+  help: Icon("lightbulb")
 };
 
 interface MenuBarProps {
