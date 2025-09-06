@@ -5,10 +5,9 @@ const MenuContainer = styled.div`
   display: flex;
   background: linear-gradient(180deg, #fafbfd 0%, #f2f5f9 100%);
   border-bottom: 1px solid #dce1e8;
-  padding: 6px 12px;
+  padding: 4px 12px;
   gap: 2px;
   font-size: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   overflow-x: auto;
   white-space: nowrap;
   justify-content: flex-start;
@@ -20,7 +19,6 @@ const MenuItem = styled.div<{ disabled?: boolean }>`
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   border-radius: 6px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  color: ${props => props.disabled ? '#95a5a6' : '#3a4a5b'};
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -33,17 +31,7 @@ const MenuItem = styled.div<{ disabled?: boolean }>`
 
   &:hover {
     ${props => !props.disabled && `
-      background: #edf2f7;
       color: #4375b9;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    `}
-  }
-  
-  &:active {
-    ${props => !props.disabled && `
-      transform: translateY(0);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     `}
   }
 `;
@@ -75,8 +63,7 @@ const MenuIcon = {
   cleanup: Icon("cleaning_services"),
   update: Icon("new_releases"),
   pin: Icon("push_pin"),
-  about: Icon("info"),
-  help: Icon("lightbulb")
+  about: Icon("info")
 };
 
 interface MenuBarProps {
@@ -90,7 +77,6 @@ interface MenuBarProps {
   onShowShortcutSettings: () => void;
   onShowHistory: () => void;
   onShowAbout: () => void;
-  onShowHelp: () => void;
   onCleanupTempFiles: () => void;
   onToggleAlwaysOnTop: () => void;
   onCheckForUpdates?: () => void;
@@ -111,7 +97,6 @@ const MenuBar: React.FC<MenuBarProps> = ({
   onShowShortcutSettings,
   onShowHistory,
   onShowAbout,
-  onShowHelp,
   onCleanupTempFiles,
   onToggleAlwaysOnTop,
   onCheckForUpdates,
@@ -163,7 +148,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
       <MenuItem 
         onClick={onToggleRecognitionMode} 
         title={isAutoRecognition ? "当前：自动识别模式，点击切换到手动识别" : "当前：手动识别模式，点击切换到自动识别"}
-        style={isAutoRecognition ? { color: '#4a90e2', background: '#edf2f7' } : {}}
+        style={{ color: '#4375b9' }}
       >
         {isAutoRecognition ? MenuIcon.autoMode : MenuIcon.manualMode}
       </MenuItem>
@@ -212,10 +197,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
       
       <Divider />
       
-      {/* 帮助 */}
-      <MenuItem onClick={onShowHelp} title="使用帮助">
-        {MenuIcon.help}
-      </MenuItem>
+
 
       {/* 关于 */}
       <MenuItem onClick={onShowAbout} title="关于">

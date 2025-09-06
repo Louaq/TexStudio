@@ -16,7 +16,6 @@ import UpdateDialog from './components/UpdateDialog';
 import UpdateProgressIndicator from './components/UpdateProgressIndicator';
 import CopyOptionsDialog from './components/CopyOptionsDialog';
 import ExportOptionsDialog from './components/ExportOptionsDialog';
-import HelpDialog from './components/HelpDialog';
 import HandwritingDialog from './components/HandwritingDialog'; // 导入手写公式组件
 import NotificationBar from './components/NotificationBar'; // 导入通知栏组件
 import * as path from 'path';
@@ -1488,7 +1487,6 @@ function App() {
         onShowShortcutSettings={() => setShowShortcutSettings(true)}
         onShowHistory={() => setShowHistory(true)}
         onShowAbout={() => setShowAbout(true)}
-        onShowHelp={() => setShowHelp(true)}
         onCleanupTempFiles={handleCleanupTempFiles}
         onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
         onCheckForUpdates={handleCheckForUpdates}
@@ -1581,11 +1579,6 @@ function App() {
 
       {showAbout && (
         <AboutDialog onClose={() => setShowAbout(false)} />
-      )}
-
-      {/* 新增帮助对话框 */}
-      {showHelp && (
-        <HelpDialog onClose={() => setShowHelp(false)} />
       )}
 
       {/* 手写公式对话框 */}

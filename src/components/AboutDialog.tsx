@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import packageInfo from '../../package.json';
 import styled from 'styled-components';
 
 const Overlay = styled.div`
@@ -83,52 +84,6 @@ const Version = styled.div`
   display: inline-block;
   border: 1px solid rgba(59, 130, 246, 0.2);
 `;
-
-const Description = styled.div`
-  color: #475569;
-  font-size: 14px;
-  line-height: 1.5;
-  background: rgba(248, 250, 252, 0.8);
-  padding: 16px;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 20px;
-  text-align: center;
-`;
-
-const FeatureList = styled.div`
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 8px;
-`;
-
-const FeatureItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #475569;
-  font-size: 12px;
-  font-weight: 500;
-  text-align: center;
-  min-width: 60px;
-`;
-
-const FeatureIcon = styled.div`
-  font-size: 18px;
-  margin-bottom: 4px;
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  border-radius: 8px;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-`;
-
 const Copyright = styled.div`
   color: #64748b;
   font-size: 12px;
@@ -183,33 +138,8 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
           <AppIcon>∑</AppIcon>
                           <AppTitle>TexStudio</AppTitle>
           <Subtitle>数学公式识别工具</Subtitle>
-          <Version>v4.2.6</Version>
+          <Version>v{packageInfo.version}</Version>
         </Header>
-
-        <Description>
-          专为学术研究设计的数学公式识别工具<br/>
-          支持截图和文件识别，快速转换为 LaTeX 代码
-        </Description>
-
-        <FeatureList>
-          <FeatureItem>
-            <FeatureIcon>📸</FeatureIcon>
-            截图识别
-          </FeatureItem>
-          <FeatureItem>
-            <FeatureIcon>📁</FeatureIcon>
-            文件上传
-          </FeatureItem>
-          <FeatureItem>
-            <FeatureIcon>📋</FeatureIcon>
-            多格式导出
-          </FeatureItem>
-          <FeatureItem>
-            <FeatureIcon>📚</FeatureIcon>
-            历史记录
-          </FeatureItem>
-        </FeatureList>
-
         <Copyright>
           © 2025 TexStudio Team. All Rights Reserved.<br/>
           本软件受知识产权法保护，未经授权不得复制或分发
