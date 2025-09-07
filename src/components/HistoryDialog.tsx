@@ -172,6 +172,13 @@ const Content = styled.div`
   flex: 1;
   overflow-y: auto;
   margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -195,8 +202,7 @@ const Content = styled.div`
 const HistoryItemContainer = styled.div`
   background: white;
   border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
+  padding: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #e1e8ed;
   position: relative;
@@ -242,7 +248,6 @@ const DeleteIconButton = styled.button`
   transition: background 0.2s ease, color 0.2s ease;
 
   &:hover {
-    background: #f2f4f7;
     color: #c0392b;
   }
 `;
@@ -259,8 +264,8 @@ const LatexCode = styled.div<{ mode?: DisplayMode }>`
   font-family: ${props => props.mode === 'rendered' ? 'inherit' : '"Cascadia Code", "Consolas", monospace'};
   font-size: ${props => props.mode === 'rendered' ? '16px' : '13px'};
   color: #2c3e50;
-  max-height: 120px;
-  overflow-y: auto;
+  max-height: 80px;
+  overflow: hidden;
   margin-bottom: 12px;
   word-break: ${props => props.mode === 'rendered' ? 'normal' : 'break-all'};
   text-align: ${props => props.mode === 'rendered' ? 'center' : 'left'};
@@ -274,7 +279,12 @@ const LatexCode = styled.div<{ mode?: DisplayMode }>`
       margin: 0;
     }
     .katex {
-      font-size: 1.1em;
+      font-size: 1.05em;
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
   `}
 `;

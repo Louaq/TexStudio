@@ -1045,17 +1045,8 @@ function App() {
         // 直接设置LaTeX代码
         setAppState(prev => ({ 
           ...prev, 
-          latexCode: latex,
-          statusMessage: '✅ 已加载历史公式'
+          latexCode: latex
         }));
-          
-        // 2秒后清除状态消息
-        setTimeout(() => {
-          setAppState(prev => ({ 
-            ...prev, 
-            statusMessage: null
-          }));
-        }, 2000);
       } else {
         console.error('无效的LaTeX内容');
       }
