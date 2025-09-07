@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { HistoryItem, CopyMode } from '../types';
 import { formatLatex } from '../utils/api';
@@ -199,13 +199,52 @@ const HistoryItemContainer = styled.div`
   margin-bottom: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #e1e8ed;
+  position: relative;
 `;
 
 const DateLabel = styled.div`
   color: #7f8c8d;
   font-size: 12px;
-  margin-bottom: 8px;
   font-weight: 500;
+`;
+
+const ItemHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+`;
+
+const HeaderLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #2c3e50;
+  font-size: 13px;
+`;
+
+const Tag = styled.span`
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #eef3fb;
+  color: #3b6db2;
+  font-size: 12px;
+  border: 1px solid #d9e4f6;
+`;
+
+const DeleteIconButton = styled.button`
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #7f8c8d;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    background: #f2f4f7;
+    color: #c0392b;
+  }
 `;
 
 // 显示模式类型
@@ -768,16 +807,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // 安全包装的onUse函数
-  const safeUse = useCallback((latex: string) => {
-    try {
-      console.log('使用历史记录项:', latex);
-      onUse(latex);
-    } catch (error) {
-      console.error('使用历史记录项失败:', error);
-      setError('使用历史记录项失败');
-    }
-  }, [onUse]);
+  // 已移除“使用”按钮，不再需要包装 onUse
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !isDragging) {
@@ -876,29 +906,20 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
           ) : (
             history.map((item, index) => (
               <HistoryItemContainer key={index}>
-                <DateLabel>{item.date}</DateLabel>
+                <ItemHeader>
+                  <HeaderLeft>
+                    <span>识别结果</span>
+                    <DateLabel>{item.date}</DateLabel>
+                    <Tag>公式</Tag>
+                  </HeaderLeft>
+                  <DeleteIconButton onClick={() => handleDelete(item.latex)} title="删除">
+                    <MaterialIcon name="delete" size={18} />
+                  </DeleteIconButton>
+                </ItemHeader>
                 <MathRenderer 
-                  latex={item.latex} 
-                  onUse={() => safeUse(item.latex)}
+                  latex={item.latex}
+                  onUse={() => onUse(item.latex)}
                 />
-                <ButtonGroup>
-                  <ActionButton 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      safeUse(item.latex);
-                    }}
-                  >
-                    <MaterialIcon name="content_paste" size={14} /> 使用
-                  </ActionButton>
-                  <ActionButton 
-                    variant="danger" 
-                    onClick={() => handleDelete(item.latex)}
-                  >
-                    <MaterialIcon name="delete" size={14} /> 删除
-                  </ActionButton>
-                  <CopyButton latex={item.latex} />
-                </ButtonGroup>
               </HistoryItemContainer>
             ))
           )}
