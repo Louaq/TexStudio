@@ -3,7 +3,7 @@ import styled, { keyframes } from 'styled-components';
 
 const slideIn = keyframes`
   from {
-    transform: translateY(100%);
+    transform: translateY(-100%);
     opacity: 0;
   }
   to {
@@ -18,48 +18,25 @@ const slideOut = keyframes`
     opacity: 1;
   }
   to {
-    transform: translateY(100%);
+    transform: translateY(-100%);
     opacity: 0;
   }
 `;
 
 const ProgressContainer = styled.div<{ isVisible: boolean }>`
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #e1e8ed;
   z-index: 2000;
-  display: flex;
-  align-items: center;
-  width: 280px;
-  animation: ${props => (props.isVisible ? slideIn : slideOut)} 0.5s forwards ease-in-out;
-  border: 1px solid #e1e8ed;
+  animation: ${props => (props.isVisible ? slideIn : slideOut)} 0.3s forwards ease-in-out;
+  pointer-events: none;
 `;
-
-const IconWrapper = styled.div`
-  font-size: 24px;
-  margin-right: 16px;
-`;
-
-const ProgressDetails = styled.div`
-  flex-grow: 1;
-`;
-
-const Title = styled.div`
-  font-size: 14px;
-  font-weight: 600;
-  color: #2c3e50;
-`;
-
 const ProgressBarContainer = styled.div`
   width: 100%;
-  height: 8px;
-  background-color: #e1e8ed;
-  border-radius: 4px;
-  margin-top: 8px;
+  height: 100%;
   overflow: hidden;
 `;
 
@@ -71,12 +48,7 @@ const ProgressBar = styled.div<{ progress: number }>`
   border-radius: 4px;
 `;
 
-const ProgressText = styled.div`
-  font-size: 12px;
-  color: #34495e;
-  margin-top: 4px;
-  text-align: right;
-`;
+// 不显示具体百分比文本
 
 interface UpdateProgressIndicatorProps {
   progress: number;
@@ -90,14 +62,9 @@ const UpdateProgressIndicator: React.FC<UpdateProgressIndicatorProps> = ({ progr
 
   return (
     <ProgressContainer isVisible={isVisible}>
-      <IconWrapper>🚀</IconWrapper>
-      <ProgressDetails>
-        <Title>正在后台下载更新...</Title>
-        <ProgressBarContainer>
-          <ProgressBar progress={progress} />
-        </ProgressBarContainer>
-        <ProgressText>{progress.toFixed(0)}%</ProgressText>
-      </ProgressDetails>
+      <ProgressBarContainer>
+        <ProgressBar progress={progress} />
+      </ProgressBarContainer>
     </ProgressContainer>
   );
 };
