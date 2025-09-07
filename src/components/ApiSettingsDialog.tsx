@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import { ApiConfig, DeepSeekConfig } from '../types';
+import MaterialIcon from './MaterialIcon';
 
 const Overlay = styled.div`
   position: fixed;
@@ -392,7 +393,7 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
     >
       <Dialog onClick={handleDialogClick}>
         <Title>
-          🔑 API设置
+          <MaterialIcon name="vpn_key" size={20} /> API设置
         </Title>
         <Form onSubmit={handleSubmit}>
           <FormGroup>
@@ -458,7 +459,11 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
               }}
             />
             <DeepSeekNote>
-              <strong>📝 获取 API Key 说明：</strong><br/>
+              <strong>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <MaterialIcon name="edit_note" size={14} /> 获取 API Key 说明：
+                </span>
+              </strong><br/>
               1. 访问 <a href="https://platform.deepseek.com" target="_blank" rel="noopener noreferrer">DeepSeek 官网</a> 注册账号<br/>
               2. 在控制台创建 API Key<br/>
               3. 将 API Key 填入上方输入框<br/>

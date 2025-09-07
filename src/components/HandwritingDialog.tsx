@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import styled from 'styled-components';
+import MaterialIcon from './MaterialIcon';
 
 const Overlay = styled.div`
   position: fixed;
@@ -446,7 +447,7 @@ const HandwritingDialog: React.FC<HandwritingDialogProps> = ({
   return (
     <Overlay onClick={onClose}>
       <Dialog onClick={e => e.stopPropagation()}>
-        <Title>✏️ 手写公式识别</Title>
+        <Title><MaterialIcon name="edit" size={20} /> 手写公式识别</Title>
         
         <CanvasContainer>
           <ControlsRow>
@@ -456,14 +457,14 @@ const HandwritingDialog: React.FC<HandwritingDialogProps> = ({
               onClick={() => handleToolChange('pen')}
               title="画笔"
             >
-              ✏️ 画笔
+              <MaterialIcon name="brush" size={16} /> 画笔
             </ToolButton>
             <ToolButton 
               selected={tool === 'eraser'} 
               onClick={() => handleToolChange('eraser')}
               title="橡皮擦"
             >
-              🧽 橡皮擦
+              <MaterialIcon name="ink_eraser" size={16} /> 橡皮擦
             </ToolButton>
             
             <Divider />
@@ -558,7 +559,7 @@ const HandwritingDialog: React.FC<HandwritingDialogProps> = ({
           />
           
           <StatusText isError={isError}>
-            {isRecognizing ? '🔄 正在识别...' : statusMessage}
+            {isRecognizing ? (<><MaterialIcon name="autorenew" size={16} /> 正在识别...</>) : statusMessage}
           </StatusText>
         </CanvasContainer>
         

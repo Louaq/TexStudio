@@ -5,6 +5,7 @@ import { formatLatex } from '../utils/api';
 // 引入KaTeX相关库
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
+import MaterialIcon from './MaterialIcon';
 
 const Overlay = styled.div`
   position: fixed;
@@ -525,7 +526,7 @@ const Confirmation: React.FC<ConfirmationProps> = ({
     }}>
       <ConfirmDialog>
         <ConfirmTitle>
-          {isDelete ? '🗑️ ' : '⚠️ '}{title}
+          {isDelete ? (<MaterialIcon name="delete" size={18} />) : (<MaterialIcon name="warning" size={18} />)} {title}
         </ConfirmTitle>
         <ConfirmMessage>{message}</ConfirmMessage>
         <ConfirmButtons>
@@ -591,14 +592,14 @@ const CopyButton: React.FC<CopyButtonProps> = ({ latex }) => {
   return (
     <>
       <ActionButton onClick={toggleOptions}>
-        📋 复制
+        <MaterialIcon name="content_copy" size={14} /> 复制
       </ActionButton>
       
       {showOptions && (
         <Overlay onClick={handleOverlayClick}>
           <CopyOptionsDialog>
             <CopyOptionsTitle>
-              📋 选择复制格式
+              <MaterialIcon name="content_copy" size={16} /> 选择复制格式
             </CopyOptionsTitle>
             
             <CopyOptionsList>
@@ -842,7 +843,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
       <Dialog onClick={handleDialogClick}>
         <Header>
           <Title>
-            📚 历史记录
+            <MaterialIcon name="history" size={20} /> 历史记录
           </Title>
         </Header>
 
@@ -870,7 +871,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
         <Content>
           {history.length === 0 ? (
             <EmptyState>
-              📝 暂无历史记录
+              <MaterialIcon name="note_alt" size={18} /> 暂无历史记录
             </EmptyState>
           ) : (
             history.map((item, index) => (
@@ -888,13 +889,13 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
                       safeUse(item.latex);
                     }}
                   >
-                    📋 使用
+                    <MaterialIcon name="content_paste" size={14} /> 使用
                   </ActionButton>
                   <ActionButton 
                     variant="danger" 
                     onClick={() => handleDelete(item.latex)}
                   >
-                    🗑️ 删除
+                    <MaterialIcon name="delete" size={14} /> 删除
                   </ActionButton>
                   <CopyButton latex={item.latex} />
                 </ButtonGroup>
@@ -906,7 +907,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
         <ButtonsContainer>
           {history.length > 0 && (
             <ClearButton onClick={handleClear}>
-              🗑️ 清空历史记录
+              <MaterialIcon name="delete" size={16} /> 清空历史记录
             </ClearButton>
           )}
           <CloseButton onClick={onClose}>

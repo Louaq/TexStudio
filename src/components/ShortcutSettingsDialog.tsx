@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import MaterialIcon from './MaterialIcon';
 
 const Overlay = styled.div`
   position: fixed;
@@ -435,12 +436,12 @@ const ShortcutSettingsDialog: React.FC<ShortcutSettingsDialogProps> = ({
         tabIndex={-1}
       >
         <Title>
-          ⌨️ 快捷键设置
+          <MaterialIcon name="keyboard" size={20} /> 快捷键设置
         </Title>
         
         {showSuccess ? (
           <SuccessMessage>
-            ✅ 快捷键已保存成功！
+            <MaterialIcon name="check_circle" size={16} /> 快捷键已保存成功！
           </SuccessMessage>
         ) : (
           <Description>
