@@ -168,16 +168,21 @@ const ClearButton = styled.button`
   }
 `;
 
-const Content = styled.div`
+const Content = styled.div<{ isEmpty: boolean }>`
   flex: 1;
   overflow-y: auto;
   margin-bottom: 20px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  display: ${props => props.isEmpty ? 'flex' : 'grid'};
+  ${props => props.isEmpty ? `
+    align-items: center;
+    justify-content: center;
+  ` : `
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  `}
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+    ${props => props.isEmpty ? '' : 'grid-template-columns: 1fr;'}
   }
 
   &::-webkit-scrollbar {
@@ -386,6 +391,9 @@ const EmptyState = styled.div`
   color: #7f8c8d;
   padding: 40px 20px;
   font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const CloseButton = styled.button`
@@ -1013,7 +1021,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
           </ErrorDisplay>
         )}
 
-        <Content>
+        <Content isEmpty={items.length === 0}>
           {items.length === 0 ? (
             <EmptyState>
               <MaterialIcon name="note_alt" size={18} /> 暂无历史记录
