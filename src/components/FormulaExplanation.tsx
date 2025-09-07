@@ -325,7 +325,7 @@ const Timestamp = styled.div`
 
 const ConfigMissingText = styled.div`
   font-size: 13px;
-  text-align: center;
+  text-align: left;
   display: flex;
   height: 100%;
   line-height: 1.5;
@@ -333,6 +333,8 @@ const ConfigMissingText = styled.div`
   width: calc(100% - 24px); /* 计算实际宽度，考虑内边距 */
   box-sizing: border-box;
   color: #7f8c8d;
+  align-items: flex-start; /* 顶部对齐 */
+  justify-content: flex-start; /* 左侧对齐 */
 `;
 
 
@@ -431,8 +433,8 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
     if (!deepSeekConfig?.apiKey || !deepSeekConfig.enabled) {
       return (
         <ConfigMissingText>
-          <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
-            <MaterialIcon name="settings" /> 请先在设置中配置 DeepSeek API 密钥并启用此功能
+          <span style={{display:'inline-flex',alignItems:'center',gap:4, fontStyle:'italic', color:'#95a5a6', padding: '0 10px'}}>
+            请先在设置中配置 DeepSeek API 密钥并启用此功能
           </span>
         </ConfigMissingText>
       );

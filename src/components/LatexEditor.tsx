@@ -31,7 +31,7 @@ const TextArea = styled.textarea<{ readOnly: boolean }>`
   border: 2px solid #dce1e8; /* 增加边框宽度使其更明显 */
   border-radius: 8px;
   color: #2c3e50;
-  font-family: "Cascadia Code", "Consolas", "Monaco", monospace;
+  font-family: "Segoe UI","Microsoft YaHei",sans-serif;
   font-size: 13px;
   line-height: 1.5;
   resize: none; /* 禁用调整大小 */
