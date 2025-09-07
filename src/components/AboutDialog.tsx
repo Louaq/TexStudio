@@ -138,7 +138,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
           <AppIcon>∑</AppIcon>
                           <AppTitle>TexStudio</AppTitle>
           <Subtitle>数学公式识别工具</Subtitle>
-          <Version>v{packageInfo.version}</Version>
+          <Version>{packageInfo.version}</Version>
         </Header>
         <Copyright>
           © 2025 TexStudio Team. All Rights Reserved.<br/>
