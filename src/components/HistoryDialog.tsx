@@ -206,6 +206,7 @@ const HistoryItemContainer = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #e1e8ed;
   position: relative;
+  min-width: 0;
 `;
 
 const DateLabel = styled.div`
@@ -268,11 +269,10 @@ const LatexCode = styled.div<{ mode?: DisplayMode }>`
   overflow: hidden;
   margin-bottom: 12px;
   word-break: ${props => props.mode === 'rendered' ? 'normal' : 'break-all'};
-  text-align: ${props => props.mode === 'rendered' ? 'center' : 'left'};
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-align: left;
+  display: block;
   min-height: 60px;
+  position: relative;
   
   ${props => props.mode === 'rendered' && `
     .katex-display {
@@ -280,13 +280,22 @@ const LatexCode = styled.div<{ mode?: DisplayMode }>`
     }
     .katex {
       font-size: 1.05em;
-      display: block;
+      display: inline-block; /* 保持整体作为一个内联块，让外层负责溢出处理 */
       max-width: 100%;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
+    }
+    .katex .katex-html {
+      display: block; /* 保持 KaTeX 内部正常排版，不再做省略 */
+      max-width: 100%;
     }
   `}
+`;
+
+const Ellipsis = styled.div`
+  width: 100%;
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis; /* 仅在实际溢出时显示结尾省略号 */
 `;
 
 // 添加模式切换按钮样式
@@ -730,19 +739,19 @@ const MathRenderer: React.FC<MathRendererProps> = ({ latex, onUse }) => {
       }
 
       return (
-        <div 
+        <div
           onClick={onUse ? handleUseClick : undefined}
-          style={{ 
-            cursor: onUse ? 'pointer' : 'default',
-            width: '100%',
-            textAlign: 'center',
-            padding: '8px'
-          }}
+          style={{ cursor: onUse ? 'pointer' : 'default' }}
           title={onUse ? "点击使用该公式" : undefined}
         >
-          <ErrorBoundary fallback={<div style={{color: '#e74c3c'}}>无法渲染公式</div>}>
-            <InlineMath math={cleanLatex} />
-          </ErrorBoundary>
+          <Ellipsis>
+            <ErrorBoundary fallback={<div style={{color: '#e74c3c'}}>无法渲染公式</div>}> 
+              {/* 将公式整体包一层span，避免内部元素分段导致中间截断 */}
+              <span style={{ display: 'inline-block', maxWidth: '100%' }}>
+                <InlineMath math={cleanLatex} />
+              </span>
+            </ErrorBoundary>
+          </Ellipsis>
         </div>
       );
     } catch (error) {
@@ -802,6 +811,7 @@ interface HistoryDialogProps {
   onDelete: (latex: string) => void;
   onClear: () => void;
   onClose: () => void;
+  onReorder?: (items: HistoryItem[]) => void; // 可选：将新顺序回传给父组件
 }
 
 const HistoryDialog: React.FC<HistoryDialogProps> = ({
@@ -809,13 +819,108 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
   onUse,
   onDelete,
   onClear,
-  onClose
+  onClose,
+  onReorder
 }) => {
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [latexToDelete, setLatexToDelete] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [items, setItems] = useState<HistoryItem[]>(history);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const dragImageRef = useRef<HTMLElement | null>(null);
+  const ghostRef = useRef<HTMLElement | null>(null);
+  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  useEffect(() => {
+    setItems(history);
+  }, [history]);
+
+  const persistHistoryOrder = (newItems: HistoryItem[]) => {
+    if (window.electronAPI) {
+      window.electronAPI.saveSettings({ history: newItems }).catch(console.error);
+    }
+    if (onReorder) onReorder(newItems);
+  };
+
+  const handleItemDragStart = (index: number) => (e: React.DragEvent) => {
+    setDragIndex(index);
+    setIsDragging(true);
+    try { e.dataTransfer.effectAllowed = 'move'; } catch {}
+
+    // 使用透明拖拽影像隐藏系统默认半透明预览
+    const transparent = document.createElement('canvas');
+    transparent.width = 1; transparent.height = 1;
+    try { e.dataTransfer.setDragImage(transparent, 0, 0); } catch {}
+
+    // 创建自定义“跟随鼠标”的幽灵元素，保持完全不透明
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const ghost = target.cloneNode(true) as HTMLElement;
+    ghost.style.position = 'fixed';
+    ghost.style.top = `${e.clientY - dragOffsetRef.current.y}px`;
+    ghost.style.left = `${e.clientX - dragOffsetRef.current.x}px`;
+    ghost.style.width = `${rect.width}px`;
+    ghost.style.height = `${rect.height}px`;
+    ghost.style.pointerEvents = 'none';
+    ghost.style.zIndex = '9999';
+    ghost.style.opacity = '1';
+    ghost.style.transform = 'translateZ(0)';
+    document.body.appendChild(ghost);
+    ghostRef.current = ghost;
+  };
+
+  const handleItemDragOver = (index: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    try { e.dataTransfer.dropEffect = 'move'; } catch {}
+    // 移动自定义幽灵元素以跟随鼠标
+    if (ghostRef.current) {
+      const x = e.clientX - dragOffsetRef.current.x;
+      const y = e.clientY - dragOffsetRef.current.y;
+      ghostRef.current.style.left = `${x}px`;
+      ghostRef.current.style.top = `${y}px`;
+    }
+  };
+
+  const handleItemDrop = (index: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === index) {
+      setIsDragging(false);
+      setDragIndex(null);
+      if (ghostRef.current && ghostRef.current.parentNode) {
+        ghostRef.current.parentNode.removeChild(ghostRef.current);
+      }
+      ghostRef.current = null;
+      return;
+    }
+    const newItems = [...items];
+    const [moved] = newItems.splice(dragIndex, 1);
+    newItems.splice(index, 0, moved);
+    setItems(newItems);
+    setIsDragging(false);
+    setDragIndex(null);
+    if (ghostRef.current && ghostRef.current.parentNode) {
+      ghostRef.current.parentNode.removeChild(ghostRef.current);
+    }
+    ghostRef.current = null;
+    persistHistoryOrder(newItems);
+  };
+
+  const handleItemDragEnd = () => {
+    setIsDragging(false);
+    setDragIndex(null);
+    // 清理自定义拖拽预览
+    if (dragImageRef.current && dragImageRef.current.parentNode) {
+      dragImageRef.current.parentNode.removeChild(dragImageRef.current);
+    }
+    dragImageRef.current = null;
+    if (ghostRef.current && ghostRef.current.parentNode) {
+      ghostRef.current.parentNode.removeChild(ghostRef.current);
+    }
+    ghostRef.current = null;
+  };
   
   // 已移除“使用”按钮，不再需要包装 onUse
 
@@ -909,13 +1014,20 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
         )}
 
         <Content>
-          {history.length === 0 ? (
+          {items.length === 0 ? (
             <EmptyState>
               <MaterialIcon name="note_alt" size={18} /> 暂无历史记录
             </EmptyState>
           ) : (
-            history.map((item, index) => (
-              <HistoryItemContainer key={index}>
+            items.map((item, index) => (
+              <HistoryItemContainer
+                key={index}
+                draggable
+                onDragStart={handleItemDragStart(index)}
+                onDragOver={handleItemDragOver(index)}
+                onDrop={handleItemDrop(index)}
+                onDragEnd={handleItemDragEnd}
+              >
                 <ItemHeader>
                   <HeaderLeft>
                     <span>识别结果</span>
