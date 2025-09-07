@@ -131,7 +131,10 @@ const NotificationBar: React.FC<NotificationBarProps> = ({
       .trim();
   };
   
-  if (!message) return null;
+  // 仅在重要事件时显示通知：包含成功/错误/警告的表情标识
+  if (!message || (!message.includes('✅') && !message.includes('❌') && !message.includes('⚠️'))) {
+    return null;
+  }
   
   const notificationType = getTypeFromMessage(message);
   const displayMessage = cleanMessage(message);

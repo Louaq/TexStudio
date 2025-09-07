@@ -143,7 +143,14 @@ const GlobalStyle = createGlobalStyle`
     word-wrap: normal;
     direction: ltr;
     -webkit-font-feature-settings: 'liga';
+    font-feature-settings: 'liga';
     -webkit-font-smoothing: antialiased;
+    /* 指定可变字体轴，确保某些符号（如 ink_eraser）正确渲染 */
+    font-variation-settings:
+      'FILL' 0,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 24;
   }
 `;
 

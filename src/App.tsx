@@ -199,7 +199,7 @@ function App() {
     latexCode: '',
     isRecognizing: false,
     history: [],
-    statusMessage: '欢迎使用 SimpleTex-OCR'
+    statusMessage: null
   });
 
   // 添加更新状态管理
