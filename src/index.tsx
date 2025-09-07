@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import "@fontsource/material-symbols-outlined";
 import { createGlobalStyle } from 'styled-components';
 
 // 全局样式
@@ -126,6 +127,23 @@ const GlobalStyle = createGlobalStyle`
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%) translateY(-4px);
+  }
+
+  /* Material Symbols Outlined 字体类，匹配 Google 样式用法 */
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
   }
 `;
 

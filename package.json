@@ -1,6 +1,6 @@
 {
   "name": "latex-ocr-electron",
-  "version": "4.3.5",
+  "version": "4.3.6",
   "description": "TexStudio OCR",
   "author": "TexStudio",
   "main": "dist/electron/electron/main.js",
@@ -17,6 +17,7 @@
     "publish": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=always"
   },
   "dependencies": {
+    "@fontsource/material-symbols-outlined": "5.0.5",
     "@types/crypto-js": "^4.2.2",
     "@types/katex": "^0.16.7",
     "axios": "^1.5.0",
