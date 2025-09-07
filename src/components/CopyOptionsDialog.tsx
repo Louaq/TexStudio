@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import MaterialIcon from './MaterialIcon';
 import { CopyMode } from '../types';
 
 const DialogOverlay = styled.div`
@@ -191,7 +192,7 @@ const CopyOptionsDialog: React.FC<CopyOptionsDialogProps> = ({
     <DialogOverlay onClick={handleOverlayClick}>
       <DialogContainer>
         <DialogTitle>
-          📋 选择复制格式
+          <MaterialIcon name="content_copy" /> 选择复制格式
         </DialogTitle>
         
         <OptionsList>

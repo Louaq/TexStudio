@@ -491,6 +491,18 @@ function App() {
         try {
           const filePath = await window.electronAPI.selectFile();
           if (filePath) {
+            // 选择文件后进行大小检测
+            try {
+              const size = await window.electronAPI.getFileSize?.(filePath);
+              const maxSizeBytes = 10 * 1024 * 1024;
+              if (typeof size === 'number' && size > maxSizeBytes) {
+                setAppState(prev => ({
+                  ...prev,
+                  statusMessage: '❌ 图片过大，最大支持 10MB'
+                }));
+                return;
+              }
+            } catch (e) {}
             setAppState(prev => ({ 
               ...prev, 
               currentImage: `file://${filePath}`,
@@ -670,6 +682,15 @@ function App() {
       console.log('文件大小:', file.size);
       
       if (file.type.startsWith('image/')) {
+        // 大小限制：10MB
+        const maxSizeBytes = 10 * 1024 * 1024;
+        if (file.size > maxSizeBytes) {
+          setAppState(prev => ({
+            ...prev,
+            statusMessage: '❌ 图片过大，最大支持 10MB'
+          }));
+          return;
+        }
         const handleDraggedFile = async () => {
           if (!window.electronAPI) {
             setAppState(prev => ({ 
@@ -769,6 +790,20 @@ function App() {
     try {
       const filePath = await window.electronAPI.selectFile();
       if (filePath) {
+        // 选择文件后进行大小检测
+        try {
+          const size = await window.electronAPI.getFileSize?.(filePath);
+          const maxSizeBytes = 10 * 1024 * 1024;
+          if (typeof size === 'number' && size > maxSizeBytes) {
+            setAppState(prev => ({
+              ...prev,
+              statusMessage: '❌ 图片过大，最大支持 10MB'
+            }));
+            return;
+          }
+        } catch (e) {
+          // 失败时不阻塞，但也给出提示
+        }
         // 清空AI解释区域
         resetAIExplanation();
         

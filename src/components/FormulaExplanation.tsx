@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import MaterialIcon from './MaterialIcon';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -430,7 +431,9 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
     if (!deepSeekConfig?.apiKey || !deepSeekConfig.enabled) {
       return (
         <ConfigMissingText>
-          ⚙️ 请先在设置中配置 DeepSeek API 密钥并启用此功能
+          <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+            <MaterialIcon name="settings" /> 请先在设置中配置 DeepSeek API 密钥并启用此功能
+          </span>
         </ConfigMissingText>
       );
     }
@@ -447,7 +450,9 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
     if (explanation.error) {
       return (
         <ErrorMessage>
-          ❌ {explanation.error}
+          <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+            <MaterialIcon name="error" /> {explanation.error}
+          </span>
         </ErrorMessage>
       );
     }
@@ -509,7 +514,7 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
     <Container>
       <Header>
         <Label>
-          🤖 AI 公式解释
+          <MaterialIcon name="smart_toy" /> AI 公式解释
         </Label>
         <ButtonGroup>
           <ExplainButton 

@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import MaterialIcon from './MaterialIcon';
 
 const DialogOverlay = styled.div`
   position: fixed;
@@ -90,6 +91,8 @@ const OptionHeader = styled.div`
 
 const OptionIcon = styled.span`
   font-size: 16px;
+  display: inline-flex;
+  align-items: center;
 `;
 
 const OptionTitle = styled.div`
@@ -171,19 +174,19 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
   const exportOptions = [
     {
       format: 'svg' as const,
-      icon: '🎨',
+      icon: <MaterialIcon name="palette" size={18} />,
       title: 'SVG格式',
       description: '矢量图形，无损缩放，适合印刷和网页使用'
     },
     {
       format: 'png' as const,
-      icon: '🖼️',
+      icon: <MaterialIcon name="image" size={18} />,
       title: 'PNG格式',
       description: '透明背景位图，适合网页和演示文稿使用'
     },
     {
       format: 'jpg' as const,
-      icon: '📷',
+      icon: <MaterialIcon name="photo_camera" size={18} />,
       title: 'JPG格式',
       description: '白色背景位图，文件较小，适合文档插入'
     }
@@ -193,7 +196,7 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
     <DialogOverlay onClick={handleOverlayClick}>
       <DialogContainer>
         <DialogTitle>
-          💾 选择导出格式
+          <MaterialIcon name="save" /> 选择导出格式
         </DialogTitle>
         
         <OptionsList>

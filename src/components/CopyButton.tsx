@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import MaterialIcon from './MaterialIcon';
 import { CopyMode } from '../types';
 
 const ButtonContainer = styled.div`
@@ -40,10 +41,7 @@ const MainButton = styled.button<{ disabled: boolean }>`
   }
 
   &::after {
-    content: '▼';
-    font-size: 8px;
-    margin-left: 6px;
-    opacity: 0.8;
+    content: '';
   }
 `;
 
@@ -140,7 +138,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({ onCopy, disabled = false }) => 
         disabled={disabled}
         onClick={handleDropdownToggle}
       >
-        📋 复制LaTeX
+        <MaterialIcon name="content_copy" /> 复制LaTeX
       </MainButton>
       
       <DropdownMenu show={showDropdown && !disabled}>

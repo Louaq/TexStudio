@@ -5,7 +5,7 @@ const MenuContainer = styled.div`
   display: flex;
   background: linear-gradient(180deg, #fafbfd 0%, #f2f5f9 100%);
   border-bottom: 1px solid #dce1e8;
-  padding: 4px 12px;
+  padding: 2px 12px;
   gap: 2px;
   font-size: 14px;
   overflow-x: auto;
@@ -15,7 +15,7 @@ const MenuContainer = styled.div`
 `;
 
 const MenuItem = styled.div<{ disabled?: boolean }>`
-  padding: 8px;
+  padding: 4px;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   border-radius: 6px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -38,7 +38,7 @@ const MenuItem = styled.div<{ disabled?: boolean }>`
 
 const Divider = styled.div`
   width: 1px;
-  height: 22px;
+  height: 18px;
   background: #dce1e8;
   margin: 0 2px;
   opacity: 0.5;
@@ -190,7 +190,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
       <MenuItem 
         onClick={onToggleAlwaysOnTop} 
         title={isAlwaysOnTop ? "取消置顶" : "窗口置顶"}
-        style={isAlwaysOnTop ? { color: '#4a90e2', background: '#edf2f7' } : {}}
+        style={isAlwaysOnTop ? { color: '#4a90e2'} : {}}
       >
         {MenuIcon.pin}
       </MenuItem>

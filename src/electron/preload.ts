@@ -4,6 +4,7 @@ import { ElectronAPI, ApiConfig, AppSettings, ScreenshotArea } from '../types';
 // 定义 Electron API
 const electronAPI: ElectronAPI = {
   selectFile: () => ipcRenderer.invoke('select-file'),
+  getFileSize: (filePath: string) => ipcRenderer.invoke('get-file-size', filePath),
   saveFile: (content: string, filename: string) => ipcRenderer.invoke('save-file', content, filename),
   saveDocxFile: (content: string, filename: string) => ipcRenderer.invoke('save-docx-file', content, filename),
   saveTempFile: (buffer: Uint8Array, filename: string) => ipcRenderer.invoke('save-temp-file', buffer, filename),

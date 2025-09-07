@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import MaterialIcon from './MaterialIcon';
 
 const ExportContainer = styled.div`
   position: relative;
@@ -130,23 +131,21 @@ const ExportButtonComponent: React.FC<ExportButtonProps> = ({
         onClick={handleButtonClick}
         title={disabled ? "请先识别或输入数学公式" : "导出数学公式为图片"}
       >
-        📁 导出图片
-        <span style={{ transform: showDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
-          ▼
-        </span>
+        <MaterialIcon name="folder" /> 导出图片
+        <MaterialIcon name={showDropdown ? 'expand_less' : 'expand_more'} style={{ transition: 'transform 0.2s ease' }} />
       </ExportButton>
       
       <DropdownMenu show={showDropdown && !disabled}>
         <DropdownItem onClick={() => handleExport('svg')}>
-          🎨 SVG格式
+          <MaterialIcon name="palette" /> SVG格式
           <span style={{ fontSize: '12px', color: '#6c757d', marginLeft: 'auto' }}>矢量图</span>
         </DropdownItem>
         <DropdownItem onClick={() => handleExport('png')}>
-          🖼️ PNG格式
+          <MaterialIcon name="image" /> PNG格式
           <span style={{ fontSize: '12px', color: '#6c757d', marginLeft: 'auto' }}>透明背景</span>
         </DropdownItem>
         <DropdownItem onClick={() => handleExport('jpg')}>
-          📷 JPG格式
+          <MaterialIcon name="photo_camera" /> JPG格式
           <span style={{ fontSize: '12px', color: '#6c757d', marginLeft: 'auto' }}>白色背景</span>
         </DropdownItem>
       </DropdownMenu>

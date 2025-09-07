@@ -75,6 +75,8 @@ export interface RecognitionResult {
 // Electron API类型
 export interface ElectronAPI {
   selectFile: () => Promise<string | null>;
+  // 新增：获取文件大小（字节）
+  getFileSize?: (filePath: string) => Promise<number>;
   saveFile: (content: string, filename: string) => Promise<boolean>;
   saveDocxFile: (content: string, filename: string) => Promise<boolean>;
   saveTempFile: (buffer: Uint8Array, filename: string) => Promise<string>;

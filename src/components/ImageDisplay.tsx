@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import MaterialIcon from './MaterialIcon';
 
 const Container = styled.div`
   display: flex;
@@ -171,7 +172,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
   return (
     <Container>
       <Label>
-        🖼️ 识别图片
+        <MaterialIcon name="image" /> 识别图片
       </Label>
       <ImageContainer isDragActive={isDragActive} onClick={handleClick}>
         {imageUrl ? (
@@ -184,26 +185,30 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
                 disabled={isRecognizing}
               >
                 {isRecognizing ? (
-                  <>🔄 识别中...</>
+                  <>
+                    <MaterialIcon name="progress_activity" /> 识别中...
+                  </>
                 ) : (
-                  <>🤖 开始识别</>
+                  <>
+                    <MaterialIcon name="smart_toy" /> 开始识别
+                  </>
                 )}
               </ManualRecognizeButton>
             )}
           </>
         ) : (
           <PlaceholderText>
-            📷 将在此处显示识别的图片
+            <MaterialIcon name="photo_camera" /> 将在此处显示识别的图片
             <br />
             <small style={{ color: '#95a5a6', fontSize: '14px', marginTop: '8px', display: 'block' }}>
-              点击此区域选择图片或拖拽图片文件到此处
+              点击此区域选择图片或拖拽图片文件到此处（最大10MB）
             </small>
           </PlaceholderText>
         )}
         
         <DragOverlay show={isDragActive}>
           <DragText>
-            📁 释放文件开始识别
+            <MaterialIcon name="drive_folder_upload" /> 释放文件开始识别
           </DragText>
         </DragOverlay>
       </ImageContainer>

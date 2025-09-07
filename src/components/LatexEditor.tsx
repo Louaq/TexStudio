@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import MaterialIcon from './MaterialIcon';
 
 const Container = styled.div`
   display: flex;
@@ -154,7 +155,7 @@ const LatexEditor: React.FC<LatexEditorProps> = ({
   return (
     <Container>
       <Label>
-        📝 LaTeX代码
+        <MaterialIcon name="code" /> LaTeX代码
       </Label>
       <EditorContainer>
         <TextArea

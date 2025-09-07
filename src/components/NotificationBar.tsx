@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import MaterialIcon from './MaterialIcon';
 
 interface NotificationBarProps {
   message: string | null;
@@ -138,7 +139,9 @@ const NotificationBar: React.FC<NotificationBarProps> = ({
   return (
     <NotificationContainer type={notificationType} visible={visible}>
       <MessageContent>{displayMessage}</MessageContent>
-      <CloseButton onClick={handleClose}>×</CloseButton>
+      <CloseButton onClick={handleClose} aria-label="关闭">
+        <MaterialIcon name="close" />
+      </CloseButton>
     </NotificationContainer>
   );
 };

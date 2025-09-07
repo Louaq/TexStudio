@@ -1016,6 +1016,16 @@ ipcMain.handle('select-file', async () => {
   }
 });
 
+// 新增：获取文件大小
+ipcMain.handle('get-file-size', async (event, filePath: string) => {
+  try {
+    const stats = fs.statSync(filePath);
+    return stats.size; // bytes
+  } catch (e) {
+    return -1;
+  }
+});
+
 
 ipcMain.handle('save-file', async (event, content: string, filename: string) => {
   const result = await dialog.showSaveDialog(mainWindow!, {

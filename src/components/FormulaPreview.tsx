@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
+import MaterialIcon from './MaterialIcon';
 
 const Container = styled.div`
   display: flex;
@@ -116,7 +117,7 @@ const FormulaPreview: React.FC<FormulaPreviewProps> = ({
   return (
     <Container>
       <Label>
-        🔍 公式预览
+        <MaterialIcon name="search" /> 公式预览
       </Label>
       <PreviewArea>
         {renderPreviewContent()}
