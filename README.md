@@ -2,31 +2,6 @@
 
 一个基于 Electron + React + TypeScript 的现代化 LaTeX 公式识别桌面应用程序。
 
-## ✨ 功能特性
-
-- 📸 **截图识别** - 支持全局快捷键截图识别公式
-- 📁 **文件上传** - 支持拖拽或选择图片文件进行识别
-- ✏️ **手写公式识别** - 支持直接手写数学公式并识别，配备橡皮擦工具
-- 🤖 **AI 公式解释** - 集成 DeepSeek R1 大模型，智能解释数学公式含义和应用场景
-- 📋 **多格式复制** - 支持复制原始代码、行内公式(\$...\$)、显示公式(\$$...\$$)格式
-- 📁 **公式导出** - 支持导出为svg、png和jpg三种格式的图片
-- 📚 **历史记录** - 自动保存识别历史，方便查看和复用
-- ⌨️ **全局快捷键** - 可自定义快捷键，支持后台运行
-- 🔑 **API配置** - 支持自定义[SimpleTex API](https://simpletex.cn/)配置和 [DeepSeek API](https://platform.deepseek.com/) 配置
-- 🎨 **现代化界面** - 基于 Styled Components 的美观界面设计
-- 🔄 **自动更新** - 支持检测和安装新版本，无需手动下载
-
-## 🛠️ 技术栈
-
-- **前端框架**: React 18 + TypeScript
-- **桌面应用**: Electron 27
-- **样式方案**: Styled Components
-- **状态管理**: React Hooks
-- **API服务**: SimpleTex OCR API + DeepSeek R1 API
-- **AI集成**: OpenAI SDK（用于 DeepSeek API 调用）
-- **构建工具**: Create React App + Electron Builder
-- **自动更新**: electron-updater
-
 ## 📦 安装和运行
 
 ### 安装包下载
