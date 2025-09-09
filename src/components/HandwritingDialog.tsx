@@ -19,12 +19,13 @@ const Dialog = styled.div`
   background: white;
   border-radius: 8px;
   padding: 20px;
-  width: 600px;
+  width: clamp(600px, 80vw, 1200px);
   max-width: 90vw;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow: auto;
 `;
 
 const Title = styled.h2`
@@ -47,9 +48,20 @@ const CanvasContainer = styled.div`
   flex-direction: column;
 `;
 
-const Canvas = styled.canvas`
+// 仅画布区域可缩放
+const CanvasResizable = styled.div`
+  position: relative;
   width: 100%;
   height: 300px;
+  min-height: 200px;
+  overflow: auto;
+  background: white;
+`;
+
+const Canvas = styled.canvas`
+  width: auto;
+  height: auto;
+  max-width: none;
   cursor: crosshair;
   touch-action: none;
 `;
@@ -178,6 +190,8 @@ const HandwritingDialog: React.FC<HandwritingDialogProps> = ({
   isRecognizing = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const resizableRef = useRef<HTMLDivElement>(null);
+  const overlayMouseDownOnSelf = useRef<boolean>(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState('#000000');
   const [lineWidth, setLineWidth] = useState(3);
@@ -186,30 +200,167 @@ const HandwritingDialog: React.FC<HandwritingDialogProps> = ({
   const [isError, setIsError] = useState(false);
   const [tool, setTool] = useState<Tool>('pen');
   const [eraserSize, setEraserSize] = useState(20);
+  const [canvasDisplayWidth, setCanvasDisplayWidth] = useState<number>(0);
+  const [canvasDisplayHeight, setCanvasDisplayHeight] = useState<number>(0);
 
-  // 初始化画布
+  // 以显示尺寸（CSS 像素）设置画布，支持内容位移（用于上/左扩展）
+  const resizeCanvas = (
+    displayWidth: number,
+    displayHeight: number,
+    preserveContent: boolean = true,
+    shiftX: number = 0,
+    shiftY: number = 0,
+    prevDisplayWidth?: number,
+    prevDisplayHeight?: number
+  ) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const dpr = (window.devicePixelRatio || 1);
+
+    const targetWidth = Math.max(1, Math.floor(displayWidth * dpr));
+    const targetHeight = Math.max(1, Math.floor(displayHeight * dpr));
+
+    // 离屏复制，避免拉伸失真与裁剪缺失
+    let offscreen: HTMLCanvasElement | null = null;
+    if (preserveContent && canvas.width > 0 && canvas.height > 0) {
+      offscreen = document.createElement('canvas');
+      offscreen.width = canvas.width;   // 设备像素
+      offscreen.height = canvas.height; // 设备像素
+      const offctx = offscreen.getContext('2d');
+      if (offctx) {
+        offctx.drawImage(canvas, 0, 0);
+      }
+    }
+
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    canvas.style.width = `${displayWidth}px`;
+    canvas.style.height = `${displayHeight}px`;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    // @ts-ignore setTransform 存在
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (tool === 'pen') {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+    } else {
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = eraserSize;
+    }
+
+    if (offscreen) {
+      const ctx2 = canvas.getContext('2d');
+      if (ctx2) {
+        const prevW = prevDisplayWidth ?? Math.max(1, Math.floor(offscreen.width / dpr));
+        const prevH = prevDisplayHeight ?? Math.max(1, Math.floor(offscreen.height / dpr));
+        // 按旧显示尺寸粘贴，避免缩放拉伸；左/上扩展通过 shiftX/shiftY 平移
+        ctx2.drawImage(
+          offscreen,
+          0,
+          0,
+          offscreen.width,
+          offscreen.height,
+          shiftX,
+          shiftY,
+          prevW,
+          prevH
+        );
+      }
+    }
+  };
+
+  // 初始化：以容器可视宽度创建画布，初始高度为容器高度
+  useEffect(() => {
+    const holder = resizableRef.current;
+    const initialWidth = Math.max(1, Math.floor(holder?.getBoundingClientRect().width || 600));
+    const initialHeight = Math.max(1, Math.floor(holder?.getBoundingClientRect().height || 300));
+    setCanvasDisplayWidth(initialWidth);
+    setCanvasDisplayHeight(initialHeight);
+    resizeCanvas(initialWidth, initialHeight, false, 0, 0, initialWidth, initialHeight);
+  }, []);
+
+  // 当目标显示尺寸变更时，同步画布
+  useEffect(() => {
+    if (canvasDisplayWidth && canvasDisplayHeight) {
+      resizeCanvas(canvasDisplayWidth, canvasDisplayHeight, true, 0, 0, canvasDisplayWidth, canvasDisplayHeight);
+    }
+  }, [canvasDisplayWidth, canvasDisplayHeight]);
+
+  // 仅更新画笔样式（不清空、不改尺寸）
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
-    // 设置画布尺寸为实际像素尺寸
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-    
-    // 设置白色背景
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // 设置默认绘图样式
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
-  }, [color, lineWidth]);
+    if (tool === 'pen') {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+    } else {
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = eraserSize;
+    }
+  }, [color, lineWidth, eraserSize, tool]);
+
+  // 根据靠近四边自动扩展画布（只增大画布本身），并在上/左扩展时平移已有内容和滚动条
+  const ensureSpaceForPoint = (x: number, y: number) => {
+    const thresholdPx = 32;
+    const stepPx = 120;
+
+    let newW = canvasDisplayWidth || 0;
+    let newH = canvasDisplayHeight || 0;
+    let shiftX = 0;
+    let shiftY = 0;
+    let expanded = false;
+
+    // 右边
+    if (x > newW - thresholdPx) {
+      newW = newW + stepPx;
+      expanded = true;
+    }
+    // 下边
+    if (y > newH - thresholdPx) {
+      newH = newH + stepPx;
+      expanded = true;
+    }
+    // 左边
+    if (x < thresholdPx) {
+      newW = newW + stepPx;
+      shiftX = stepPx;
+      expanded = true;
+    }
+    // 上边
+    if (y < thresholdPx) {
+      newH = newH + stepPx;
+      shiftY = stepPx;
+      expanded = true;
+    }
+
+    if (expanded) {
+      const prevW = canvasDisplayWidth || newW - stepPx;
+      const prevH = canvasDisplayHeight || newH - stepPx;
+      setCanvasDisplayWidth(newW);
+      setCanvasDisplayHeight(newH);
+      // 立即同步并平移已有内容（使用之前的显示尺寸避免缩放失真）
+      resizeCanvas(newW, newH, true, shiftX, shiftY, prevW, prevH);
+      const holder = resizableRef.current;
+      if (holder) {
+        if (shiftX) holder.scrollLeft = holder.scrollLeft + shiftX;
+        if (shiftY) holder.scrollTop = holder.scrollTop + shiftY;
+      }
+      return { x: x + shiftX, y: y + shiftY, expanded: true };
+    }
+
+    return { x, y, expanded: false };
+  };
 
   // 处理鼠标/触摸事件
   const startDrawing = (x: number, y: number) => {
@@ -246,8 +397,15 @@ const HandwritingDialog: React.FC<HandwritingDialogProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
+    // 如接近四边则扩展；上/左扩展后重建路径并偏移坐标
+    const result = ensureSpaceForPoint(x, y);
+    if (result.expanded) {
+      ctx.beginPath();
+      ctx.moveTo(result.x, result.y);
+    }
+
     if (tool === 'pen' || tool === 'eraser') {
-      ctx.lineTo(x, y);
+      ctx.lineTo(result.x, result.y);
       ctx.stroke();
       setHasDrawing(true);
     }
@@ -545,18 +703,19 @@ const HandwritingDialog: React.FC<HandwritingDialogProps> = ({
               </>
             )}
           </ControlsRow>
-          
-          <Canvas
-            ref={canvasRef}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            style={{ cursor: getCursorStyle() }}
-          />
+          <CanvasResizable ref={resizableRef}>
+            <Canvas
+              ref={canvasRef}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{ cursor: getCursorStyle(), display: 'block' }}
+            />
+          </CanvasResizable>
           
           <StatusText isError={isError}>
             {isRecognizing ? (<><MaterialIcon name="autorenew" size={16} /> 正在识别...</>) : statusMessage}
