@@ -443,6 +443,7 @@ const store = new Store<AppSettings>({
 });
 
 let mainWindow: BrowserWindow | null = null;
+let splashWindow: BrowserWindow | null = null;
 
 // 创建主窗口
 async function createMainWindow(): Promise<void> {
@@ -495,6 +496,12 @@ async function createMainWindow(): Promise<void> {
   }
 
   mainWindow.once('ready-to-show', () => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      try {
+        splashWindow.close();
+      } catch (e) {}
+      splashWindow = null;
+    }
     mainWindow?.show();
   });
 
@@ -517,6 +524,147 @@ async function createMainWindow(): Promise<void> {
       forceQuitApp();
     }
   });
+}
+
+// 创建启动页窗口（Splash）
+function createSplashWindow(): void {
+  try {
+    splashWindow = new BrowserWindow({
+      width: 420,
+      height: 280,
+      frame: false,
+      resizable: false,
+      movable: true,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      transparent: false,
+      show: false,
+      autoHideMenuBar: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true,
+        backgroundThrottling: false
+      }
+    });
+
+    let logoDataUrl = '';
+    try {
+      const primaryLogoPath = path.join(__dirname, '../../../build/logo192.png');
+      const fallbackLogoPath = path.join(__dirname, '../../../build/icons/icon-128.png');
+      let logoBuffer: Buffer | null = null;
+      if (fs.existsSync(primaryLogoPath)) {
+        logoBuffer = fs.readFileSync(primaryLogoPath);
+      } else if (fs.existsSync(fallbackLogoPath)) {
+        logoBuffer = fs.readFileSync(fallbackLogoPath);
+      }
+      if (logoBuffer && logoBuffer.length > 0) {
+        logoDataUrl = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+      }
+    } catch (e) {
+    }
+
+    const splashHTML = `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TexStudio 启动中</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; }
+    body {
+      background: #ffffff;
+      color: #2c3e50;
+      font-family: "Segoe UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      box-shadow: none;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      position: relative;
+      overflow: hidden;
+      padding-bottom: 18px;
+    }
+    .ring {
+      width: 64px; height: 64px; border-radius: 50%;
+      border: 4px solid #e6eef7; border-top-color: #4a90e2;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .title { font-size: 18px; font-weight: 700; letter-spacing: 0.3px; }
+    .sub { font-size: 12px; color: #6b7c93; margin-top: 2px; }
+    .content { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+    .logo { width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08)); }
+    .shine {
+      position: absolute; inset: 0;
+      background: radial-gradient(120px 60px at 20% 0%, rgba(74,144,226,0.12), transparent 60%),
+                  radial-gradient(160px 80px at 90% 80%, rgba(100,181,246,0.12), transparent 60%);
+      pointer-events: none;
+      animation: float 4s ease-in-out infinite alternate;
+    }
+    @keyframes float { to { transform: translateY(-6px); filter: hue-rotate(10deg); } }
+    /* 底部条状进度条（不定进度动画） */
+    .progress {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 6px;
+      background: #eef2f7;
+      overflow: hidden;
+    }
+    .progress-bar {
+      position: absolute;
+      top: 0; left: -30%;
+      height: 100%; width: 30%;
+      background: linear-gradient(90deg, #4a90e2 0%, #64b5f6 100%);
+      animation: indeterminate 1.2s ease-in-out infinite;
+    }
+    @keyframes indeterminate {
+      0% { left: -30%; }
+      100% { left: 100%; }
+    }
+  </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="shine"></div>
+      <div class="content">
+        ${logoDataUrl ? `<img class="logo" src="${logoDataUrl}" alt="Logo" />` : ''}
+        <div class="title">TexStudio OCR</div>
+        <div class="sub">正在启动，请稍候…</div>
+      </div>
+      <div class="progress"><div class="progress-bar"></div></div>
+    </div>
+  </body>
+  </html>`;
+
+    splashWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(splashHTML)}`);
+    splashWindow.once('ready-to-show', () => {
+      splashWindow?.show();
+    });
+
+    // 保险超时：最长显示6秒，避免异常阻塞
+    setTimeout(() => {
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        try { splashWindow.close(); } catch (e) {}
+        splashWindow = null;
+      }
+    }, 6000);
+  } catch (e) {
+  }
 }
 
 const screenshotWindows: BrowserWindow[] = [];
@@ -830,6 +978,7 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(async () => {
+    createSplashWindow();
 
     const settingsPath = path.join(app.getAppPath(), 'settings.json');
     if (!fs.existsSync(settingsPath)) {
