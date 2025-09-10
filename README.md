@@ -1,4 +1,4 @@
-# LaTeX公式识别工具 - TypeScript版
+# LaTeX公式识别工具
 
 一个基于 Electron + React + TypeScript 的现代化 LaTeX 公式识别桌面应用程序。
 
