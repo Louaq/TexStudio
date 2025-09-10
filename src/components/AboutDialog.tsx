@@ -28,7 +28,6 @@ const Dialog = styled.div`
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  font-family: "Georgia", "Times New Roman", serif;
 
   @keyframes slideIn {
     from {
@@ -69,7 +68,6 @@ const AppTitle = styled.h1`
 const Subtitle = styled.div`
   color: #64748b;
   font-size: 14px;
-  font-style: italic;
   margin-bottom: 8px;
   letter-spacing: 0.5px;
 `;
@@ -88,7 +86,6 @@ const Copyright = styled.div`
   color: #64748b;
   font-size: 12px;
   margin-bottom: 16px;
-  font-style: italic;
   line-height: 1.4;
   text-align: center;
 `;
@@ -138,10 +135,10 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
           <AppIcon>∑</AppIcon>
                           <AppTitle>TexStudio</AppTitle>
           <Subtitle>数学公式识别工具</Subtitle>
-          <Version>{packageInfo.version}</Version>
+          <Version>v{packageInfo.version}</Version>
         </Header>
         <Copyright>
-          © 2025 TexStudio Team. All Rights Reserved.<br/>
+          © 2025 Visual-Medical Group. All Rights Reserved.<br/>
           本软件受知识产权法保护，未经授权不得复制或分发
         </Copyright>
       </Dialog>
