@@ -145,6 +145,15 @@ const Title = styled.h2`
   gap: 12px;
 `;
 
+const HintText = styled.div`
+  color: #7f8c8d;
+  font-size: 12px;
+  margin: -8px 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
 const ClearButton = styled.button`
   background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
   color: white;
@@ -999,6 +1008,12 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({
             <MaterialIcon name="history" size={20} /> 历史记录
           </Title>
         </Header>
+
+        {items.length > 0 && (
+          <HintText>
+            <MaterialIcon name="touch_app" size={14} /> 点击公式，可以在程序中使用公式
+          </HintText>
+        )}
 
         {error && (
           <ErrorDisplay style={{ margin: '10px 0' }}>
