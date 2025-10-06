@@ -93,8 +93,11 @@ const NotificationBar: React.FC<NotificationBarProps> = ({
     if (message) {
       setVisible(true);
       
-      // Auto-hide notification after duration if duration > 0
-      if (duration > 0) {
+      // 对于下载进度消息（包含 📥 或 🔄），不自动隐藏
+      const isProgressMessage = message.includes('📥') || message.includes('🔄');
+      
+      // Auto-hide notification after duration if duration > 0 and not a progress message
+      if (duration > 0 && !isProgressMessage) {
         const timer = setTimeout(() => {
           setVisible(false);
           if (onClose) onClose();
@@ -117,7 +120,7 @@ const NotificationBar: React.FC<NotificationBarProps> = ({
     if (msg.includes('✅')) return 'success';
     if (msg.includes('❌')) return 'error';
     if (msg.includes('⚠️')) return 'warning';
-    if (msg.includes('ℹ️')) return 'info';
+    if (msg.includes('ℹ️') || msg.includes('🔄') || msg.includes('✨') || msg.includes('📥')) return 'info';
     return type;
   };
   
@@ -128,11 +131,14 @@ const NotificationBar: React.FC<NotificationBarProps> = ({
       .replace(/❌/g, '')
       .replace(/⚠️/g, '')
       .replace(/ℹ️/g, '')
+      .replace(/🔄/g, '')
+      .replace(/✨/g, '')
+      .replace(/📥/g, '')
       .trim();
   };
   
-  // 仅在重要事件时显示通知：包含成功/错误/警告的表情标识
-  if (!message || (!message.includes('✅') && !message.includes('❌') && !message.includes('⚠️'))) {
+  // 仅在重要事件时显示通知：包含成功/错误/警告/信息的表情标识
+  if (!message || (!message.includes('✅') && !message.includes('❌') && !message.includes('⚠️') && !message.includes('🔄') && !message.includes('✨') && !message.includes('📥'))) {
     return null;
   }
   
