@@ -21,7 +21,7 @@ const GlobalStyle = createGlobalStyle`
     font-family: "Segoe UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: var(--color-background, #f8f9fa);
+    background: var(--color-background, #f3f8f5);
     color: var(--color-text, #2c3e50);
     overflow: hidden;
   }

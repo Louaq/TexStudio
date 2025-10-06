@@ -321,6 +321,7 @@ interface AppSettings {
     upload: string;
   };
   history: HistoryItem[];
+  theme?: string; // 主题ID
 }
 
 interface ApiConfig {
@@ -556,7 +557,8 @@ const store = new Store<AppSettings>({
       capture: 'Alt+C',
       upload: 'Alt+S' 
     },
-    history: []
+    history: [],
+    theme: 'green' // 默认使用清新绿色主题
   }
 });
 
@@ -586,7 +588,7 @@ async function createMainWindow(): Promise<void> {
     title: 'TexStudio OCR',
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#f8f9fa'
+    backgroundColor: '#f3f8f5' // 清新绿色主题的背景色
   });
 
   // 完全禁用菜单栏

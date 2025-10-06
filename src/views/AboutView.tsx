@@ -68,32 +68,6 @@ const AppLogo = styled.div`
   }
 `;
 
-const ProgressRing = styled.svg`
-  position: absolute;
-  top: -6px;
-  left: -6px;
-  width: 92px;
-  height: 92px;
-  transform: rotate(-90deg);
-  pointer-events: none;
-`;
-
-const ProgressBackground = styled.circle`
-  fill: none;
-  stroke: rgba(0, 0, 0, 0.1);
-  stroke-width: 3;
-`;
-
-const ProgressCircle = styled.circle<{ $progress: number }>`
-  fill: none;
-  stroke: var(--color-primary);
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-dasharray: ${2 * Math.PI * 43};
-  stroke-dashoffset: ${props => 2 * Math.PI * 43 * (1 - props.$progress / 100)};
-  transition: stroke-dashoffset 0.3s ease;
-`;
-
 const AppInfo = styled.div`
   flex: 1;
 `;
@@ -345,9 +319,6 @@ const AboutView: React.FC<AboutViewProps> = ({ onCheckForUpdates }) => {
     }
   };
 
-  // 显示进度的条件：正在检查、有更新、正在下载或已下载
-  const showProgress = updateStatus !== 'idle' && updateStatus !== 'no-update';
-
   return (
     <AboutContainer>
       <Content>
@@ -357,21 +328,6 @@ const AboutView: React.FC<AboutViewProps> = ({ onCheckForUpdates }) => {
               <AppLogo>
                 <img src={logoSrc} alt="TexStudio Logo" />
               </AppLogo>
-              {showProgress && (
-                <ProgressRing>
-                  <ProgressBackground
-                    cx="46"
-                    cy="46"
-                    r="43"
-                  />
-                  <ProgressCircle
-                    cx="46"
-                    cy="46"
-                    r="43"
-                    $progress={downloadProgress}
-                  />
-                </ProgressRing>
-              )}
             </LogoWrapper>
             <AppInfo>
               <AppName>TexStudio OCR</AppName>

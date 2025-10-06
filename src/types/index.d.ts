@@ -17,6 +17,7 @@ export interface AppSettings {
     apiConfig: ApiConfig;
     shortcuts: ShortcutConfig;
     history: HistoryItem[];
+    theme?: string; // 主题ID
 }
 export interface ShortcutConfig {
     capture: string;

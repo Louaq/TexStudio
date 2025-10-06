@@ -173,18 +173,23 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         if (window.electronAPI) {
           const appSettings = await window.electronAPI.getSettings();
           console.log('从Electron加载的设置:', appSettings);
+          const selectedTheme = appSettings.theme || 'green';
           setSettings({
             apiConfig: appSettings.apiConfig,
             shortcuts: appSettings.shortcuts,
-            theme: appSettings.theme || 'green'
+            theme: selectedTheme
           });
           setAppState(prev => ({ ...prev, history: appSettings.history }));
           
-          // 应用保存的主题
-          if (appSettings.theme) {
-            const { applyTheme, getTheme } = await import('./theme/themes');
-            const theme = getTheme(appSettings.theme);
-            applyTheme(theme);
+          // 应用主题（首次安装时使用默认的 green 主题）
+          const { applyTheme, getTheme } = await import('./theme/themes');
+          const theme = getTheme(selectedTheme);
+          applyTheme(theme);
+          
+          // 如果是首次安装（没有保存的主题），保存默认主题
+          if (!appSettings.theme && window.electronAPI) {
+            await window.electronAPI.saveSettings({ theme: 'green' });
+            console.log('首次启动，已保存默认主题: green');
           }
         } else {
           const defaultSettings = {
@@ -253,14 +258,23 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
     // 创建更新事件处理函数
     const handleCheckingForUpdate = () => {
       console.log('正在检查更新...');
-      setUpdateInfo({ showDialog: true, showIndicator: false, status: 'checking', version: '' });
+      setUpdateInfo({ showDialog: false, showIndicator: false, status: 'checking', version: '' });
       setDownloadProgress(0);
+      // 在顶部显示检查更新的消息
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '🔄 正在检查更新...'
+      }));
     };
 
     const handleUpdateAvailable = (info: any) => {
       console.log('发现新版本:', info);
       // 直接开始下载，不显示对话框
       setUpdateInfo(prev => ({ ...prev, showDialog: false, showIndicator: false, status: 'available', version: info.version }));
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `✨ 发现新版本 ${info.version}，正在自动下载...`
+      }));
       // 自动开始下载
       if (window.electronAPI) {
         window.electronAPI.downloadUpdate();
@@ -269,23 +283,53 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
 
     const handleUpdateNotAvailable = (info: any) => {
       console.log('已是最新版本:', info);
-      setUpdateInfo(prev => ({ ...prev, status: 'no-update' }));
+      setUpdateInfo(prev => ({ ...prev, showDialog: false, status: 'no-update' }));
+      // 在顶部显示已是最新版本的消息
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '✅ 已是最新版本'
+      }));
+      // 3秒后自动隐藏消息
+      setTimeout(() => {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: null
+        }));
+      }, 3000);
     };
 
     const handleUpdateError = (error: string) => {
       console.error('更新错误:', error);
       setUpdateInfo({
-        showDialog: true,
+        showDialog: false, // 不显示对话框
         showIndicator: false,
         status: 'error',
         version: ''
       });
       setDownloadProgress(0);
+      // 在顶部显示错误消息
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `❌ 检查更新失败: ${error}`
+      }));
+      // 5秒后自动隐藏消息
+      setTimeout(() => {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: null
+        }));
+      }, 5000);
     };
 
     const handleDownloadProgress = (progressObj: any) => {
       console.log(`下载进度: ${progressObj.percent}%`);
-      setDownloadProgress(progressObj.percent);
+      const percent = Math.round(progressObj.percent || 0);
+      setDownloadProgress(percent);
+      // 更新下载进度消息
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: `📥 正在下载更新... ${percent}%`
+      }));
     };
 
     const handleUpdateDownloaded = (info: any) => {
@@ -297,6 +341,11 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         status: 'downloaded',
         version: info.version,
       });
+      // 清除下载进度消息
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: null
+      }));
     };
 
     // 注册自动更新事件处理程序
@@ -1179,8 +1228,12 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
     }
     
     try {
-      setUpdateInfo({ showDialog: true, showIndicator: false, status: 'checking', version: '' });
+      setUpdateInfo({ showDialog: false, showIndicator: false, status: 'checking', version: '' });
       setDownloadProgress(0);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '🔄 正在检查更新...'
+      }));
       await window.electronAPI.checkForUpdates();
     } catch (error) {
       console.error('检查更新失败:', error);
@@ -1188,7 +1241,14 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         ...prev,
         statusMessage: '❌ 检查更新失败'
       }));
-      setUpdateInfo(prev => ({ ...prev, status: 'error' }));
+      setUpdateInfo(prev => ({ ...prev, showDialog: false, status: 'error' }));
+      // 3秒后自动隐藏消息
+      setTimeout(() => {
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: null
+        }));
+      }, 3000);
     }
   };
 
