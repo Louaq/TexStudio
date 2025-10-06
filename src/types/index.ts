@@ -56,6 +56,7 @@ export interface AppSettings {
   history: HistoryItem[];
   theme?: string; // 主题ID
   sidebarConfig?: SidebarConfig; // 侧边栏配置
+  hardwareAcceleration?: boolean; // 硬件加速
 }
 export interface ShortcutConfig {
   capture: string;
@@ -180,6 +181,10 @@ export interface ElectronAPI {
   clearCache: () => Promise<{ success: boolean; size?: string; message?: string }>;
   resetAllData: () => Promise<{ success: boolean; message?: string }>;
   restartApp: () => Promise<void>;
+  
+  // 硬件加速
+  getHardwareAcceleration: () => Promise<boolean>;
+  setHardwareAcceleration: (enabled: boolean) => Promise<{ success: boolean }>;
   
   // IPC设置
   setMaxListeners: (count: number) => void;

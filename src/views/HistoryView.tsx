@@ -223,12 +223,56 @@ const NoMoreText = styled.div`
   margin-top: 20px;
 `;
 
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+  padding: 20px 0;
+`;
+
+const PageButton = styled.button<{ $active?: boolean }>`
+  padding: 8px 16px;
+  border: 2px solid ${props => props.$active ? 'var(--color-primary)' : 'var(--color-border)'};
+  border-radius: 6px;
+  background: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-surface)'};
+  color: ${props => props.$active ? 'white' : 'var(--color-text)'};
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 40px;
+
+  &:hover:not(:disabled) {
+    background: ${props => props.$active ? 'var(--color-primary)' : 'rgba(0, 0, 0, 0.05)'};
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+`;
+
+const PageInfo = styled.span`
+  color: var(--color-textSecondary);
+  font-size: 14px;
+  padding: 0 12px;
+`;
+
 interface HistoryViewProps {
   history: HistoryItem[];
   onUse: (latex: string) => void;
   onDelete: (latex: string) => void;
   onClear: () => void;
 }
+
+const ITEMS_PER_PAGE = 12; // 每页显示12个公式
 
 const HistoryView: React.FC<HistoryViewProps> = ({
   history,
@@ -241,6 +285,20 @@ const HistoryView: React.FC<HistoryViewProps> = ({
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const [deleteTarget, setDeleteTarget] = React.useState<string | null>(null);
   const [showClearDialog, setShowClearDialog] = React.useState(false);
+  const [currentPage, setCurrentPage] = React.useState(1);
+
+  // 计算分页数据
+  const totalPages = Math.ceil(history.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentItems = history.slice(startIndex, endIndex);
+
+  // 当历史记录变化时，如果当前页超出范围，返回第一页
+  React.useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [history.length, currentPage, totalPages]);
 
   const handleClear = () => {
     setShowClearDialog(true);
@@ -324,11 +382,11 @@ const HistoryView: React.FC<HistoryViewProps> = ({
           <>
             <HintBar>
               <MaterialIcon name="info" size={18} />
-              <span>💡 点击公式可编辑，点击复制按钮选择格式</span>
+              <span>💡 点击公式可编辑，点击复制按钮选择格式 | 共 {history.length} 条记录</span>
             </HintBar>
             <HistoryList>
-              {history.map((item, index) => (
-                <HistoryCard key={index}>
+              {currentItems.map((item, index) => (
+                <HistoryCard key={startIndex + index}>
                   <HistoryHeader>
                     <HeaderLeft>
                       <HeaderTitle>识别结果</HeaderTitle>
@@ -361,7 +419,62 @@ const HistoryView: React.FC<HistoryViewProps> = ({
                 </HistoryCard>
               ))}
             </HistoryList>
-            <NoMoreText>─ 暂无更多记录 ─</NoMoreText>
+
+            {/* 分页控件 */}
+            {totalPages > 1 && (
+              <PaginationContainer>
+                <PageButton
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  title="上一页"
+                >
+                  <MaterialIcon name="chevron_left" size={20} />
+                </PageButton>
+
+                {/* 页码按钮 */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                  // 智能显示页码：显示首页、尾页、当前页及其邻近页
+                  const showPage = 
+                    page === 1 || 
+                    page === totalPages || 
+                    Math.abs(page - currentPage) <= 1;
+                  
+                  const showEllipsis = 
+                    (page === 2 && currentPage > 3) || 
+                    (page === totalPages - 1 && currentPage < totalPages - 2);
+
+                  if (showEllipsis) {
+                    return <PageInfo key={`ellipsis-${page}`}>...</PageInfo>;
+                  }
+
+                  if (!showPage) return null;
+
+                  return (
+                    <PageButton
+                      key={page}
+                      $active={currentPage === page}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </PageButton>
+                  );
+                })}
+
+                <PageButton
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  title="下一页"
+                >
+                  <MaterialIcon name="chevron_right" size={20} />
+                </PageButton>
+
+                <PageInfo>
+                  第 {currentPage} / {totalPages} 页
+                </PageInfo>
+              </PaginationContainer>
+            )}
+
+            {totalPages <= 1 && <NoMoreText>─ 暂无更多记录 ─</NoMoreText>}
           </>
         )}
       </Content>

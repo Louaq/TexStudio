@@ -322,6 +322,7 @@ interface AppSettings {
   };
   history: HistoryItem[];
   theme?: string; // 主题ID
+  hardwareAcceleration?: boolean; // 硬件加速
 }
 
 interface ApiConfig {
@@ -1060,18 +1061,25 @@ function createScreenshotWindows(): void {
 }
 
 
-if (process.platform === 'win32') {
-
+// 根据用户设置决定是否禁用硬件加速
+// 默认在 Windows 上禁用硬件加速以避免某些图形问题
+const hardwareAccelerationEnabled = store.get('hardwareAcceleration', false) as boolean;
+if (!hardwareAccelerationEnabled) {
   app.disableHardwareAcceleration();
-  app.commandLine.appendSwitch('disable-gpu');
-  app.commandLine.appendSwitch('disable-gpu-compositing');
-  app.commandLine.appendSwitch('disable-gpu-sandbox');
+  if (process.platform === 'win32') {
+    app.commandLine.appendSwitch('disable-gpu');
+    app.commandLine.appendSwitch('disable-gpu-compositing');
+    app.commandLine.appendSwitch('disable-gpu-sandbox');
+  }
+  logger.log('硬件加速已禁用');
+} else {
+  logger.log('硬件加速已启用');
+}
 
-
+if (process.platform === 'win32') {
   app.commandLine.appendSwitch('disable-http-cache');
   app.commandLine.appendSwitch('disable-background-networking');
   app.commandLine.appendSwitch('disable-background-timer-throttling');
-
 
   app.commandLine.appendSwitch('max-old-space-size', '512');
   app.commandLine.appendSwitch('max-semi-space-size', '64');
@@ -1080,7 +1088,6 @@ if (process.platform === 'win32') {
   app.commandLine.appendSwitch('disable-dev-shm-usage');
   app.commandLine.appendSwitch('disable-software-rasterizer');
   app.commandLine.appendSwitch('disable-features', 'VizDisplayCompositor');
-
 
   app.commandLine.appendSwitch('memory-pressure-off');
   app.commandLine.appendSwitch('disable-background-mode');
@@ -2634,26 +2641,29 @@ ipcMain.handle('get-data-paths', async () => {
 // 获取缓存大小
 ipcMain.handle('get-cache-size', async () => {
   try {
-    const tempDir = path.join(app.getPath('temp'), 'texstudio-temp');
+    const tempDir = app.getPath('temp');
     let totalSize = 0;
 
-    const calculateSize = (dir: string) => {
-      if (!fs.existsSync(dir)) return 0;
-      const files = fs.readdirSync(dir);
-      let size = 0;
+    // 计算所有临时文件的大小
+    if (fs.existsSync(tempDir)) {
+      const files = fs.readdirSync(tempDir);
       for (const file of files) {
-        const filePath = path.join(dir, file);
-        const stats = fs.statSync(filePath);
-        if (stats.isDirectory()) {
-          size += calculateSize(filePath);
-        } else {
-          size += stats.size;
+        // 只统计应用创建的临时文件
+        if (file.startsWith(TEMP_FILE_PREFIX) || file.startsWith(SCREENSHOT_PREFIX)) {
+          try {
+            const filePath = path.join(tempDir, file);
+            const stats = fs.statSync(filePath);
+            if (stats.isFile()) {
+              totalSize += stats.size;
+            }
+          } catch (error) {
+            // 忽略单个文件的错误（可能文件已被删除）
+            continue;
+          }
         }
       }
-      return size;
-    };
+    }
 
-    totalSize = calculateSize(tempDir);
     const sizeMB = (totalSize / 1024 / 1024).toFixed(2);
     return { size: `${sizeMB}MB` };
   } catch (error) {
@@ -2693,11 +2703,27 @@ ipcMain.handle('backup-data', async (event, simple: boolean) => {
       archive.file(historyPath, { name: 'history.json' });
     }
 
-    // 非精简备份：备份所有数据
+    // 非精简备份：备份临时文件（截图等）
     if (!simple) {
-      const tempDir = path.join(app.getPath('temp'), 'texstudio-temp');
+      const tempDir = app.getPath('temp');
       if (fs.existsSync(tempDir)) {
-        archive.directory(tempDir, 'temp');
+        const files = fs.readdirSync(tempDir);
+        for (const file of files) {
+          // 只备份应用创建的临时文件
+          if (file.startsWith(TEMP_FILE_PREFIX) || file.startsWith(SCREENSHOT_PREFIX)) {
+            try {
+              const filePath = path.join(tempDir, file);
+              const stats = fs.statSync(filePath);
+              if (stats.isFile()) {
+                archive.file(filePath, { name: `temp/${file}` });
+              }
+            } catch (error) {
+              // 忽略单个文件的错误
+              logger.error('备份临时文件失败:', file, error);
+              continue;
+            }
+          }
+        }
       }
     }
 
@@ -2778,51 +2804,41 @@ ipcMain.handle('open-log-folder', async () => {
   require('electron').shell.openPath(logPath);
 });
 
-// 清除知识库文件（暂时返回成功，因为应用中似乎没有知识库功能）
-ipcMain.handle('clear-knowledge', async () => {
-  try {
-    // 如果将来有知识库文件夹，可以在这里清理
-    return { success: true, count: 0 };
-  } catch (error) {
-    logger.error('清除知识库失败:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : '未知错误'
-    };
-  }
-});
-
 // 清除缓存
 ipcMain.handle('clear-cache', async () => {
   try {
-    const tempDir = path.join(app.getPath('temp'), 'texstudio-temp');
+    const tempDir = app.getPath('temp');
     let totalSize = 0;
+    let deletedCount = 0;
 
-    const calculateSize = (dir: string) => {
-      if (!fs.existsSync(dir)) return 0;
-      const files = fs.readdirSync(dir);
-      let size = 0;
+    // 计算并删除所有临时文件
+    if (fs.existsSync(tempDir)) {
+      const files = fs.readdirSync(tempDir);
       for (const file of files) {
-        const filePath = path.join(dir, file);
-        const stats = fs.statSync(filePath);
-        if (stats.isDirectory()) {
-          size += calculateSize(filePath);
-        } else {
-          size += stats.size;
+        // 只删除应用创建的临时文件
+        if (file.startsWith(TEMP_FILE_PREFIX) || file.startsWith(SCREENSHOT_PREFIX)) {
+          try {
+            const filePath = path.join(tempDir, file);
+            const stats = fs.statSync(filePath);
+            if (stats.isFile()) {
+              totalSize += stats.size;
+              fs.unlinkSync(filePath);
+              deletedCount++;
+            }
+          } catch (error) {
+            // 忽略单个文件的错误（可能文件已被删除）
+            logger.error('删除临时文件失败:', file, error);
+            continue;
+          }
         }
       }
-      return size;
-    };
-
-    totalSize = calculateSize(tempDir);
-    
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true });
     }
 
+    // 清空临时文件追踪集合
     tempFiles.clear();
 
     const sizeMB = (totalSize / 1024 / 1024).toFixed(2);
+    logger.log(`清除缓存成功：删除了 ${deletedCount} 个文件，释放了 ${sizeMB}MB 空间`);
     return { success: true, size: `${sizeMB}MB` };
   } catch (error) {
     logger.error('清除缓存失败:', error);
@@ -2837,7 +2853,7 @@ ipcMain.handle('clear-cache', async () => {
 ipcMain.handle('reset-all-data', async () => {
   try {
     const userData = app.getPath('userData');
-    const tempDir = path.join(app.getPath('temp'), 'texstudio-temp');
+    const tempDir = app.getPath('temp');
 
     // 删除配置文件
     const configPath = path.join(userData, 'config.json');
@@ -2851,9 +2867,20 @@ ipcMain.handle('reset-all-data', async () => {
       fs.unlinkSync(historyPath);
     }
 
-    // 删除缓存
+    // 删除临时文件（缓存）
     if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true });
+      const files = fs.readdirSync(tempDir);
+      for (const file of files) {
+        if (file.startsWith(TEMP_FILE_PREFIX) || file.startsWith(SCREENSHOT_PREFIX)) {
+          try {
+            const filePath = path.join(tempDir, file);
+            fs.unlinkSync(filePath);
+          } catch (error) {
+            logger.error('删除临时文件失败:', file, error);
+            continue;
+          }
+        }
+      }
     }
 
     tempFiles.clear();
@@ -2872,4 +2899,21 @@ ipcMain.handle('reset-all-data', async () => {
 ipcMain.handle('restart-app', async () => {
   app.relaunch();
   app.exit(0);
+});
+
+// 获取硬件加速状态
+ipcMain.handle('get-hardware-acceleration', () => {
+  return store.get('hardwareAcceleration', false);
+});
+
+// 设置硬件加速
+ipcMain.handle('set-hardware-acceleration', async (event, enabled: boolean) => {
+  try {
+    store.set('hardwareAcceleration', enabled);
+    logger.log(`硬件加速设置已更改为: ${enabled ? '启用' : '禁用'}`);
+    return { success: true };
+  } catch (error) {
+    logger.error('设置硬件加速失败:', error);
+    return { success: false };
+  }
 });

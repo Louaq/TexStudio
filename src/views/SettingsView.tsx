@@ -14,21 +14,6 @@ const SettingsContainer = styled.div`
   overflow: hidden;
 `;
 
-const Header = styled.div`
-  padding: 24px 32px;
-  border-bottom: 2px solid var(--color-border);
-  background: var(--color-surface);
-`;
-
-const Title = styled.h1`
-  margin: 0;
-  color: var(--color-text);
-  font-size: 22px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-`;
 
 const Content = styled.div`
   flex: 1;
@@ -90,7 +75,7 @@ const Label = styled.label`
 const Input = styled.input`
   width: 100%;
   padding: 10px 14px;
-  border: 2px solid var(--color-inputBorder);
+  border: 1px solid var(--color-inputBorder);
   border-radius: 8px;
   background: var(--color-inputBackground);
   font-size: 13px;
@@ -231,7 +216,7 @@ const ThemeGrid = styled.div`
 
 const ThemeCard = styled.button<{ $isActive: boolean }>`
   padding: 20px 16px;
-  border: 3px solid ${props => props.$isActive ? 'var(--color-primary)' : 'var(--color-border)'};
+  border: 1px solid ${props => props.$isActive ? 'var(--color-primary)' : 'var(--color-border)'};
   border-radius: 12px;
   background: var(--color-surface);
   cursor: pointer;
@@ -269,7 +254,7 @@ const ThemeColorPreview = styled.div<{ $color: string }>`
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.2) 100%);
+    background: linear-gradient(135deg, transparent 30%, rgba(0, 0, 0, 0.05) 100%);
   }
 `;
 
@@ -322,7 +307,7 @@ const ShortcutLabel = styled.div`
 
 const ShortcutButton = styled.button<{ $isListening?: boolean; $isSet?: boolean }>`
   padding: 10px 16px;
-  border: 1.5px solid ${props => 
+  border: 1px solid ${props => 
     props.$isListening ? '#e74c3c' : 
     props.$isSet ? '#27ae60' : '#d1d5db'
   };
@@ -429,7 +414,7 @@ const UpdateButton = styled.button`
 const CustomThemeEditor = styled.div`
   margin-top: 24px;
   padding: 24px;
-  border: 2px solid var(--color-primary);
+  border: 1px solid var(--color-primary);
   border-radius: 12px;
   background: color-mix(in srgb, var(--color-primary) 3%, var(--color-surface));
 `;
@@ -473,7 +458,7 @@ const ColorInputWrapper = styled.div`
 const ColorInput = styled.input`
   width: 50px;
   height: 36px;
-  border: 2px solid var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   cursor: pointer;
   padding: 2px;
@@ -491,7 +476,7 @@ const ColorInput = styled.input`
 const ColorTextInput = styled.input`
   flex: 1;
   padding: 8px 12px;
-  border: 2px solid var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-surface);
   font-size: 12px;
@@ -640,7 +625,7 @@ const Toggle = styled.label`
       width: 20px;
       left: 3px;
       bottom: 3px;
-      background: white;
+      background: var(--color-surface);
       border-radius: 50%;
       transition: all 0.3s ease;
     }
@@ -719,7 +704,7 @@ const OrderButton = styled.button`
   height: 32px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: white;
+  background: var(--color-surface);
   color: var(--color-text);
   cursor: pointer;
   display: flex;
@@ -729,7 +714,7 @@ const OrderButton = styled.button`
 
   &:hover:not(:disabled) {
     background: var(--color-primary);
-    color: white;
+    color: var(--color-surface);
     border-color: var(--color-primary);
   }
 
@@ -781,6 +766,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   const [dataPath, setDataPath] = useState('');
   const [logPath, setLogPath] = useState('');
   const [cacheSize, setCacheSize] = useState('0MB');
+  const [hardwareAcceleration, setHardwareAcceleration] = useState(false);
   
   // 对话框状态
   const [dialogState, setDialogState] = useState<{
@@ -1032,6 +1018,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           
           const cache = await window.electronAPI.getCacheSize();
           setCacheSize(cache.size);
+          
+          const hwAccel = await window.electronAPI.getHardwareAcceleration();
+          setHardwareAcceleration(hwAccel);
         } catch (error) {
           console.error('加载数据信息失败:', error);
         }
@@ -1205,6 +1194,30 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     } catch (error) {
       console.error('重置数据失败:', error);
       await showAlert('重置失败', '重置数据时发生错误', 'error');
+    }
+  };
+
+  const handleHardwareAccelerationChange = async (enabled: boolean) => {
+    if (!window.electronAPI) return;
+    
+    try {
+      const result = await window.electronAPI.setHardwareAcceleration(enabled);
+      if (result.success) {
+        setHardwareAcceleration(enabled);
+        await showAlert(
+          '设置成功',
+          <>
+            硬件加速已{enabled ? '启用' : '禁用'}。<br /><br />
+            <strong>注意：</strong>需要重启应用才能生效。
+          </>,
+          'success'
+        );
+      } else {
+        await showAlert('设置失败', '硬件加速设置失败', 'error');
+      }
+    } catch (error) {
+      console.error('设置硬件加速失败:', error);
+      await showAlert('设置失败', '设置硬件加速时发生错误', 'error');
     }
   };
 
@@ -1533,10 +1546,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
               </CustomThemeEditor>
             )}
 
-            <InfoNote style={{ marginTop: '24px' }}>
-              <strong>提示</strong><br/>
-              主题设置会自动保存，下次启动应用时会应用您选择的主题。自定义主题的配色也会被保存。
-            </InfoNote>
         </Section>
 
         {/* 侧边栏配置 */}
@@ -1559,7 +1568,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                   </SidebarItemIcon>
                   <SidebarItemText>
                     <SidebarItemName>{item.label}</SidebarItemName>
-                    <SidebarItemId>{item.id}</SidebarItemId>
                   </SidebarItemText>
                 </SidebarItemInfo>
                 
@@ -1599,11 +1607,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
               保存
             </Button>
           </ButtonGroup>
-
-          <InfoNote style={{ marginTop: '16px' }}>
-            <strong>注意</strong><br/>
-            隐藏的选项将不会在侧边栏中显示。至少保留一个可见的选项以便访问应用功能。
-          </InfoNote>
         </Section>
 
         {/* 数据设置 */}
@@ -1642,6 +1645,33 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                   type="checkbox"
                   checked={simpleBackup}
                   onChange={(e) => setSimpleBackup(e.target.checked)}
+                />
+                <span></span>
+              </Toggle>
+            </DataActions>
+          </DataRow>
+        </Section>
+
+        {/* 性能设置 */}
+        <Section>
+          <SectionTitle>
+            <MaterialIcon name="settings" size={22} />
+            性能设置
+          </SectionTitle>
+
+          <DataRow>
+            <DataLabel>
+              <DataTitle>硬件加速</DataTitle>
+              <DataDescription>
+                启用GPU硬件加速以提升渲染性能。部分系统可能会出现图形问题，如遇到界面异常可尝试关闭此选项。修改后需要重启应用才能生效。
+              </DataDescription>
+            </DataLabel>
+            <DataActions>
+              <Toggle>
+                <input
+                  type="checkbox"
+                  checked={hardwareAcceleration}
+                  onChange={(e) => handleHardwareAccelerationChange(e.target.checked)}
                 />
                 <span></span>
               </Toggle>
@@ -1706,11 +1736,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
               </SmallButton>
             </DataActions>
           </DataRow>
-
-          <InfoNote style={{ marginTop: '16px' }}>
-            <strong>注意</strong><br/>
-            重置数据将删除所有应用数据，包括设置、历史记录和缓存文件。此操作不可恢复，请谨慎使用。
-          </InfoNote>
+          
         </Section>
       </Content>
 

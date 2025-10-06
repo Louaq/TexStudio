@@ -24,7 +24,7 @@ const Label = styled.h3`
 
 const ImageContainer = styled.div<{ isDragActive: boolean }>`
   flex: 1;
-  border: 1px dashed ${props => props.isDragActive ? 'var(--color-primary)' : 'var(--color-border)'};
+  border: 2px dashed ${props => props.isDragActive ? 'var(--color-primary)' : 'var(--color-border)'};
   border-radius: 8px;
   background: var(--color-surface);
   display: flex;
@@ -37,12 +37,6 @@ const ImageContainer = styled.div<{ isDragActive: boolean }>`
   /* 确保虚线边框完全可见 */
   box-sizing: border-box;
   cursor: pointer;
-
-  /* 添加淡色网格背景，类似于科学论文中的图表网格 */
-  background-image: 
-    linear-gradient(var(--color-borderLight) 1px, transparent 1px),
-    linear-gradient(90deg, var(--color-borderLight) 1px, transparent 1px);
-  background-size: 20px 20px;
 
   &:hover {
     border-color: var(--color-primary);

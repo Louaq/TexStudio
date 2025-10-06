@@ -213,12 +213,12 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
 `;
 
 const Description = styled.p`
-  color: #7f8c8d;
+  color: var(--color-textSecondary);
   font-size: 13px;
   margin: 0 0 20px 0;
   line-height: 1.5;
   text-align: center;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--color-surfaceLight);
   padding: 12px;
   border-radius: 8px;
 `;

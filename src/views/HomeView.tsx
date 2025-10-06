@@ -52,14 +52,14 @@ const BottomSection = styled.div`
   z-index: 1;
   background-color: var(--color-surface);
   border-radius: 8px;
-  padding: 15px 15px 15px 15px;
+  padding: 2px;
 `;
 
 const PreviewAndEditorContainer = styled.div`
   display: flex;
   gap: 12px;
   height: 245px;
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 
   @media (max-width: 1024px) {
     flex-direction: column;

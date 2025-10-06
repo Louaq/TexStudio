@@ -12,7 +12,6 @@ import AboutView from './views/AboutView';
 import UpdateDialog from './components/UpdateDialog';
 import CopyOptionsDialog from './components/CopyOptionsDialog';
 import ExportOptionsDialog from './components/ExportOptionsDialog';
-import HandwritingDialog from './components/HandwritingDialog';
 import NotificationBar from './components/NotificationBar';
 import * as path from 'path';
 
@@ -38,8 +37,8 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--color-background);
   background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),
     repeating-linear-gradient(
       45deg, 
       var(--color-backgroundPattern), 
@@ -105,8 +104,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
   
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
-  const [showHandwriting, setShowHandwriting] = useState(false);
-  const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
   
   // 添加AI解释重置控制
   const [explanationResetKey, setExplanationResetKey] = useState(0);
@@ -319,23 +316,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
     };
   }, []);
 
-      useEffect(() => {
-        const loadAlwaysOnTopState = async () => {
-          if (window.electronAPI) {
-            try {
-              const result = await window.electronAPI.getAlwaysOnTop();
-              if (result.success) {
-                setIsAlwaysOnTop(result.alwaysOnTop);
-              }
-            } catch (error) {
-              console.error('获取窗口置顶状态失败:', error);
-            }
-          }
-        };
-
-        loadAlwaysOnTopState();
-      }, []);
-
   // 分离出事件处理器初始化和清理逻辑
   useEffect(() => {
     if (!window.electronAPI) {
@@ -447,7 +427,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
                   setAppState(prev => {
                     const exists = prev.history.some(item => item.latex === newItem.latex);
                     if (!exists) {
-                      const newHistory = [newItem, ...prev.history.slice(0, 4)];
+                      const newHistory = [newItem, ...prev.history];
                       if (window.electronAPI) {
                         window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
                       }
@@ -725,7 +705,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
     const exists = appState.history.some(item => item.latex === newItem.latex);
     if (exists) return;
 
-    const newHistory = [newItem, ...appState.history.slice(0, 4)];
+    const newHistory = [newItem, ...appState.history];
     setAppState(prev => ({ ...prev, history: newHistory }));
 
     if (window.electronAPI) {
@@ -804,8 +784,8 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
             // 检查是否已存在相同的公式，避免重复
             const exists = prev.history.some(item => item.latex === newItem.latex);
             if (!exists) {
-              // 添加到历史记录的开头，并保留最多5条记录
-              newHistory = [newItem, ...prev.history.slice(0, 4)];
+              // 添加到历史记录的开头
+              newHistory = [newItem, ...prev.history];
               
               // 保存到设置
               if (window.electronAPI) {
@@ -1116,80 +1096,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
       setSettings(prev => prev ? { ...prev, sidebarConfig } : null);
     }
   };
-  const handleToggleAlwaysOnTop = async () => {
-    if (!window.electronAPI) {
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '❌ 窗口置顶功能仅在桌面应用中可用'
-      }));
-      return;
-    }
-
-    try {
-      const newAlwaysOnTop = !isAlwaysOnTop;
-      const result = await window.electronAPI.setAlwaysOnTop(newAlwaysOnTop);
-      
-      if (result.success) {
-        setIsAlwaysOnTop(newAlwaysOnTop);
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: newAlwaysOnTop ? '窗口已置顶' : '已取消置顶'
-        }));
-        setTimeout(() => {
-          setAppState(prev => ({ 
-            ...prev, 
-            statusMessage: null
-          }));
-        }, 2000);
-      } else {
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: '❌ 设置窗口置顶失败'
-        }));
-      }
-    } catch (error) {
-      console.error('切换窗口置顶状态失败:', error);
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '❌ 窗口置顶设置失败'
-      }));
-    }
-  };
-  const handleCleanupTempFiles = async () => {
-    if (!window.electronAPI) {
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '❌ 临时文件清理功能仅在桌面应用中可用'
-      }));
-      return;
-    }
-    
-    try {
-      const result = await window.electronAPI.cleanupTempFiles();
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: `✅ 已清理 ${result.count} 个临时文件`
-      }));
-      setTimeout(() => {
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: null
-        }));
-      }, 3000);
-    } catch (error) {
-      console.error('清理临时文件失败:', error);
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '❌ 清理临时文件失败'
-      }));
-      setTimeout(() => {
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: null
-        }));
-      }, 3000);
-    }
-  };
 
   const handleCheckForUpdates = async () => {
     if (!window.electronAPI) {
@@ -1323,131 +1229,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
     }
   };
 
-  // 处理手写公式识别
-  const handleHandwriting = () => {
-    setShowHandwriting(true);
-    setAppState(prev => ({ 
-      ...prev, 
-      statusMessage: 'ℹ️ 请在手写板上绘制数学公式'
-    }));
-  };
-
-  // 处理手写公式识别提交
-  const handleHandwritingRecognize = async (imageData: string) => {
-    if (!settings) {
-      console.log('settings未加载');
-      return;
-    }
-
-    const currentSettings = settings;
-    console.log('当前使用的设置:', currentSettings);
-
-    if (!window.electronAPI) {
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '❌ 公式识别功能仅在 Electron 应用中可用'
-      }));
-      return;
-    }
-
-    // 清空AI解释区域
-    resetAIExplanation();
-
-    // 立即关闭手写对话框
-    setShowHandwriting(false);
-
-    setAppState(prev => ({ 
-      ...prev, 
-      isRecognizing: true, 
-      latexCode: '',
-      statusMessage: '🤖 正在识别手写公式...'
-    }));
-
-    try {
-      // 先保存手写图像为临时文件，以便显示
-      const tempFilePath = await window.electronAPI.saveHandwritingImage(imageData);
-      
-      // 设置当前图像
-      setAppState(prev => ({ 
-        ...prev, 
-        currentImage: `file://${tempFilePath}`
-      }));
-      
-      // 调用手写公式识别API
-      const apiConfig = currentSettings.apiConfig;
-      if (!validateApiConfig(apiConfig)) {
-        console.log('API配置无效，无法识别');
-        setAppState(prev => ({ 
-          ...prev, 
-          latexCode: '',
-          isRecognizing: false,
-          statusMessage: '❌ 请先在设置中配置API密钥'
-        }));
-        return;
-      }
-      
-      console.log('调用手写公式识别API，配置:', currentSettings.apiConfig);
-      const result = await window.electronAPI.recognizeHandwriting(imageData, currentSettings.apiConfig);
-      console.log('手写公式识别结果:', result);
-      
-      if (result.status && result.res?.latex) {
-        const latex = result.res.latex;
-        console.log('识别成功，LaTeX:', latex);
-        
-        setAppState(prev => {
-          let newHistory = prev.history;
-          if (latex.trim()) {
-            const newItem = {
-              date: getCurrentTimestamp(),
-              latex: latex.trim()
-            };
-            
-            const exists = prev.history.some(item => item.latex === newItem.latex);
-            if (!exists) {
-              newHistory = [newItem, ...prev.history.slice(0, 4)];
-              if (window.electronAPI) {
-                window.electronAPI.saveSettings({ history: newHistory }).catch(console.error);
-              }
-            }
-          }
-          
-          return { 
-            ...prev, 
-            latexCode: latex,
-            isRecognizing: false,
-            statusMessage: '✅ 手写公式识别完成！',
-            history: newHistory
-          };
-        });
-      } else {
-        console.log('识别失败，错误信息:', result.message);
-        if (result.error_code === 'NO_API_CONFIG') {
-          setAppState(prev => ({ 
-            ...prev, 
-            latexCode: '',
-            isRecognizing: false,
-            statusMessage: `❌ ${result.message || '请先在设置中配置API密钥'}`
-          }));
-        } else {
-          setAppState(prev => ({ 
-            ...prev, 
-            latexCode: '',
-            isRecognizing: false,
-            statusMessage: `❌ 手写公式识别失败: ${result.message || '未知错误'}`
-          }));
-        }
-      }
-    } catch (error) {
-      console.error('手写公式识别失败:', error);
-      setAppState(prev => ({ 
-        ...prev, 
-        latexCode: '',
-        isRecognizing: false,
-        statusMessage: '❌ 手写公式识别出错'
-      }));
-    }
-  };
-
   return (
     <AppContainer>
       {/* 自定义标题栏 */}
@@ -1460,7 +1241,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           onViewChange={setCurrentView}
           onCapture={handleCapture}
           onUpload={handleUpload}
-          onHandwriting={handleHandwriting}
           onCopy={() => {
             if (appState.latexCode.trim() && !appState.isRecognizing) {
               setShowCopyOptions(true);
@@ -1471,9 +1251,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
               setShowExportOptions(true);
             }
           }}
-          onCleanupTempFiles={handleCleanupTempFiles}
-          onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
-          isAlwaysOnTop={isAlwaysOnTop}
           copyDisabled={!appState.latexCode.trim() || appState.isRecognizing}
           exportDisabled={!appState.latexCode.trim() || appState.isRecognizing}
           sidebarConfig={settings?.sidebarConfig}
@@ -1539,14 +1316,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         )}
       </ContentContainer>
 
-      {/* 保留的对话框（手写公式、复制选项、导出选项、更新对话框） */}
-      {showHandwriting && (
-        <HandwritingDialog
-          onClose={() => setShowHandwriting(false)}
-          onRecognize={handleHandwritingRecognize}
-          isRecognizing={appState.isRecognizing}
-        />
-      )}
+      {/* 保留的对话框（复制选项、导出选项、更新对话框） */}
 
       <CopyOptionsDialog
         isOpen={showCopyOptions}

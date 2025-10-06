@@ -66,7 +66,7 @@ const OptionItem = styled.button`
   flex-direction: column;
   align-items: flex-start;
   padding: 12px 16px;
-  border: 2px solid var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
   cursor: pointer;
@@ -76,7 +76,6 @@ const OptionItem = styled.button`
   &:hover {
     border-color: var(--color-primary);
     background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
-    transform: translateY(-1px);
   }
 
   &:active {

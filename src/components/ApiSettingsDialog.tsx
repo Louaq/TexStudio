@@ -18,7 +18,7 @@ const Overlay = styled.div`
 `;
 
 const Dialog = styled.div`
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: var(--color-surface);
   border-radius: 16px;
   padding: 24px;
   width: 90%;
@@ -26,7 +26,7 @@ const Dialog = styled.div`
   max-height: 85vh;
   overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--color-border);
   animation: slideIn 0.3s ease;
 
   @keyframes slideIn {
@@ -46,23 +46,23 @@ const Dialog = styled.div`
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--color-borderLight);
     border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e0;
+    background: var(--color-border);
     border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0;
+    background: var(--color-textSecondary);
   }
 `;
 
 const Title = styled.h2`
   margin: 0 0 18px 0;
-  color: #2c3e50;
+  color: var(--color-text);
   font-size: 20px;
   font-weight: 600;
   text-align: center;
@@ -85,28 +85,28 @@ const FormGroup = styled.div`
 `;
 
 const Label = styled.label`
-  color: #34495e;
+  color: var(--color-text);
   font-weight: 600;
   font-size: 14px;
 `;
 
 const Input = styled.input`
   padding: 12px 16px;
-  border: 2px solid #e1e8ed;
+  border: 2px solid var(--color-border);
   border-radius: 8px;
-  background: white;
+  background: var(--color-inputBackground);
   font-size: 14px;
-  color: #2c3e50;
+  color: var(--color-text);
   transition: all 0.3s ease;
 
   &:focus {
     outline: none;
-    border-color: #4a90e2;
+    border-color: var(--color-inputFocus);
     box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
   }
 
   &::placeholder {
-    color: #95a5a6;
+    color: var(--color-textSecondary);
   }
 `;
 
@@ -170,20 +170,20 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
 `;
 
 const Description = styled.p`
-  color: #7f8c8d;
+  color: var(--color-textSecondary);
   font-size: 13px;
   margin: 0 0 16px 0;
   line-height: 1.5;
   text-align: center;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--color-surfaceLight);
   padding: 10px;
   border-radius: 8px;
-  border-left: 4px solid #4a90e2;
+  border-left: 4px solid var(--color-primary);
 `;
 
 const SectionDivider = styled.div`
   height: 1px;
-  background: linear-gradient(90deg, transparent, #e1e8ed, transparent);
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
   margin: 16px 0 14px 0;
   position: relative;
 
@@ -193,10 +193,10 @@ const SectionDivider = styled.div`
     top: -8px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: var(--color-surface);
     padding: 0 16px;
     font-size: 12px;
-    color: #7f8c8d;
+    color: var(--color-textSecondary);
     font-weight: 600;
   }
 `;
@@ -215,7 +215,7 @@ const Checkbox = styled.input`
 `;
 
 const CheckboxLabel = styled.label`
-  color: #2c3e50;
+  color: var(--color-text);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -224,20 +224,20 @@ const CheckboxLabel = styled.label`
 
 const DeepSeekNote = styled.div`
   background: rgba(52, 152, 219, 0.1);
-  border: 1px solid #3498db;
+  border: 1px solid var(--color-info);
   border-radius: 8px;
   padding: 8px;
   margin-top: 8px;
   font-size: 11px;
-  color: #2c3e50;
+  color: var(--color-text);
   line-height: 1.3;
 
   strong {
-    color: #3498db;
+    color: var(--color-info);
   }
 
   a {
-    color: #3498db;
+    color: var(--color-info);
     text-decoration: none;
     font-weight: 600;
     

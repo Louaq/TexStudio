@@ -50,8 +50,8 @@ const DropdownMenu = styled.div<{ show: boolean }>`
   bottom: 100%;
   right: 0;
   min-width: 190px;
-  background: white;
-  border: 1px solid #e1e8ed;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   z-index: 1000;
@@ -76,7 +76,7 @@ const DropdownItem = styled.div`
   padding: 10px 14px;
   cursor: pointer;
   transition: background 0.2s ease;
-  color: #2c3e50;
+  color: var(--color-text);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -84,18 +84,18 @@ const DropdownItem = styled.div`
   font-weight: 500;
 
   &:hover {
-    background: #27ae60;
-    color: white;
+    background: var(--color-primary);
+    color: var(--color-surface);
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid #f1f3f4;
+    border-bottom: 1px solid var(--color-borderLight);
   }
 `;
 
 const ModeDescription = styled.div`
   font-size: 11px;
-  color: #7f8c8d;
+  color: var(--color-textSecondary);
   font-weight: normal;
 `;
 

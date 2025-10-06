@@ -68,16 +68,12 @@ const MenuIcon = {
 interface MenuBarProps {
   onCapture: () => void;
   onUpload: () => void;
-  onHandwriting: () => void; // 新增
   onCopy: () => void;
   onExport: () => void;
   onToggleRecognitionMode: () => void;
   onShowSettings: () => void;
   onShowHistory: () => void;
   onShowAbout: () => void;
-  onCleanupTempFiles: () => void;
-  onToggleAlwaysOnTop: () => void;
-  isAlwaysOnTop: boolean;
   isAutoRecognition: boolean;
   copyDisabled?: boolean;
   exportDisabled?: boolean;
@@ -86,16 +82,12 @@ interface MenuBarProps {
 const MenuBar: React.FC<MenuBarProps> = ({
   onCapture,
   onUpload,
-  onHandwriting, // 新增
   onCopy,
   onExport,
   onToggleRecognitionMode,
   onShowSettings,
   onShowHistory,
   onShowAbout,
-  onCleanupTempFiles,
-  onToggleAlwaysOnTop,
-  isAlwaysOnTop,
   isAutoRecognition,
   copyDisabled = false,
   exportDisabled = false
@@ -110,11 +102,6 @@ const MenuBar: React.FC<MenuBarProps> = ({
       {/* 上传图片 */}
       <MenuItem onClick={onUpload} title="上传图片">
         {MenuIcon.upload}
-      </MenuItem>
-      
-      {/* 手写公式 */}
-      <MenuItem onClick={onHandwriting} title="手写公式">
-        {MenuIcon.handwriting}
       </MenuItem>
       
       <Divider />
@@ -162,21 +149,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
         {MenuIcon.settings}
       </MenuItem>
       
-      {/* 清理临时文件 */}
-      <MenuItem onClick={onCleanupTempFiles} title="清理临时文件">
-        {MenuIcon.cleanup}
-      </MenuItem>
       
-      <Divider />
-      
-      {/* 窗口置顶 */}
-      <MenuItem 
-        $highlighted={isAlwaysOnTop}
-        onClick={onToggleAlwaysOnTop} 
-        title={isAlwaysOnTop ? "取消置顶" : "窗口置顶"}
-      >
-        {MenuIcon.pin}
-      </MenuItem>
       
       <Divider />
       

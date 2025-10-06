@@ -9,75 +9,99 @@ interface NotificationBarProps {
   onClose?: () => void;
 }
 
-// Styled components for the notification bar
-const NotificationContainer = styled.div<{ type: string; visible: boolean }>`
-  position: fixed;
-  top: 50px; // Position below the menu bar
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  min-width: 300px;
-  max-width: 80%;
-  padding: 10px 16px;
-  border-radius: 8px;
-  display: ${props => (props.visible ? 'flex' : 'none')};
+// 图标容器
+const IconWrapper = styled.div<{ type: string }>`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
   align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-size: 14px;
-  transition: opacity 0.3s, transform 0.3s;
-  opacity: ${props => (props.visible ? 1 : 0)};
+  justify-content: center;
+  flex-shrink: 0;
   
   ${props => {
     switch (props.type) {
       case 'success':
         return `
-          background-color: #f0fdf4;
-          color: #166534;
+          background: var(--color-success);
+          color: white;
         `;
       case 'error':
         return `
-          background-color: #fef2f2;
-          color: #991b1b;
+          background: var(--color-error);
+          color: white;
         `;
       case 'warning':
         return `
-          background-color: #fffbeb;
-          color: #92400e;
+          background: var(--color-warning);
+          color: white;
         `;
       case 'info':
       default:
         return `
-          background-color: #f0f9ff;
-          color: #1e40af;
+          background: var(--color-info);
+          color: white;
         `;
     }
   }}
 `;
 
+// Styled components for the notification bar
+const NotificationContainer = styled.div<{ type: string; visible: boolean }>`
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  min-width: 320px;
+  max-width: 500px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: ${props => (props.visible ? 'flex' : 'none')};
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: ${props => (props.visible ? 1 : 0)};
+  transform: translateX(-50%) translateY(${props => (props.visible ? '0' : '-20px')});
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+`;
+
 const MessageContent = styled.div`
   flex: 1;
-  padding-right: 16px;
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--color-text);
 `;
 
 const CloseButton = styled.button`
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 16px;
-  color: inherit;
+  color: var(--color-textSecondary);
   opacity: 0.7;
-  transition: opacity 0.2s;
-  padding: 0;
+  transition: all 0.2s ease;
+  padding: 4px;
   margin: 0;
   width: 24px;
   height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
+  flex-shrink: 0;
   
   &:hover {
     opacity: 1;
+    color: var(--color-text);
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  &:active {
+    transform: scale(0.9);
   }
 `;
 
@@ -145,11 +169,29 @@ const NotificationBar: React.FC<NotificationBarProps> = ({
   const notificationType = getTypeFromMessage(message);
   const displayMessage = cleanMessage(message);
   
+  // 根据类型选择图标
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'success':
+        return 'check_circle';
+      case 'error':
+        return 'error';
+      case 'warning':
+        return 'warning';
+      case 'info':
+      default:
+        return 'info';
+    }
+  };
+  
   return (
     <NotificationContainer type={notificationType} visible={visible}>
+      <IconWrapper type={notificationType}>
+        <MaterialIcon name={getIcon(notificationType)} size={16} />
+      </IconWrapper>
       <MessageContent>{displayMessage}</MessageContent>
       <CloseButton onClick={handleClose} aria-label="关闭">
-        <MaterialIcon name="close" />
+        <MaterialIcon name="close" size={16} />
       </CloseButton>
     </NotificationContainer>
   );

@@ -9,7 +9,7 @@ const SidebarContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 0;
+  padding: 0 0 12px 0;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
   z-index: 100;
   transition: all 0.3s ease;
@@ -53,6 +53,11 @@ const MenuItem = styled.div<{ $active?: boolean; $highlighted?: boolean; disable
   background: transparent;
   opacity: ${props => props.disabled ? 0.4 : 1};
 
+  /* 第一个图标移除顶部margin，使其对齐标题栏底部 */
+  &:first-child {
+    margin-top: 0;
+  }
+
   &:hover {
     ${props => !props.disabled && !props.$active && `
       color: var(--color-primary);
@@ -90,12 +95,8 @@ interface SidebarProps {
   onViewChange: (view: ViewType) => void;
   onCapture: () => void;
   onUpload: () => void;
-  onHandwriting: () => void;
   onCopy: () => void;
   onExport: () => void;
-  onCleanupTempFiles: () => void;
-  onToggleAlwaysOnTop: () => void;
-  isAlwaysOnTop: boolean;
   copyDisabled?: boolean;
   exportDisabled?: boolean;
   sidebarConfig?: SidebarConfig;
@@ -106,14 +107,11 @@ export const getDefaultSidebarConfig = (): SidebarConfig => ({
   items: [
     { id: 'home', label: '主页', icon: 'home', visible: true, order: 0, type: 'view' },
     { id: 'capture', label: '截图', icon: 'photo_camera', visible: true, order: 1, type: 'action' },
-    { id: 'handwriting', label: '手写公式', icon: 'edit', visible: true, order: 2, type: 'action' },
-    { id: 'copy', label: '复制LaTeX', icon: 'content_copy', visible: true, order: 3, type: 'action' },
-    { id: 'export', label: '导出图片', icon: 'download', visible: true, order: 4, type: 'action' },
-    { id: 'history', label: '历史记录', icon: 'history', visible: true, order: 5, type: 'view' },
-    { id: 'alwaysOnTop', label: '窗口置顶', icon: 'push_pin', visible: true, order: 6, type: 'action' },
-    { id: 'cleanup', label: '清理临时文件', icon: 'cleaning_services', visible: true, order: 7, type: 'action' },
-    { id: 'settings', label: '设置', icon: 'settings', visible: true, order: 8, type: 'view' },
-    { id: 'about', label: '关于', icon: 'info', visible: true, order: 9, type: 'view' }
+    { id: 'copy', label: '复制LaTeX', icon: 'content_copy', visible: true, order: 2, type: 'action' },
+    { id: 'export', label: '导出图片', icon: 'download', visible: true, order: 3, type: 'action' },
+    { id: 'history', label: '历史记录', icon: 'history', visible: true, order: 4, type: 'view' },
+    { id: 'settings', label: '设置', icon: 'settings', visible: true, order: 5, type: 'view' },
+    { id: 'about', label: '关于', icon: 'info', visible: true, order: 6, type: 'view' }
   ]
 });
 
@@ -122,12 +120,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onViewChange,
   onCapture,
   onUpload,
-  onHandwriting,
   onCopy,
   onExport,
-  onCleanupTempFiles,
-  onToggleAlwaysOnTop,
-  isAlwaysOnTop,
   copyDisabled = false,
   exportDisabled = false,
   sidebarConfig
@@ -172,13 +166,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           </MenuItem>
         );
       
-      case 'handwriting':
-        return (
-          <MenuItem {...commonProps} onClick={onHandwriting}>
-            <MaterialIcon name={item.icon} size={20} />
-          </MenuItem>
-        );
-      
       case 'copy':
         return (
           <MenuItem 
@@ -210,25 +197,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             $active={currentView === 'history'} 
             onClick={() => onViewChange('history')}
           >
-            <MaterialIcon name={item.icon} size={20} />
-          </MenuItem>
-        );
-      
-      case 'alwaysOnTop':
-        return (
-          <MenuItem 
-            {...commonProps}
-            $highlighted={isAlwaysOnTop}
-            onClick={onToggleAlwaysOnTop} 
-            title={isAlwaysOnTop ? "取消置顶" : item.label}
-          >
-            <MaterialIcon name={item.icon} size={20} />
-          </MenuItem>
-        );
-      
-      case 'cleanup':
-        return (
-          <MenuItem {...commonProps} onClick={onCleanupTempFiles}>
             <MaterialIcon name={item.icon} size={20} />
           </MenuItem>
         );

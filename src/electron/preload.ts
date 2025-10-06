@@ -128,6 +128,10 @@ const electronAPI: ElectronAPI = {
   resetAllData: () => ipcRenderer.invoke('reset-all-data'),
   restartApp: () => ipcRenderer.invoke('restart-app'),
   
+  // 硬件加速
+  getHardwareAcceleration: () => ipcRenderer.invoke('get-hardware-acceleration'),
+  setHardwareAcceleration: (enabled: boolean) => ipcRenderer.invoke('set-hardware-acceleration', enabled),
+  
   // 添加设置最大监听器数量的方法
   setMaxListeners: (count: number) => {
     ipcRenderer.setMaxListeners(count);
