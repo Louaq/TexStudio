@@ -452,6 +452,7 @@ async function createMainWindow(): Promise<void> {
     height: 820,
     minWidth: 1051,
     minHeight: 820,
+    frame: false, // 移除默认标题栏，使用自定义标题栏
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -464,9 +465,10 @@ async function createMainWindow(): Promise<void> {
       enableWebSQL: false,
       experimentalFeatures: false
     },
-            title: 'TexStudio OCR',
+    title: 'TexStudio OCR',
     show: false,
-    autoHideMenuBar: true
+    autoHideMenuBar: true,
+    backgroundColor: '#f8f9fa'
   });
 
   // 完全禁用菜单栏
@@ -523,6 +525,15 @@ async function createMainWindow(): Promise<void> {
       event.preventDefault();
       forceQuitApp();
     }
+  });
+
+  // 监听窗口最大化/还原事件
+  mainWindow.on('maximize', () => {
+    mainWindow?.webContents.send('window-state-changed', true);
+  });
+
+  mainWindow.on('unmaximize', () => {
+    mainWindow?.webContents.send('window-state-changed', false);
   });
 }
 
@@ -1769,6 +1780,20 @@ ipcMain.handle('minimize-window', () => {
   mainWindow?.minimize();
 });
 
+ipcMain.handle('maximize-window', () => {
+  if (mainWindow) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  }
+});
+
+ipcMain.handle('is-window-maximized', () => {
+  return mainWindow?.isMaximized() || false;
+});
+
 ipcMain.handle('close-window', () => {
   forceQuitApp();
   return true;
@@ -2084,6 +2109,32 @@ ipcMain.handle('open-dev-tools', async (event) => {
   } catch (error) {
     logger.error('打开开发者工具失败:', error);
     throw error;
+  }
+});
+
+// 更新窗口主题颜色
+ipcMain.handle('update-window-theme', async (event, backgroundColor: string, textColor: string) => {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setBackgroundColor(backgroundColor);
+      
+      // 更新 Windows 标题栏颜色
+      if (process.platform === 'win32') {
+        mainWindow.setTitleBarOverlay({
+          color: backgroundColor,
+          symbolColor: textColor
+        });
+      }
+      
+      logger.log(`窗口主题颜色已更新: 背景=${backgroundColor}, 文字=${textColor}`);
+      return { success: true };
+    } else {
+      logger.error('主窗口不存在或已销毁');
+      return { success: false, message: '主窗口不存在' };
+    }
+  } catch (error) {
+    logger.error('更新窗口主题颜色失败:', error);
+    return { success: false, message: '更新失败' };
   }
 });
 
@@ -2436,3 +2487,255 @@ if (typeof mathjaxExt.typesetClear !== 'function') {
     }
   };
 }
+
+// ==================== 数据管理 IPC 处理器 ====================
+
+// 获取数据路径
+ipcMain.handle('get-data-paths', async () => {
+  const dataPath = app.getPath('userData');
+  const logPath = path.join(dataPath, 'logs');
+  return { dataPath, logPath };
+});
+
+// 获取缓存大小
+ipcMain.handle('get-cache-size', async () => {
+  try {
+    const tempDir = path.join(app.getPath('temp'), 'texstudio-temp');
+    let totalSize = 0;
+
+    const calculateSize = (dir: string) => {
+      if (!fs.existsSync(dir)) return 0;
+      const files = fs.readdirSync(dir);
+      let size = 0;
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stats = fs.statSync(filePath);
+        if (stats.isDirectory()) {
+          size += calculateSize(filePath);
+        } else {
+          size += stats.size;
+        }
+      }
+      return size;
+    };
+
+    totalSize = calculateSize(tempDir);
+    const sizeMB = (totalSize / 1024 / 1024).toFixed(2);
+    return { size: `${sizeMB}MB` };
+  } catch (error) {
+    logger.error('获取缓存大小失败:', error);
+    return { size: '0MB' };
+  }
+});
+
+// 备份数据
+ipcMain.handle('backup-data', async (event, simple: boolean) => {
+  try {
+    const { filePath } = await dialog.showSaveDialog({
+      title: '选择备份保存位置',
+      defaultPath: `texstudio-backup-${Date.now()}.zip`,
+      filters: [{ name: 'ZIP文件', extensions: ['zip'] }]
+    });
+
+    if (!filePath) {
+      return { success: false, message: '用户取消' };
+    }
+
+    const archiver = require('archiver');
+    const output = fs.createWriteStream(filePath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.pipe(output);
+
+    const userData = app.getPath('userData');
+    const settingsPath = path.join(userData, 'config.json');
+    const historyPath = path.join(userData, 'history.json');
+
+    // 始终备份设置和历史
+    if (fs.existsSync(settingsPath)) {
+      archive.file(settingsPath, { name: 'config.json' });
+    }
+    if (fs.existsSync(historyPath)) {
+      archive.file(historyPath, { name: 'history.json' });
+    }
+
+    // 非精简备份：备份所有数据
+    if (!simple) {
+      const tempDir = path.join(app.getPath('temp'), 'texstudio-temp');
+      if (fs.existsSync(tempDir)) {
+        archive.directory(tempDir, 'temp');
+      }
+    }
+
+    await archive.finalize();
+
+    return new Promise<{ success: boolean; filePath?: string; message?: string }>((resolve) => {
+      output.on('close', () => {
+        resolve({ success: true, filePath });
+      });
+      archive.on('error', (err: Error) => {
+        resolve({ success: false, message: err.message });
+      });
+    });
+  } catch (error) {
+    logger.error('备份数据失败:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '未知错误'
+    };
+  }
+});
+
+// 恢复数据
+ipcMain.handle('restore-data', async () => {
+  try {
+    const { filePaths } = await dialog.showOpenDialog({
+      title: '选择备份文件',
+      filters: [{ name: 'ZIP文件', extensions: ['zip'] }],
+      properties: ['openFile']
+    });
+
+    if (!filePaths || filePaths.length === 0) {
+      return { success: false, message: '用户取消' };
+    }
+
+    const extract = require('extract-zip');
+    const userData = app.getPath('userData');
+    const tempExtractDir = path.join(app.getPath('temp'), `texstudio-restore-${Date.now()}`);
+
+    await extract(filePaths[0], { dir: tempExtractDir });
+
+    // 恢复配置文件
+    const configSrc = path.join(tempExtractDir, 'config.json');
+    const historySrc = path.join(tempExtractDir, 'history.json');
+    
+    if (fs.existsSync(configSrc)) {
+      fs.copyFileSync(configSrc, path.join(userData, 'config.json'));
+    }
+    if (fs.existsSync(historySrc)) {
+      fs.copyFileSync(historySrc, path.join(userData, 'history.json'));
+    }
+
+    // 清理临时文件
+    fs.rmSync(tempExtractDir, { recursive: true, force: true });
+
+    return { success: true };
+  } catch (error) {
+    logger.error('恢复数据失败:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '未知错误'
+    };
+  }
+});
+
+// 打开数据文件夹
+ipcMain.handle('open-data-folder', async () => {
+  const userData = app.getPath('userData');
+  require('electron').shell.openPath(userData);
+});
+
+// 打开日志文件夹
+ipcMain.handle('open-log-folder', async () => {
+  const logPath = path.join(app.getPath('userData'), 'logs');
+  if (!fs.existsSync(logPath)) {
+    fs.mkdirSync(logPath, { recursive: true });
+  }
+  require('electron').shell.openPath(logPath);
+});
+
+// 清除知识库文件（暂时返回成功，因为应用中似乎没有知识库功能）
+ipcMain.handle('clear-knowledge', async () => {
+  try {
+    // 如果将来有知识库文件夹，可以在这里清理
+    return { success: true, count: 0 };
+  } catch (error) {
+    logger.error('清除知识库失败:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '未知错误'
+    };
+  }
+});
+
+// 清除缓存
+ipcMain.handle('clear-cache', async () => {
+  try {
+    const tempDir = path.join(app.getPath('temp'), 'texstudio-temp');
+    let totalSize = 0;
+
+    const calculateSize = (dir: string) => {
+      if (!fs.existsSync(dir)) return 0;
+      const files = fs.readdirSync(dir);
+      let size = 0;
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stats = fs.statSync(filePath);
+        if (stats.isDirectory()) {
+          size += calculateSize(filePath);
+        } else {
+          size += stats.size;
+        }
+      }
+      return size;
+    };
+
+    totalSize = calculateSize(tempDir);
+    
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+
+    tempFiles.clear();
+
+    const sizeMB = (totalSize / 1024 / 1024).toFixed(2);
+    return { success: true, size: `${sizeMB}MB` };
+  } catch (error) {
+    logger.error('清除缓存失败:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '未知错误'
+    };
+  }
+});
+
+// 重置所有数据
+ipcMain.handle('reset-all-data', async () => {
+  try {
+    const userData = app.getPath('userData');
+    const tempDir = path.join(app.getPath('temp'), 'texstudio-temp');
+
+    // 删除配置文件
+    const configPath = path.join(userData, 'config.json');
+    if (fs.existsSync(configPath)) {
+      fs.unlinkSync(configPath);
+    }
+
+    // 删除历史记录
+    const historyPath = path.join(userData, 'history.json');
+    if (fs.existsSync(historyPath)) {
+      fs.unlinkSync(historyPath);
+    }
+
+    // 删除缓存
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+
+    tempFiles.clear();
+
+    return { success: true };
+  } catch (error) {
+    logger.error('重置数据失败:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '未知错误'
+    };
+  }
+});
+
+// 重启应用
+ipcMain.handle('restart-app', async () => {
+  app.relaunch();
+  app.exit(0);
+});

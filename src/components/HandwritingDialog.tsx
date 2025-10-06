@@ -8,7 +8,7 @@ const Overlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-dialogOverlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,7 +16,7 @@ const Overlay = styled.div`
 `;
 
 const Dialog = styled.div`
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
   padding: 20px;
   width: clamp(600px, 80vw, 1200px);
@@ -24,13 +24,14 @@ const Dialog = styled.div`
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--color-text) 15%, transparent);
+  border: 1px solid var(--color-border);
   overflow: auto;
 `;
 
 const Title = styled.h2`
   margin: 0 0 20px;
-  color: #3a4a5b;
+  color: var(--color-text);
   font-size: 18px;
   font-weight: 600;
   display: flex;
@@ -39,9 +40,9 @@ const Title = styled.h2`
 `;
 
 const CanvasContainer = styled.div`
-  border: 1px solid #dce1e8;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #f8f9fa;
+  background: color-mix(in srgb, var(--color-text) 3%, var(--color-surface));
   position: relative;
   margin-bottom: 20px;
   display: flex;
@@ -81,13 +82,13 @@ const Button = styled.button<{ primary?: boolean }>`
   transition: all 0.2s;
   border: none;
   background: ${props => props.primary 
-    ? 'linear-gradient(135deg, #4375b9 0%, #2c5282 100%)' 
-    : '#f1f5f9'};
-  color: ${props => props.primary ? 'white' : '#3a4a5b'};
+    ? 'var(--color-buttonGradientStart)' 
+    : 'color-mix(in srgb, var(--color-text) 5%, var(--color-surface))'};
+  color: ${props => props.primary ? 'white' : 'var(--color-text)'};
   
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 5px color-mix(in srgb, var(--color-text) 10%, transparent);
   }
   
   &:disabled {
@@ -102,8 +103,8 @@ const ControlsRow = styled.div`
   display: flex;
   padding: 10px;
   gap: 10px;
-  border-bottom: 1px solid #dce1e8;
-  background: #f1f5f9;
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-text) 5%, var(--color-surface));
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   flex-wrap: wrap;
@@ -113,9 +114,9 @@ const ColorButton = styled.button<{ selected?: boolean }>`
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2px solid ${props => props.selected ? '#4375b9' : 'transparent'};
+  border: 2px solid ${props => props.selected ? 'var(--color-primary)' : 'transparent'};
   cursor: pointer;
-  box-shadow: ${props => props.selected ? '0 0 0 2px rgba(67, 117, 185, 0.3)' : 'none'};
+  box-shadow: ${props => props.selected ? '0 0 0 2px color-mix(in srgb, var(--color-primary) 30%, transparent)' : 'none'};
   transition: all 0.2s;
   
   &:hover {
@@ -127,9 +128,9 @@ const SizeButton = styled.button<{ selected?: boolean }>`
   width: 24px;
   height: 24px;
   border-radius: 4px;
-  border: 1px solid #dce1e8;
-  background: ${props => props.selected ? '#4375b9' : 'white'};
-  color: ${props => props.selected ? 'white' : '#3a4a5b'};
+  border: 1px solid var(--color-border);
+  background: ${props => props.selected ? 'var(--color-primary)' : 'var(--color-surface)'};
+  color: ${props => props.selected ? 'white' : 'var(--color-text)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -138,16 +139,16 @@ const SizeButton = styled.button<{ selected?: boolean }>`
   font-size: 12px;
   
   &:hover {
-    background: ${props => props.selected ? '#4375b9' : '#f1f5f9'};
+    background: ${props => props.selected ? 'var(--color-primary)' : 'color-mix(in srgb, var(--color-text) 5%, var(--color-surface))'};
   }
 `;
 
 const ToolButton = styled.button<{ selected?: boolean }>`
   padding: 5px 10px;
   border-radius: 4px;
-  border: 1px solid #dce1e8;
-  background: ${props => props.selected ? '#4375b9' : 'white'};
-  color: ${props => props.selected ? 'white' : '#3a4a5b'};
+  border: 1px solid var(--color-border);
+  background: ${props => props.selected ? 'var(--color-primary)' : 'var(--color-surface)'};
+  color: ${props => props.selected ? 'white' : 'var(--color-text)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,21 +158,21 @@ const ToolButton = styled.button<{ selected?: boolean }>`
   gap: 4px;
   
   &:hover {
-    background: ${props => props.selected ? '#4375b9' : '#f1f5f9'};
+    background: ${props => props.selected ? 'var(--color-primary)' : 'color-mix(in srgb, var(--color-text) 5%, var(--color-surface))'};
   }
 `;
 
 const Divider = styled.div`
   width: 1px;
   height: 24px;
-  background: #dce1e8;
+  background: var(--color-border);
   margin: 0 5px;
 `;
 
 const StatusText = styled.div<{ isError?: boolean }>`
   padding: 10px;
   font-size: 14px;
-  color: ${props => props.isError ? '#e74c3c' : '#3a4a5b'};
+  color: ${props => props.isError ? 'var(--color-error)' : 'var(--color-text)'};
   text-align: center;
 `;
 

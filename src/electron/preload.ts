@@ -31,7 +31,6 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('register-global-shortcuts', shortcuts),
   unregisterGlobalShortcuts: () => ipcRenderer.invoke('unregister-global-shortcuts'),
 
-  minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
   closeWindow: () => ipcRenderer.invoke('close-window'),
 
   onShortcutTriggered: (callback: (action: 'capture' | 'upload') => void) => {
@@ -104,6 +103,30 @@ const electronAPI: ElectronAPI = {
   // 打开外部链接和开发者工具
   openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
   openDevTools: () => ipcRenderer.invoke('open-dev-tools'),
+  updateWindowTheme: (backgroundColor: string, textColor: string) => 
+    ipcRenderer.invoke('update-window-theme', backgroundColor, textColor),
+  
+  // 窗口控制
+  minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
+  maximizeWindow: () => ipcRenderer.invoke('maximize-window'),
+  isWindowMaximized: () => ipcRenderer.invoke('is-window-maximized'),
+  onWindowStateChange: (callback: (maximized: boolean) => void) => {
+    const listener = (_event: any, maximized: boolean) => callback(maximized);
+    ipcRenderer.on('window-state-changed', listener);
+    return () => ipcRenderer.removeListener('window-state-changed', listener);
+  },
+  
+  // 数据管理
+  getDataPaths: () => ipcRenderer.invoke('get-data-paths'),
+  getCacheSize: () => ipcRenderer.invoke('get-cache-size'),
+  backupData: (simple: boolean) => ipcRenderer.invoke('backup-data', simple),
+  restoreData: () => ipcRenderer.invoke('restore-data'),
+  openDataFolder: () => ipcRenderer.invoke('open-data-folder'),
+  openLogFolder: () => ipcRenderer.invoke('open-log-folder'),
+  clearKnowledge: () => ipcRenderer.invoke('clear-knowledge'),
+  clearCache: () => ipcRenderer.invoke('clear-cache'),
+  resetAllData: () => ipcRenderer.invoke('reset-all-data'),
+  restartApp: () => ipcRenderer.invoke('restart-app'),
   
   // 添加设置最大监听器数量的方法
   setMaxListeners: (count: number) => {

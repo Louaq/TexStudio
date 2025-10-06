@@ -100,7 +100,6 @@ export interface ElectronAPI {
   registerGlobalShortcuts: (shortcuts: { capture: string; upload: string }) => Promise<boolean>;
   unregisterGlobalShortcuts: () => Promise<void>;
   
-  minimizeWindow: () => Promise<void>;
   closeWindow: () => Promise<boolean>;
   
   onShortcutTriggered: (callback: (action: 'capture' | 'upload') => void) => void;
@@ -145,6 +144,27 @@ export interface ElectronAPI {
   // 打开外部链接和开发者工具
   openExternal: (url: string) => Promise<void>;
   openDevTools: () => Promise<void>;
+  
+  // 更新窗口主题颜色
+  updateWindowTheme: (backgroundColor: string, textColor: string) => Promise<{ success: boolean; message?: string }>;
+  
+  // 窗口控制
+  minimizeWindow: () => Promise<void>;
+  maximizeWindow: () => Promise<void>;
+  isWindowMaximized: () => Promise<boolean>;
+  onWindowStateChange: (callback: (maximized: boolean) => void) => (() => void) | undefined;
+  
+  // 数据管理
+  getDataPaths: () => Promise<{ dataPath: string; logPath: string }>;
+  getCacheSize: () => Promise<{ size: string }>;
+  backupData: (simple: boolean) => Promise<{ success: boolean; filePath?: string; message?: string }>;
+  restoreData: () => Promise<{ success: boolean; message?: string }>;
+  openDataFolder: () => Promise<void>;
+  openLogFolder: () => Promise<void>;
+  clearKnowledge: () => Promise<{ success: boolean; count?: number; message?: string }>;
+  clearCache: () => Promise<{ success: boolean; size?: string; message?: string }>;
+  resetAllData: () => Promise<{ success: boolean; message?: string }>;
+  restartApp: () => Promise<void>;
   
   // IPC设置
   setMaxListeners: (count: number) => void;

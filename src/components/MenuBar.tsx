@@ -14,7 +14,7 @@ const MenuContainer = styled.div`
   align-items: center;
 `;
 
-const MenuItem = styled.div<{ disabled?: boolean }>`
+const MenuItem = styled.div<{ disabled?: boolean; $highlighted?: boolean }>`
   padding: 4px;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   border-radius: 6px;
@@ -28,10 +28,11 @@ const MenuItem = styled.div<{ disabled?: boolean }>`
   height: 34px;
   position: relative;
   opacity: ${props => props.disabled ? 0.5 : 1};
+  color: ${props => props.$highlighted ? 'var(--color-primary)' : 'inherit'};
 
   &:hover {
     ${props => !props.disabled && `
-      color: #4375b9;
+      color: var(--color-primary);
     `}
   }
 `;
@@ -140,9 +141,9 @@ const MenuBar: React.FC<MenuBarProps> = ({
       
       {/* 识别模式切换 */}
       <MenuItem 
+        $highlighted={isAutoRecognition}
         onClick={onToggleRecognitionMode} 
         title={isAutoRecognition ? "当前：自动识别模式，点击切换到手动识别" : "当前：手动识别模式，点击切换到自动识别"}
-        style={{ color: '#4375b9' }}
       >
         {isAutoRecognition ? MenuIcon.autoMode : MenuIcon.manualMode}
       </MenuItem>
@@ -170,9 +171,9 @@ const MenuBar: React.FC<MenuBarProps> = ({
       
       {/* 窗口置顶 */}
       <MenuItem 
+        $highlighted={isAlwaysOnTop}
         onClick={onToggleAlwaysOnTop} 
         title={isAlwaysOnTop ? "取消置顶" : "窗口置顶"}
-        style={isAlwaysOnTop ? { color: '#4a90e2'} : {}}
       >
         {MenuIcon.pin}
       </MenuItem>

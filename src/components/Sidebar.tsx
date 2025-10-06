@@ -33,7 +33,7 @@ const SidebarContainer = styled.div`
   }
 `;
 
-const MenuItem = styled.div<{ $active?: boolean; disabled?: boolean }>`
+const MenuItem = styled.div<{ $active?: boolean; $highlighted?: boolean; disabled?: boolean }>`
   width: 36px;
   height: 36px;
   display: flex;
@@ -44,7 +44,10 @@ const MenuItem = styled.div<{ $active?: boolean; disabled?: boolean }>`
   margin: 4px 0;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  color: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-textSecondary)'};
+  color: ${props => {
+    if (props.$active || props.$highlighted) return 'var(--color-primary)';
+    return 'var(--color-textSecondary)';
+  }};
   background: transparent;
   opacity: ${props => props.disabled ? 0.4 : 1};
 
@@ -126,9 +129,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* 识别模式切换 */}
       <MenuItem 
+        $highlighted={isAutoRecognition}
         onClick={onToggleRecognitionMode} 
         title={isAutoRecognition ? "当前：自动识别模式，点击切换到手动识别" : "当前：手动识别模式，点击切换到自动识别"}
-        style={{ color: isAutoRecognition ? 'var(--color-primary)' : 'var(--color-textSecondary)' }}
       >
         <MaterialIcon name={isAutoRecognition ? "smart_toy" : "back_hand"} size={20} />
       </MenuItem>
@@ -167,9 +170,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* 窗口置顶 */}
       <MenuItem 
+        $highlighted={isAlwaysOnTop}
         onClick={onToggleAlwaysOnTop} 
         title={isAlwaysOnTop ? "取消置顶" : "窗口置顶"}
-        style={{ color: isAlwaysOnTop ? 'var(--color-primary)' : 'var(--color-textSecondary)' }}
       >
         <MaterialIcon name="push_pin" size={20} />
       </MenuItem>

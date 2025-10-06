@@ -9,7 +9,7 @@ const DialogOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-dialogOverlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,12 +23,13 @@ const DialogOverlay = styled.div`
 `;
 
 const DialogContainer = styled.div`
-  background: white;
+  background: var(--color-surface);
   border-radius: 12px;
   padding: 24px;
   min-width: 320px;
   max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--color-text) 12%, transparent);
+  border: 1px solid var(--color-border);
   animation: slideUp 0.3s ease;
 
   @keyframes slideUp {
@@ -46,7 +47,7 @@ const DialogContainer = styled.div`
 const DialogTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-text);
   margin: 0 0 20px 0;
   display: flex;
   align-items: center;
@@ -65,16 +66,16 @@ const OptionItem = styled.button`
   flex-direction: column;
   align-items: flex-start;
   padding: 12px 16px;
-  border: 2px solid #e1e8ed;
+  border: 2px solid var(--color-border);
   border-radius: 8px;
-  background: white;
+  background: var(--color-surface);
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
   
   &:hover {
-    border-color: #27ae60;
-    background: #f8fbf9;
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
     transform: translateY(-1px);
   }
 
@@ -86,13 +87,13 @@ const OptionItem = styled.button`
 const OptionTitle = styled.div`
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-text);
   margin-bottom: 4px;
 `;
 
 const OptionDescription = styled.div`
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--color-textSecondary);
   line-height: 1.4;
 `;
 
@@ -104,18 +105,19 @@ const ButtonGroup = styled.div`
 
 const CancelButton = styled.button`
   padding: 8px 16px;
-  border: 1px solid #dce1e8;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: white;
-  color: #6c757d;
+  background: var(--color-surface);
+  color: var(--color-textSecondary);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f8f9fa;
-    border-color: #adb5bd;
+    background: color-mix(in srgb, var(--color-text) 3%, var(--color-surface));
+    border-color: var(--color-primary);
+    color: var(--color-text);
   }
 `;
 

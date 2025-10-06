@@ -232,7 +232,6 @@ const ExplanationContent = styled.div`
   }
 
   blockquote {
-    border-left: 3px solid #3498db;
     padding-left: 12px;
     margin: 8px 0;
     color: #34495e;
@@ -305,7 +304,6 @@ const ErrorMessage = styled.div`
   padding: 12px;
   background: rgba(231, 76, 60, 0.1);
   border-radius: 6px;
-  border-left: 4px solid #e74c3c;
   margin: 8px 0;
   width: calc(100% - 24px); /* 计算实际宽度，考虑内边距 */
   box-sizing: border-box;

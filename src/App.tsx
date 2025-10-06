@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useDropzone } from 'react-dropzone';
 import { AppState, HistoryItem, ApiConfig, CopyMode } from './types';
 import { formatLatex, getCurrentTimestamp, validateApiConfig } from './utils/api';
+import TitleBar from './components/TitleBar';
 import Sidebar from './components/Sidebar';
 import HomeView from './views/HomeView';
 import SettingsView from './views/SettingsView';
@@ -18,11 +19,18 @@ import * as path from 'path';
 
 const AppContainer = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   height: 100vh;
   background: var(--color-background);
   font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
   color: var(--color-text);
+  overflow: hidden;
+`;
+
+const MainContent = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex: 1;
   overflow: hidden;
 `;
 
@@ -1411,28 +1419,32 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
 
   return (
     <AppContainer>
-      {/* 左侧导航栏 */}
-      <Sidebar
-        currentView={currentView}
-        onViewChange={setCurrentView}
-        onCapture={handleCapture}
-        onUpload={handleUpload}
-        onHandwriting={handleHandwriting}
-        onCopy={() => {
-          if (appState.latexCode.trim() && !appState.isRecognizing) {
-            setShowCopyOptions(true);
-          }
-        }}
-        onExport={() => {
-          if (appState.latexCode.trim() && !appState.isRecognizing) {
-            setShowExportOptions(true);
-          }
-        }}
-        onToggleRecognitionMode={handleToggleRecognitionMode}
-        onCleanupTempFiles={handleCleanupTempFiles}
-        onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
-        isAlwaysOnTop={isAlwaysOnTop}
-        isAutoRecognition={isAutoRecognition}
+      {/* 自定义标题栏 */}
+      <TitleBar title="TexStudio OCR" />
+      
+      <MainContent>
+        {/* 左侧导航栏 */}
+        <Sidebar
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          onCapture={handleCapture}
+          onUpload={handleUpload}
+          onHandwriting={handleHandwriting}
+          onCopy={() => {
+            if (appState.latexCode.trim() && !appState.isRecognizing) {
+              setShowCopyOptions(true);
+            }
+          }}
+          onExport={() => {
+            if (appState.latexCode.trim() && !appState.isRecognizing) {
+              setShowExportOptions(true);
+            }
+          }}
+          onToggleRecognitionMode={handleToggleRecognitionMode}
+          onCleanupTempFiles={handleCleanupTempFiles}
+          onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
+          isAlwaysOnTop={isAlwaysOnTop}
+          isAutoRecognition={isAutoRecognition}
         copyDisabled={!appState.latexCode.trim() || appState.isRecognizing}
         exportDisabled={!appState.latexCode.trim() || appState.isRecognizing}
       />
@@ -1517,6 +1529,8 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         onClose={() => setShowExportOptions(false)}
         onExport={handleExportFormula}
       />
+
+      </MainContent>
 
       <UpdateDialog
         isOpen={updateInfo.showDialog}

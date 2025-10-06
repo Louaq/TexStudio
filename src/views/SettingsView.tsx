@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { ApiConfig } from '../types';
 import MaterialIcon from '../components/MaterialIcon';
-import { themes } from '../theme/themes';
+import { themes, getTheme, saveCustomTheme, Theme } from '../theme/themes';
+import { DataConfirmDialog, DataAlertDialog } from '../components/DataDialog';
 
 const SettingsContainer = styled.div`
   flex: 1;
@@ -189,7 +190,6 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
 
         &:hover {
           background: var(--color-buttonHoverStart);
-          transform: translateY(-1px);
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
       `;
@@ -201,7 +201,6 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
         &:hover {
           background: var(--color-warning);
           opacity: 0.9;
-          transform: translateY(-1px);
           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
         }
       `;
@@ -212,7 +211,6 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
 
         &:hover {
           background: var(--color-borderLight);
-          transform: translateY(-1px);
         }
       `;
     }
@@ -245,7 +243,6 @@ const ThemeCard = styled.button<{ $isActive: boolean }>`
 
   &:hover {
     border-color: ${props => props.$isActive ? 'var(--color-primary)' : 'var(--color-borderLight)'};
-    transform: translateY(-4px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
   }
 
@@ -420,12 +417,240 @@ const UpdateButton = styled.button`
 
   &:hover {
     background: #5ba0f2;
-    transform: translateY(-1px);
     box-shadow: 0 3px 10px rgba(74, 144, 226, 0.25);
   }
 
   &:active {
     transform: translateY(0);
+  }
+`;
+
+const CustomThemeEditor = styled.div`
+  margin-top: 24px;
+  padding: 24px;
+  border: 2px solid var(--color-primary);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-primary) 3%, var(--color-surface));
+`;
+
+const CustomThemeTitle = styled.h3`
+  margin: 0 0 20px 0;
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ColorGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+`;
+
+const ColorItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const ColorLabel = styled.label`
+  display: block;
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 12px;
+`;
+
+const ColorInputWrapper = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+`;
+
+const ColorInput = styled.input`
+  width: 50px;
+  height: 36px;
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px;
+  
+  &::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+  
+  &::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+  }
+`;
+
+const ColorTextInput = styled.input`
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  font-size: 12px;
+  color: var(--color-text);
+  font-family: "Cascadia Code", "Consolas", monospace;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+`;
+
+const DataRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border);
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  &:first-child {
+    padding-top: 0;
+  }
+`;
+
+const DataLabel = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const DataTitle = styled.span`
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+`;
+
+const DataDescription = styled.span`
+  font-size: 12px;
+  color: var(--color-textSecondary);
+  max-width: 500px;
+`;
+
+const DataPath = styled.span`
+  font-size: 12px;
+  color: var(--color-textSecondary);
+  font-family: "Cascadia Code", "Consolas", monospace;
+  word-break: break-all;
+`;
+
+const DataActions = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+`;
+
+const SmallButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  border: 1px solid;
+
+  ${props => {
+    switch (props.$variant) {
+      case 'primary':
+        return `
+          background: var(--color-primary);
+          color: white;
+          border-color: var(--color-primary);
+          &:hover {
+            opacity: 0.9;
+          }
+        `;
+      case 'danger':
+        return `
+          background: var(--color-error);
+          color: white;
+          border-color: var(--color-error);
+          &:hover {
+            opacity: 0.9;
+          }
+        `;
+      default:
+        return `
+          background: var(--color-surface);
+          color: var(--color-text);
+          border-color: var(--color-border);
+          &:hover {
+            background: color-mix(in srgb, var(--color-text) 5%, var(--color-surface));
+          }
+        `;
+    }
+  }}
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const Toggle = styled.label`
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  cursor: pointer;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  span {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-border);
+    border-radius: 26px;
+    transition: all 0.3s ease;
+
+    &:before {
+      content: '';
+      position: absolute;
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+  }
+
+  input:checked + span {
+    background: var(--color-primary);
+  }
+
+  input:checked + span:before {
+    transform: translateX(22px);
   }
 `;
 
@@ -452,6 +677,37 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   const [shortcutFormData, setShortcutFormData] = useState(shortcuts);
   const [listeningFor, setListeningFor] = useState<'capture' | 'upload' | null>(null);
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
+  const [customTheme, setCustomTheme] = useState<Theme>(getTheme('custom'));
+  
+  // 数据设置相关状态
+  const [simpleBackup, setSimpleBackup] = useState(false);
+  const [dataPath, setDataPath] = useState('');
+  const [logPath, setLogPath] = useState('');
+  const [cacheSize, setCacheSize] = useState('0MB');
+  
+  // 对话框状态
+  const [dialogState, setDialogState] = useState<{
+    type: 'alert' | 'confirm' | null;
+    title: string;
+    message: string | React.ReactNode;
+    dialogType?: 'info' | 'warning' | 'error' | 'success';
+    isDanger?: boolean;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm?: () => void;
+    onCancel?: () => void;
+  }>({
+    type: null,
+    title: '',
+    message: ''
+  });
+
+  // 当切换到自定义主题时加载
+  useEffect(() => {
+    if (currentTheme === 'custom') {
+      setCustomTheme(getTheme('custom'));
+    }
+  }, [currentTheme]);
 
   // API设置相关函数
   const handleApiChange = (field: keyof ApiConfig, value: string) => {
@@ -573,6 +829,309 @@ const SettingsView: React.FC<SettingsViewProps> = ({
       return '按住快捷键...';
     }
     return shortcutFormData[field] || '点击设置快捷键';
+  };
+
+  // 自定义主题相关函数
+  const handleCustomColorChange = (colorKey: string, value: string) => {
+    setCustomTheme(prev => ({
+      ...prev,
+      colors: {
+        ...prev.colors,
+        [colorKey]: value
+      }
+    }));
+  };
+
+  const handleSaveCustomTheme = () => {
+    saveCustomTheme(customTheme);
+    if (onThemeChange) {
+      onThemeChange('custom');
+    }
+  };
+
+  const handleResetCustomTheme = () => {
+    const defaultTheme = {
+      id: 'custom',
+      name: '自定义主题',
+      colors: { ...themes[0].colors }
+    };
+    setCustomTheme(defaultTheme);
+    saveCustomTheme(defaultTheme);
+    if (onThemeChange) {
+      onThemeChange('custom');
+    }
+  };
+
+  // 对话框辅助函数
+  const showAlert = (
+    title: string,
+    message: string | React.ReactNode,
+    type: 'info' | 'warning' | 'error' | 'success' = 'info'
+  ) => {
+    return new Promise<void>((resolve) => {
+      setDialogState({
+        type: 'alert',
+        title,
+        message,
+        dialogType: type,
+        onConfirm: () => {
+          setDialogState({ type: null, title: '', message: '' });
+          resolve();
+        }
+      });
+    });
+  };
+
+  const showConfirm = (
+    title: string,
+    message: string | React.ReactNode,
+    type: 'info' | 'warning' | 'error' = 'info',
+    isDanger: boolean = false
+  ) => {
+    return new Promise<boolean>((resolve) => {
+      const handleConfirm = () => {
+        setDialogState({ type: null, title: '', message: '' });
+        resolve(true);
+      };
+      
+      const handleCancel = () => {
+        setDialogState({ type: null, title: '', message: '' });
+        resolve(false);
+      };
+      
+      setDialogState({
+        type: 'confirm',
+        title,
+        message,
+        dialogType: type,
+        isDanger,
+        onConfirm: handleConfirm,
+        onCancel: handleCancel
+      });
+    });
+  };
+
+  const closeDialog = () => {
+    setDialogState({ type: null, title: '', message: '' });
+  };
+
+  // 数据设置相关函数
+  useEffect(() => {
+    // 加载数据路径和缓存大小
+    const loadDataInfo = async () => {
+      if (window.electronAPI) {
+        try {
+          const paths = await window.electronAPI.getDataPaths();
+          setDataPath(paths.dataPath);
+          setLogPath(paths.logPath);
+          
+          const cache = await window.electronAPI.getCacheSize();
+          setCacheSize(cache.size);
+        } catch (error) {
+          console.error('加载数据信息失败:', error);
+        }
+      }
+    };
+    loadDataInfo();
+  }, []);
+
+  const handleBackupData = async () => {
+    if (!window.electronAPI) return;
+    try {
+      const result = await window.electronAPI.backupData(simpleBackup);
+      if (result.success) {
+        await showAlert(
+          '备份成功',
+          <>
+            数据备份成功！<br />
+            <strong>保存位置：</strong><br />
+            {result.filePath}
+          </>,
+          'success'
+        );
+      } else {
+        await showAlert('备份失败', `数据备份失败：${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('备份数据失败:', error);
+      await showAlert('备份失败', '备份数据时发生错误', 'error');
+    }
+  };
+
+  const handleRestoreData = async () => {
+    if (!window.electronAPI) return;
+    
+    const confirmed = await showConfirm(
+      '恢复数据',
+      '恢复数据将覆盖当前所有设置和历史记录，是否继续？',
+      'warning',
+      false
+    );
+    if (!confirmed) return;
+    
+    try {
+      const result = await window.electronAPI.restoreData();
+      if (result.success) {
+        await showAlert(
+          '恢复成功',
+          '数据恢复成功！应用将重启以加载新数据。',
+          'success'
+        );
+        window.electronAPI.restartApp();
+      } else {
+        await showAlert('恢复失败', `数据恢复失败：${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('恢复数据失败:', error);
+      await showAlert('恢复失败', '恢复数据时发生错误', 'error');
+    }
+  };
+
+  const handleOpenDataFolder = async () => {
+    if (!window.electronAPI) return;
+    try {
+      await window.electronAPI.openDataFolder();
+    } catch (error) {
+      console.error('打开数据文件夹失败:', error);
+    }
+  };
+
+  const handleOpenLogFolder = async () => {
+    if (!window.electronAPI) return;
+    try {
+      await window.electronAPI.openLogFolder();
+    } catch (error) {
+      console.error('打开日志文件夹失败:', error);
+    }
+  };
+
+  const handleClearKnowledge = async () => {
+    if (!window.electronAPI) return;
+    
+    const confirmed = await showConfirm(
+      '删除知识库文件',
+      '确定要删除所有知识库文件吗？此操作不可恢复。',
+      'warning',
+      true
+    );
+    if (!confirmed) return;
+    
+    try {
+      const result = await window.electronAPI.clearKnowledge();
+      if (result.success) {
+        await showAlert(
+          '删除成功',
+          `已删除 ${result.count} 个知识库文件`,
+          'success'
+        );
+      } else {
+        await showAlert('删除失败', `删除失败：${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('删除知识库文件失败:', error);
+      await showAlert('删除失败', '删除知识库文件时发生错误', 'error');
+    }
+  };
+
+  const handleClearCache = async () => {
+    if (!window.electronAPI) return;
+    
+    const confirmed = await showConfirm(
+      '清除缓存',
+      '确定要清除所有缓存吗？',
+      'info',
+      false
+    );
+    if (!confirmed) return;
+    
+    try {
+      const result = await window.electronAPI.clearCache();
+      if (result.success) {
+        setCacheSize('0MB');
+        await showAlert(
+          '清除成功',
+          `已清除 ${result.size} 的缓存`,
+          'success'
+        );
+      } else {
+        await showAlert('清除失败', `清除缓存失败：${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('清除缓存失败:', error);
+      await showAlert('清除失败', '清除缓存时发生错误', 'error');
+    }
+  };
+
+  const handleResetData = async () => {
+    if (!window.electronAPI) return;
+    
+    const confirmed = await showConfirm(
+      '⚠️ 重置数据警告',
+      <>
+        <strong>警告：</strong>重置数据将删除所有设置、历史记录和缓存文件，恢复到初始状态。<br /><br />
+        <strong style={{ color: 'var(--color-error)' }}>此操作不可恢复！</strong><br /><br />
+        确定要继续吗？
+      </>,
+      'error',
+      true
+    );
+    if (!confirmed) return;
+    
+    const doubleCheck = await showConfirm(
+      '⚠️ 再次确认',
+      '您真的要重置所有数据吗？这是最后一次确认机会。',
+      'error',
+      true
+    );
+    if (!doubleCheck) return;
+    
+    try {
+      const result = await window.electronAPI.resetAllData();
+      if (result.success) {
+        await showAlert(
+          '重置成功',
+          '数据已重置，应用将重启。',
+          'success'
+        );
+        window.electronAPI.restartApp();
+      } else {
+        await showAlert('重置失败', `重置数据失败：${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('重置数据失败:', error);
+      await showAlert('重置失败', '重置数据时发生错误', 'error');
+    }
+  };
+
+  // 颜色标签的中文名称
+  const colorLabels: Record<string, string> = {
+    primary: '主色调',
+    primaryLight: '主色调（亮）',
+    primaryDark: '主色调（暗）',
+    background: '背景色',
+    backgroundPattern: '背景图案',
+    surface: '表面颜色',
+    surfaceLight: '表面颜色（亮）',
+    text: '文字颜色',
+    textSecondary: '次要文字',
+    border: '边框颜色',
+    borderLight: '边框颜色（亮）',
+    buttonGradientStart: '按钮渐变（起）',
+    buttonGradientEnd: '按钮渐变（终）',
+    buttonHoverStart: '按钮悬停（起）',
+    buttonHoverEnd: '按钮悬停（终）',
+    inputBackground: '输入框背景',
+    inputBorder: '输入框边框',
+    inputFocus: '输入框焦点',
+    success: '成功色',
+    error: '错误色',
+    warning: '警告色',
+    info: '信息色',
+    menuBackground: '菜单背景',
+    menuBorder: '菜单边框',
+    menuHover: '菜单悬停',
+    dialogBackground: '对话框背景',
+    dialogOverlay: '对话框遮罩'
   };
 
   return (
@@ -735,7 +1294,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
             </SectionTitle>
             
             <InfoNote style={{ marginBottom: '24px' }}>
-              选择您喜欢的主题颜色，应用会立即切换到新主题。
+              选择您喜欢的主题颜色，应用会立即切换到新主题。您也可以选择"自定义主题"来创建专属配色。
             </InfoNote>
 
             <ThemeGrid>
@@ -754,14 +1313,215 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                   <ThemeName>{theme.name}</ThemeName>
                 </ThemeCard>
               ))}
+              
+              {/* 自定义主题卡片 */}
+              <ThemeCard
+                $isActive={currentTheme === 'custom'}
+                onClick={() => onThemeChange && onThemeChange('custom')}
+              >
+                {currentTheme === 'custom' && (
+                  <ActiveBadge>
+                    <MaterialIcon name="check" size={16} style={{ color: 'white' }} />
+                  </ActiveBadge>
+                )}
+                <ThemeColorPreview $color={customTheme.colors.primary} />
+                <ThemeName>
+                  <MaterialIcon name="tune" size={16} /> 自定义主题
+                </ThemeName>
+              </ThemeCard>
             </ThemeGrid>
+
+            {/* 自定义主题编辑器 */}
+            {currentTheme === 'custom' && (
+              <CustomThemeEditor>
+                <CustomThemeTitle>
+                  <MaterialIcon name="color_lens" size={20} />
+                  自定义主题编辑器
+                </CustomThemeTitle>
+                
+                <InfoNote style={{ marginBottom: '20px' }}>
+                  💡 提示：修改颜色后点击"应用"按钮即可实时预览效果。支持 HEX 颜色代码和渐变。
+                </InfoNote>
+
+                <ColorGrid>
+                  {Object.entries(customTheme.colors).map(([key, value]) => {
+                    // 检查是否是渐变或其他复杂值
+                    const isSimpleColor = /^#[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{3}$|^rgba?\(/.test(value);
+                    const displayValue = isSimpleColor ? value : value.split(',')[0].split('(')[1] || '#4a90e2';
+                    
+                    return (
+                      <ColorItem key={key}>
+                        <ColorLabel>{colorLabels[key] || key}</ColorLabel>
+                        <ColorInputWrapper>
+                          {isSimpleColor && (
+                            <ColorInput
+                              type="color"
+                              value={value.startsWith('#') ? value : '#4a90e2'}
+                              onChange={(e) => handleCustomColorChange(key, e.target.value)}
+                            />
+                          )}
+                          <ColorTextInput
+                            type="text"
+                            value={value}
+                            onChange={(e) => handleCustomColorChange(key, e.target.value)}
+                            placeholder="#000000"
+                          />
+                        </ColorInputWrapper>
+                      </ColorItem>
+                    );
+                  })}
+                </ColorGrid>
+
+                <ButtonGroup>
+                  <Button variant="tertiary" onClick={handleResetCustomTheme}>
+                    重置
+                  </Button>
+                  <Button variant="primary" onClick={handleSaveCustomTheme}>
+                    应用
+                  </Button>
+                </ButtonGroup>
+              </CustomThemeEditor>
+            )}
 
             <InfoNote style={{ marginTop: '24px' }}>
               <strong>提示</strong><br/>
-              主题设置会自动保存，下次启动应用时会应用您选择的主题。
+              主题设置会自动保存，下次启动应用时会应用您选择的主题。自定义主题的配色也会被保存。
             </InfoNote>
         </Section>
+
+        {/* 数据设置 */}
+        <Section>
+          <SectionTitle>
+            <MaterialIcon name="storage" size={22} />
+            数据设置
+          </SectionTitle>
+
+          <DataRow>
+            <DataLabel>
+              <DataTitle>数据备份与恢复</DataTitle>
+            </DataLabel>
+            <DataActions>
+              <SmallButton onClick={handleBackupData}>
+                <MaterialIcon name="save" size={16} />
+                备份
+              </SmallButton>
+              <SmallButton onClick={handleRestoreData}>
+                <MaterialIcon name="restore" size={16} />
+                恢复
+              </SmallButton>
+            </DataActions>
+          </DataRow>
+
+          <DataRow>
+            <DataLabel>
+              <DataTitle>精简备份</DataTitle>
+              <DataDescription>
+                备份时跳过备份图片等数据文件，减少空间占用，加快备份速度
+              </DataDescription>
+            </DataLabel>
+            <DataActions>
+              <Toggle>
+                <input
+                  type="checkbox"
+                  checked={simpleBackup}
+                  onChange={(e) => setSimpleBackup(e.target.checked)}
+                />
+                <span></span>
+              </Toggle>
+            </DataActions>
+          </DataRow>
+        </Section>
+
+        {/* 数据目录 */}
+        <Section>
+          <SectionTitle>
+            <MaterialIcon name="folder" size={22} />
+            数据目录
+          </SectionTitle>
+
+          <DataRow>
+            <DataLabel>
+              <DataTitle>应用数据</DataTitle>
+              <DataPath>{dataPath || '加载中...'}</DataPath>
+            </DataLabel>
+            <DataActions>
+              <SmallButton onClick={handleOpenDataFolder}>
+                <MaterialIcon name="folder_open" size={16} />
+                打开目录
+              </SmallButton>
+            </DataActions>
+          </DataRow>
+
+          <DataRow>
+            <DataLabel>
+              <DataTitle>应用日志</DataTitle>
+              <DataPath>{logPath || '加载中...'}</DataPath>
+            </DataLabel>
+            <DataActions>
+              <SmallButton onClick={handleOpenLogFolder}>
+                <MaterialIcon name="description" size={16} />
+                打开日志
+              </SmallButton>
+            </DataActions>
+          </DataRow>
+
+          <DataRow>
+            <DataLabel>
+              <DataTitle>清除缓存</DataTitle>
+              <DataDescription>{cacheSize}</DataDescription>
+            </DataLabel>
+            <DataActions>
+              <SmallButton onClick={handleClearCache}>
+                <MaterialIcon name="cleaning_services" size={16} />
+                清除缓存
+              </SmallButton>
+            </DataActions>
+          </DataRow>
+
+          <DataRow>
+            <DataLabel>
+              <DataTitle>重置数据</DataTitle>
+            </DataLabel>
+            <DataActions>
+              <SmallButton $variant="danger" onClick={handleResetData}>
+                <MaterialIcon name="restore_page" size={16} />
+                重置数据
+              </SmallButton>
+            </DataActions>
+          </DataRow>
+
+          <InfoNote style={{ marginTop: '16px' }}>
+            <strong>注意</strong><br/>
+            重置数据将删除所有应用数据，包括设置、历史记录和缓存文件。此操作不可恢复，请谨慎使用。
+          </InfoNote>
+        </Section>
       </Content>
+
+      {/* 对话框 */}
+      {dialogState.type === 'confirm' && (
+        <DataConfirmDialog
+          isOpen={true}
+          title={dialogState.title}
+          message={dialogState.message}
+          type={dialogState.dialogType}
+          isDanger={dialogState.isDanger}
+          confirmText={dialogState.confirmText}
+          cancelText={dialogState.cancelText}
+          onConfirm={() => dialogState.onConfirm?.()}
+          onCancel={() => dialogState.onCancel?.()}
+        />
+      )}
+
+      {dialogState.type === 'alert' && (
+        <DataAlertDialog
+          isOpen={true}
+          title={dialogState.title}
+          message={dialogState.message}
+          type={dialogState.dialogType}
+          confirmText={dialogState.confirmText}
+          onConfirm={() => dialogState.onConfirm?.()}
+        />
+      )}
     </SettingsContainer>
   );
 };

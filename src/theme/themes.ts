@@ -389,53 +389,43 @@ export const themes: Theme[] = [
       dialogBackground: 'linear-gradient(135deg, #faf3f6 0%, #f0e6ec 100%)',
       dialogOverlay: 'rgba(0, 0, 0, 0.5)',
     }
-  },
-  {
-    id: 'dark',
-    name: '暗黑模式',
-    colors: {
-      primary: '#64b5f6',
-      primaryLight: '#74c5ff',
-      primaryDark: '#54a5e6',
-      
-      background: '#1e1e1e',
-      backgroundPattern: 'rgba(40, 40, 40, 0.3)',
-      
-      surface: '#2d2d2d',
-      surfaceLight: 'rgba(45, 45, 45, 0.7)',
-      
-      text: '#e0e0e0',
-      textSecondary: '#b0b0b0',
-      
-      border: '#404040',
-      borderLight: '#4a4a4a',
-      
-      buttonGradientStart: '#64b5f6',
-      buttonGradientEnd: '#54a5e6',
-      buttonHoverStart: '#74c5ff',
-      buttonHoverEnd: '#64b5f6',
-      
-      inputBackground: '#2d2d2d',
-      inputBorder: '#4a4a4a',
-      inputFocus: '#64b5f6',
-      
-      success: '#4caf50',
-      error: '#f44336',
-      warning: '#ff9800',
-      info: '#2196f3',
-      
-      menuBackground: 'linear-gradient(180deg, #2d2d2d 0%, #252525 100%)',
-      menuBorder: '#404040',
-      menuHover: '#74c5ff',
-      
-      dialogBackground: 'linear-gradient(135deg, #2d2d2d 0%, #252525 100%)',
-      dialogOverlay: 'rgba(0, 0, 0, 0.7)',
-    }
   }
 ];
 
-// 获取主题
+// 获取自定义主题
+export const getCustomTheme = (): Theme | null => {
+  try {
+    const saved = localStorage.getItem('customTheme');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (error) {
+    console.error('读取自定义主题失败:', error);
+  }
+  return null;
+};
+
+// 保存自定义主题
+export const saveCustomTheme = (theme: Theme): void => {
+  try {
+    localStorage.setItem('customTheme', JSON.stringify(theme));
+  } catch (error) {
+    console.error('保存自定义主题失败:', error);
+  }
+};
+
+// 获取主题（包括自定义主题）
 export const getTheme = (themeId: string): Theme => {
+  if (themeId === 'custom') {
+    const customTheme = getCustomTheme();
+    if (customTheme) return customTheme;
+    // 如果没有自定义主题，返回默认主题的副本作为自定义主题模板
+    return {
+      id: 'custom',
+      name: '自定义主题',
+      colors: { ...themes[0].colors }
+    };
+  }
   return themes.find(t => t.id === themeId) || themes[0];
 };
 
@@ -450,6 +440,21 @@ export const applyTheme = (theme: Theme) => {
   
   // 同时更新body的背景色，确保立即生效
   document.body.style.background = theme.colors.background;
+  
+  // 更新 Electron 窗口标题栏颜色（如果在 Electron 环境中）
+  if (window.electronAPI && window.electronAPI.updateWindowTheme) {
+    // 从背景色和文字色计算标题栏颜色
+    const backgroundColor = theme.colors.background;
+    const textColor = theme.colors.text;
+    
+    window.electronAPI.updateWindowTheme(backgroundColor, textColor)
+      .then(() => {
+        console.log(`✅ Electron 窗口颜色已更新: ${backgroundColor}`);
+      })
+      .catch((error: Error) => {
+        console.error('更新 Electron 窗口颜色失败:', error);
+      });
+  }
   
   // 触发重绘，确保所有元素立即更新
   root.style.display = 'none';

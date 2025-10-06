@@ -8,7 +8,7 @@ const Overlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-dialogOverlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,11 +19,12 @@ const Overlay = styled.div`
 const Dialog = styled.div`
   background: var(--color-surface);
   border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px color-mix(in srgb, var(--color-text) 30%, transparent);
   width: 90%;
   max-width: 420px;
   overflow: hidden;
   animation: slideIn 0.2s ease-out;
+  border: 1px solid var(--color-border);
 
   @keyframes slideIn {
     from {
@@ -69,7 +70,7 @@ const CloseButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: color-mix(in srgb, var(--color-text) 5%, transparent);
     color: var(--color-text);
   }
 
@@ -95,7 +96,7 @@ const DialogFooter = styled.div`
   justify-content: flex-end;
   gap: 12px;
   border-top: 1px solid var(--color-borderLight);
-  background: rgba(0, 0, 0, 0.02);
+  background: color-mix(in srgb, var(--color-text) 2%, transparent);
 `;
 
 const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
@@ -115,7 +116,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
     &:hover {
       opacity: 0.9;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--color-error) 30%, transparent);
     }
   ` : `
     background: var(--color-surface);
@@ -123,7 +124,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
     border: 1px solid var(--color-border);
     
     &:hover {
-      background: rgba(0, 0, 0, 0.03);
+      background: color-mix(in srgb, var(--color-text) 3%, transparent);
       border-color: var(--color-primary);
     }
   `}
