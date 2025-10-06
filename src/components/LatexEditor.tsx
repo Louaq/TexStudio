@@ -15,7 +15,7 @@ const Container = styled.div`
 const Label = styled.h3`
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-text);
   margin: 0 0 10px 0;
   display: flex;
   align-items: center;
@@ -28,9 +28,10 @@ const TextArea = styled.textarea<{ readOnly: boolean }>`
   min-height: 226px;
   max-height: 226px;
   padding: 12px;
-  border: 2px solid #dce1e8; /* 增加边框宽度使其更明显 */
+  border: 2px solid var(--color-border); /* 增加边框宽度使其更明显 */
   border-radius: 8px;
-  color: #2c3e50;
+  color: var(--color-text);
+  background: var(--color-inputBackground);
   font-family: "Segoe UI","Microsoft YaHei",sans-serif;
   font-size: 13px;
   line-height: 1.5;
@@ -58,13 +59,13 @@ const TextArea = styled.textarea<{ readOnly: boolean }>`
 
   &:focus {
     outline: none;
-    border-color: #4a90e2;
-    background: white;
+    border-color: var(--color-inputFocus);
+    background: var(--color-inputBackground);
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 2px rgba(74, 144, 226, 0.1);
   }
 
   &::placeholder {
-    color: #95a5a6;
+    color: var(--color-textSecondary);
     font-style: italic;
   }
 
@@ -73,17 +74,17 @@ const TextArea = styled.textarea<{ readOnly: boolean }>`
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--color-borderLight);
     border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e0;
+    background: var(--color-border);
     border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0;
+    background: var(--color-textSecondary);
   }
 `;
 

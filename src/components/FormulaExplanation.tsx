@@ -42,7 +42,7 @@ const ButtonGroup = styled.div`
 const Label = styled.h3`
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-text);
   margin: 0;
   display: flex;
   align-items: center;
@@ -72,7 +72,7 @@ const ExplainButton = styled.button<{ disabled: boolean }>`
   };
 
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
+    background: linear-gradient(135deg, var(--color-buttonHoverStart) 0%, var(--color-buttonHoverEnd) 100%);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
   }
@@ -104,7 +104,7 @@ const ClearButton = styled.button<{ disabled: boolean }>`
   flex-shrink: 0; /* 防止按钮被压缩 */
 
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #ec7063 0%, #e74c3c 100%);
+    background: linear-gradient(135deg, #ec7063 0%, var(--color-error) 100%);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
   }
@@ -131,18 +131,18 @@ const ContentArea = styled.div`
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--color-borderLight);
     border-radius: 3px;
     margin: 2px; /* 给滚动条轨道添加边距 */
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e0;
+    background: var(--color-border);
     border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0;
+    background: var(--color-textSecondary);
   }
   
   /* 确保KaTeX公式正确显示 */

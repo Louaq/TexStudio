@@ -10,7 +10,6 @@ import SettingsView from './views/SettingsView';
 import HistoryView from './views/HistoryView';
 import AboutView from './views/AboutView';
 import UpdateDialog from './components/UpdateDialog';
-import UpdateProgressIndicator from './components/UpdateProgressIndicator';
 import CopyOptionsDialog from './components/CopyOptionsDialog';
 import ExportOptionsDialog from './components/ExportOptionsDialog';
 import HandwritingDialog from './components/HandwritingDialog';
@@ -260,7 +259,12 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
 
     const handleUpdateAvailable = (info: any) => {
       console.log('发现新版本:', info);
-      setUpdateInfo(prev => ({ ...prev, showDialog: true, showIndicator: false, status: 'available', version: info.version }));
+      // 直接开始下载，不显示对话框
+      setUpdateInfo(prev => ({ ...prev, showDialog: false, showIndicator: false, status: 'available', version: info.version }));
+      // 自动开始下载
+      if (window.electronAPI) {
+        window.electronAPI.downloadUpdate();
+      }
     };
 
     const handleUpdateNotAvailable = (info: any) => {
@@ -286,6 +290,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
 
     const handleUpdateDownloaded = (info: any) => {
       setDownloadProgress(100);
+      // 下载完成后显示对话框，让用户选择是否立即重启
       setUpdateInfo({
         showDialog: true,
         showIndicator: false,
@@ -1226,13 +1231,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
     }));
   };
 
-  const handleBackgroundDownload = () => {
-    setUpdateInfo(prev => ({
-      ...prev,
-      showDialog: false,
-      showIndicator: true,
-    }));
-  };
 
   const handleExportFormula = async (format: 'svg' | 'png' | 'jpg') => {
     if (!appState.latexCode.trim()) {
@@ -1540,12 +1538,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         version={updateInfo.version}
         onDownload={handleDownloadUpdate}
         onRestart={handleRestartAndInstall}
-        onBackgroundDownload={handleBackgroundDownload}
-      />
-
-      <UpdateProgressIndicator
-        isVisible={updateInfo.showIndicator}
-        progress={downloadProgress}
+        onBackgroundDownload={() => {}}
       />
     </AppContainer>
   );

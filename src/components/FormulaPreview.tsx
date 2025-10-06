@@ -17,7 +17,7 @@ const Container = styled.div`
 const Label = styled.h3`
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-text);
   margin: 0 0 10px 0;
   display: flex;
   align-items: center;
@@ -29,9 +29,9 @@ const PreviewArea = styled.div`
   padding: 12px;
   min-height: 226px; /* 与LatexEditor保持一致 */
   height: 226px; /* 与LatexEditor保持一致 */
-  border: 2px solid #dce1e8; /* 增加边框宽度使其更明显 */
+  border: 2px solid var(--color-border); /* 增加边框宽度使其更明显 */
   border-radius: 8px;
-  background: linear-gradient(135deg, #fefefe 0%, #f9fafb 100%);
+  background: var(--color-surface);
   display: flex;
   overflow: auto;
   box-sizing: border-box;
@@ -50,16 +50,6 @@ const PreviewArea = styled.div`
     min-height: 226px;
   }
 
-  /* 添加淡色数学元素背景 */
-  background-image: 
-    repeating-linear-gradient(
-      -45deg,
-      rgba(245, 247, 250, 0.5) 0px,
-      rgba(245, 247, 250, 0.5) 1px,
-      transparent 1px,
-      transparent 20px
-    );
-
   .katex-display {
     margin: 0;
   }
@@ -70,14 +60,14 @@ const PreviewArea = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  color: #e74c3c;
+  color: var(--color-error);
   font-size: 13px;
   padding: 8px;
   font-style: italic;
 `;
 
 const PlaceholderText = styled.div`
-  color: #95a5a6;
+  color: var(--color-textSecondary);
   font-style: italic;
   font-size: 13px;
   text-align: center;

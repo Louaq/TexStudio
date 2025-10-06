@@ -6,7 +6,7 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: rgba(250, 250, 252, 0.7);
+  background-color: var(--color-surfaceLight);
   border-radius: 6px;
   padding: 5px;
 `;
@@ -14,7 +14,7 @@ const Container = styled.div`
 const Label = styled.h3`
   font-size: 14px;
   font-weight: 600;
-  color: #3a4a5b;
+  color: var(--color-text);
   margin: 0 0 10px 0;
   display: flex;
   align-items: center;
@@ -24,12 +24,9 @@ const Label = styled.h3`
 
 const ImageContainer = styled.div<{ isDragActive: boolean }>`
   flex: 1;
-  border: 1px dashed ${props => props.isDragActive ? '#4375b9' : '#dce1e8'};
+  border: 1px dashed ${props => props.isDragActive ? 'var(--color-primary)' : 'var(--color-border)'};
   border-radius: 8px;
-  background: ${props => props.isDragActive 
-    ? 'linear-gradient(135deg, rgba(67, 117, 185, 0.08) 0%, rgba(67, 117, 185, 0.04) 100%)'
-    : 'linear-gradient(135deg, #fefefe 0%, #f7f9fc 100%)'
-  };
+  background: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -43,23 +40,23 @@ const ImageContainer = styled.div<{ isDragActive: boolean }>`
 
   /* 添加淡色网格背景，类似于科学论文中的图表网格 */
   background-image: 
-    linear-gradient(rgba(220, 225, 232, 0.3) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(220, 225, 232, 0.3) 1px, transparent 1px);
+    linear-gradient(var(--color-borderLight) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-borderLight) 1px, transparent 1px);
   background-size: 20px 20px;
 
   &:hover {
-    border-color: #4375b9;
-    background: linear-gradient(135deg, rgba(67, 117, 185, 0.05) 0%, rgba(67, 117, 185, 0.02) 100%);
+    border-color: var(--color-primary);
+    opacity: 0.95;
   }
 `;
 
 const PlaceholderText = styled.div`
   text-align: center;
-  color: #4a6583;
+  color: var(--color-text);
   font-size: 15px;
   font-weight: 500;
   line-height: 1.4;
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: var(--color-surfaceLight);
   padding: 15px;
   border-radius: 8px;
 `;
@@ -78,7 +75,8 @@ const DragOverlay = styled.div<{ show: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(67, 117, 185, 0.1);
+  background: var(--color-primaryLight);
+  opacity: 0.1;
   display: ${props => props.show ? 'flex' : 'none'};
   align-items: center;
   justify-content: center;
@@ -87,14 +85,15 @@ const DragOverlay = styled.div<{ show: boolean }>`
 `;
 
 const DragText = styled.div`
-  color: #4375b9;
+  color: var(--color-primary);
   font-size: 16px;
   font-weight: 500;
   text-align: center;
   padding: 16px;
-  border: 1px solid #4375b9;
+  border: 1px solid var(--color-primary);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--color-surface);
+  opacity: 0.95;
 `;
 
 const ManualRecognizeButton = styled.button`
@@ -200,7 +199,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
           <PlaceholderText>
             <MaterialIcon name="photo_camera" /> 将在此处显示识别的图片
             <br />
-            <small style={{ color: '#95a5a6', fontSize: '14px', marginTop: '8px', display: 'block' }}>
+            <small style={{ color: 'var(--color-textSecondary)', fontSize: '14px', marginTop: '8px', display: 'block' }}>
               点击此区域选择图片或拖拽图片文件到此处（最大10MB）
             </small>
           </PlaceholderText>

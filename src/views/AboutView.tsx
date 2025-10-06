@@ -55,12 +55,11 @@ const LogoWrapper = styled.div`
 const AppLogo = styled.div`
   width: 80px;
   height: 80px;
-  border-radius: 16px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 
   img {
     width: 100%;
@@ -375,7 +374,7 @@ const AboutView: React.FC<AboutViewProps> = ({ onCheckForUpdates }) => {
               )}
             </LogoWrapper>
             <AppInfo>
-              <AppName>TexStudio</AppName>
+              <AppName>TexStudio OCR</AppName>
               <AppDescription>一款优雅的数学公式识别与编辑工具</AppDescription>
               <VersionRow>
                 <VersionBadge>v{packageJson.version}</VersionBadge>
