@@ -6,14 +6,24 @@ const TitleBarContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 40px;
+  height: 48px;
   background: var(--color-background);
-  border-bottom: 1px solid var(--color-border);
   user-select: none;
   -webkit-app-region: drag;
   padding: 0 0 0 16px;
   position: relative;
   z-index: 10000;
+  
+  /* 底部边框从侧边栏右侧开始 */
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 48px;
+    right: 0;
+    height: 1px;
+    background: var(--color-border);
+  }
 `;
 
 const TitleSection = styled.div`
@@ -57,16 +67,16 @@ const WindowControls = styled.div`
 
 const ControlButton = styled.button<{ $isClose?: boolean; $isMinimize?: boolean }>`
   width: 48px;
-  height: 40px;
+  height: 48px;
   border: none;
   background: transparent;
   color: var(--color-text);
   cursor: pointer;
   display: flex;
-  align-items: ${props => props.$isMinimize ? 'flex-end' : 'center'};
+  align-items: center;
   justify-content: center;
   transition: background-color 0.15s ease;
-  padding: ${props => props.$isMinimize ? '0 0 12px 0' : '0'};
+  padding: 0;
 
   &:hover {
     background: ${props => props.$isClose 

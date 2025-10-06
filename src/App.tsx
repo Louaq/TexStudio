@@ -106,7 +106,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [showHandwriting, setShowHandwriting] = useState(false);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
-  const [isAutoRecognition, setIsAutoRecognition] = useState(true);
   
   // 添加AI解释重置控制
   const [explanationResetKey, setExplanationResetKey] = useState(0);
@@ -114,56 +113,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
   // 重置AI解释的函数
   const resetAIExplanation = () => {
     setExplanationResetKey(prev => prev + 1);
-  };
-
-  // 切换识别模式的函数
-  const handleToggleRecognitionMode = () => {
-    const newMode = !isAutoRecognition;
-    setIsAutoRecognition(newMode);
-    setAppState(prev => ({ 
-      ...prev, 
-      statusMessage: newMode ? 'ℹ️ 已开启自动识别模式' : 'ℹ️ 已切换为手动识别模式' 
-    }));
-  };
-
-  // 手动识别函数
-  const handleManualRecognize = async () => {
-    if (!appState.currentImage) {
-      setAppState(prev => ({ ...prev, statusMessage: '⚠️ 请先上传或截取图片' }));
-      return;
-    }
-
-    let imagePath = appState.currentImage;
-    
-    // 如果是 data URL（拖拽上传的情况），需要重新保存为临时文件
-    if (imagePath.startsWith('data:')) {
-      if (!window.electronAPI) {
-        setAppState(prev => ({ ...prev, statusMessage: '❌ 浏览器模式不支持此操作' }));
-        return;
-      }
-
-      try {
-        // 将 data URL 转换为 Blob
-        const response = await fetch(imagePath);
-        const blob = await response.blob();
-        const arrayBuffer = await blob.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        
-        // 保存为临时文件
-        const tempFileName = `manual-recognize-${Date.now()}.png`;
-        imagePath = await window.electronAPI.saveTempFile(uint8Array, tempFileName);
-        console.log('手动识别：将 data URL 保存为临时文件:', imagePath);
-      } catch (error) {
-        console.error('转换 data URL 为临时文件失败:', error);
-        // 移除状态消息的设置
-        return;
-      }
-    } else if (imagePath.startsWith('file://')) {
-      // 从文件URL中提取文件路径
-      imagePath = imagePath.substring(7); // 移除 'file://' 前缀
-    }
-
-    await recognizeFormula(imagePath);
   };
 
   useEffect(() => {
@@ -562,13 +511,11 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         setAppState(prev => ({ 
           ...prev, 
           latexCode: '',
-          statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '截图完成，点击识别按钮开始识别'
+          statusMessage: '🔄 准备自动识别...'
         }));
         
-        // 根据识别模式决定是否自动开始识别
-        if (isAutoRecognition) {
-          await recognizeFormula(imagePath);
-        }
+        // 自动开始识别
+        await recognizeFormula(imagePath);
       } else {
         console.error('无效的图片路径或electronAPI不可用');
         setAppState(prev => ({ 
@@ -609,7 +556,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         }
       }
     };
-  }, [settings, isAutoRecognition]); // 依赖于settings和isAutoRecognition
+  }, [settings]); // 依赖于settings
 
   // 拖拽上传
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -659,13 +606,11 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
             setAppState(prev => ({ 
               ...prev, 
               latexCode: '',
-              statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '图片已拖拽上传，点击识别按钮开始识别'
+              statusMessage: '🔄 准备自动识别...'
             }));
             
-            // 根据识别模式决定是否自动开始识别
-            if (isAutoRecognition) {
-              await recognizeFormula(tempPath);
-            }
+            // 自动开始识别
+            await recognizeFormula(tempPath);
           } catch (error) {
             console.error('处理拖拽图片失败:', error);
             setAppState(prev => ({ 
@@ -684,7 +629,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         }));
       }
     }
-  }, [settings, resetAIExplanation, isAutoRecognition]);
+  }, [settings, resetAIExplanation]);
 
   const { getRootProps, isDragActive } = useDropzone({
     onDrop,
@@ -752,13 +697,11 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           ...prev, 
           currentImage: `file://${filePath}`,
           latexCode: '',
-          statusMessage: isAutoRecognition ? '🔄 准备自动识别...' : '图片已上传，点击识别按钮开始识别'
+          statusMessage: '🔄 准备自动识别...'
         }));
         
-        // 根据识别模式决定是否自动开始识别
-        if (isAutoRecognition) {
-          await recognizeFormula(filePath);
-        }
+        // 自动开始识别
+        await recognizeFormula(filePath);
       }
     } catch (error) {
       console.error('上传文件失败:', error);
@@ -1498,13 +1441,11 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
               setShowExportOptions(true);
             }
           }}
-          onToggleRecognitionMode={handleToggleRecognitionMode}
           onCleanupTempFiles={handleCleanupTempFiles}
           onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
           isAlwaysOnTop={isAlwaysOnTop}
-          isAutoRecognition={isAutoRecognition}
-        copyDisabled={!appState.latexCode.trim() || appState.isRecognizing}
-        exportDisabled={!appState.latexCode.trim() || appState.isRecognizing}
+          copyDisabled={!appState.latexCode.trim() || appState.isRecognizing}
+          exportDisabled={!appState.latexCode.trim() || appState.isRecognizing}
       />
 
       {/* 右侧内容区 */}
@@ -1521,12 +1462,10 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
             currentImage={appState.currentImage}
             latexCode={appState.latexCode}
             isRecognizing={appState.isRecognizing}
-            isAutoRecognition={isAutoRecognition}
             isDragActive={isDragActive}
             apiConfig={settings?.apiConfig}
             explanationResetKey={explanationResetKey}
             onUpload={handleUpload}
-            onManualRecognize={handleManualRecognize}
             onLatexChange={(code: string) => {
               setAppState(prev => ({ 
                 ...prev, 

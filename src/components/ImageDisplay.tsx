@@ -140,31 +140,20 @@ const ManualRecognizeButton = styled.button`
 interface ImageDisplayProps {
   imageUrl: string | null;
   isDragActive: boolean;
-  isAutoRecognition: boolean;
   isRecognizing: boolean;
   onUpload?: () => void;
-  onManualRecognize?: () => void;
 }
 
 const ImageDisplay: React.FC<ImageDisplayProps> = ({ 
   imageUrl, 
   isDragActive, 
-  isAutoRecognition, 
   isRecognizing,
-  onUpload,
-  onManualRecognize 
+  onUpload
 }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onUpload) {
       onUpload();
-    }
-  };
-
-  const handleManualRecognize = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onManualRecognize) {
-      onManualRecognize();
     }
   };
 
@@ -175,26 +164,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
       </Label>
       <ImageContainer isDragActive={isDragActive} onClick={handleClick}>
         {imageUrl ? (
-          <>
-            <Image src={imageUrl} alt="待识别的图片" />
-            {/* 只在手动模式且有图片时显示识别按钮 */}
-            {!isAutoRecognition && imageUrl && (
-              <ManualRecognizeButton 
-                onClick={handleManualRecognize}
-                disabled={isRecognizing}
-              >
-                {isRecognizing ? (
-                  <>
-                    <MaterialIcon name="progress_activity" /> 识别中...
-                  </>
-                ) : (
-                  <>
-                    <MaterialIcon name="smart_toy" /> 开始识别
-                  </>
-                )}
-              </ManualRecognizeButton>
-            )}
-          </>
+          <Image src={imageUrl} alt="待识别的图片" />
         ) : (
           <PlaceholderText>
             <MaterialIcon name="photo_camera" /> 将在此处显示识别的图片

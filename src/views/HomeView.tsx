@@ -110,12 +110,10 @@ interface HomeViewProps {
   currentImage: string | null;
   latexCode: string;
   isRecognizing: boolean;
-  isAutoRecognition: boolean;
   isDragActive: boolean;
   apiConfig?: ApiConfig;
   explanationResetKey: number;
   onUpload: () => void;
-  onManualRecognize: () => void;
   onLatexChange: (code: string) => void;
   getRootProps: any;
 }
@@ -124,12 +122,10 @@ const HomeView: React.FC<HomeViewProps> = ({
   currentImage,
   latexCode,
   isRecognizing,
-  isAutoRecognition,
   isDragActive,
   apiConfig,
   explanationResetKey,
   onUpload,
-  onManualRecognize,
   onLatexChange,
   getRootProps
 }) => {
@@ -139,10 +135,8 @@ const HomeView: React.FC<HomeViewProps> = ({
         <ImageDisplay
           imageUrl={currentImage}
           isDragActive={isDragActive}
-          isAutoRecognition={isAutoRecognition}
           isRecognizing={isRecognizing}
           onUpload={onUpload}
-          onManualRecognize={onManualRecognize}
         />
       </TopSection>
       <BottomSection>

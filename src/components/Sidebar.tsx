@@ -13,6 +13,7 @@ const SidebarContainer = styled.div`
   z-index: 100;
   transition: all 0.3s ease;
   overflow-y: auto;
+  position: relative;
   
   /* 滚动条样式 */
   &::-webkit-scrollbar {
@@ -91,11 +92,9 @@ interface SidebarProps {
   onHandwriting: () => void;
   onCopy: () => void;
   onExport: () => void;
-  onToggleRecognitionMode: () => void;
   onCleanupTempFiles: () => void;
   onToggleAlwaysOnTop: () => void;
   isAlwaysOnTop: boolean;
-  isAutoRecognition: boolean;
   copyDisabled?: boolean;
   exportDisabled?: boolean;
 }
@@ -108,35 +107,23 @@ const Sidebar: React.FC<SidebarProps> = ({
   onHandwriting,
   onCopy,
   onExport,
-  onToggleRecognitionMode,
   onCleanupTempFiles,
   onToggleAlwaysOnTop,
   isAlwaysOnTop,
-  isAutoRecognition,
   copyDisabled = false,
   exportDisabled = false
 }) => {
   return (
     <SidebarContainer>
       {/* 主页 */}
-      <MenuItem 
-        $active={currentView === 'home'} 
-        onClick={() => onViewChange('home')}
-        title="主页"
-      >
-        <MaterialIcon name="home" size={20} />
-      </MenuItem>
-
-      {/* 识别模式切换 */}
-      <MenuItem 
-        $highlighted={isAutoRecognition}
-        onClick={onToggleRecognitionMode} 
-        title={isAutoRecognition ? "当前：自动识别模式，点击切换到手动识别" : "当前：手动识别模式，点击切换到自动识别"}
-      >
-        <MaterialIcon name={isAutoRecognition ? "smart_toy" : "back_hand"} size={20} />
-      </MenuItem>
-
-      <Divider />
+        <MenuItem 
+          $active={currentView === 'home'} 
+          onClick={() => onViewChange('home')}
+          title="主页"
+        >
+          <MaterialIcon name="home" size={20} />
+        </MenuItem>
+  
 
       {/* 截图 */}
       <MenuItem onClick={onCapture} title="截图">
@@ -166,7 +153,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         <MaterialIcon name="download" size={20} />
       </MenuItem>
 
-      <Divider />
+      {/* 历史记录 */}
+      <MenuItem 
+        $active={currentView === 'history'} 
+        onClick={() => onViewChange('history')}
+        title="历史记录"
+      >
+        <MaterialIcon name="history" size={20} />
+      </MenuItem>
+
 
       {/* 窗口置顶 */}
       <MenuItem 
@@ -180,17 +175,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* 清理临时文件 */}
       <MenuItem onClick={onCleanupTempFiles} title="清理临时文件">
         <MaterialIcon name="cleaning_services" size={20} />
-      </MenuItem>
-
-      <Divider />
-
-      {/* 历史记录 */}
-      <MenuItem 
-        $active={currentView === 'history'} 
-        onClick={() => onViewChange('history')}
-        title="历史记录"
-      >
-        <MaterialIcon name="history" size={20} />
       </MenuItem>
 
       {/* 设置 */}
