@@ -21,8 +21,8 @@ const GlobalStyle = createGlobalStyle`
     font-family: "Segoe UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: #f8f9fa;
-    color: #2c3e50;
+    background: var(--color-background, #f8f9fa);
+    color: var(--color-text, #2c3e50);
     overflow: hidden;
   }
 
@@ -54,8 +54,8 @@ const GlobalStyle = createGlobalStyle`
 
   /* 选择文本样式 */
   ::selection {
-    background: rgba(74, 144, 226, 0.2);
-    color: #2c3e50;
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--color-text);
   }
 
   /* 输入框焦点样式 */
@@ -63,7 +63,7 @@ const GlobalStyle = createGlobalStyle`
   textarea:focus,
   select:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
   }
 
   /* 禁用拖拽选择 */

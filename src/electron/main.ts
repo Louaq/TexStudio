@@ -2055,6 +2055,38 @@ ipcMain.handle('get-always-on-top', async (event) => {
   }
 });
 
+// 打开外部链接
+ipcMain.handle('open-external', async (event, url: string) => {
+  try {
+    const { shell } = require('electron');
+    await shell.openExternal(url);
+    logger.log(`已使用系统默认浏览器打开链接: ${url}`);
+  } catch (error) {
+    logger.error('打开外部链接失败:', error);
+    throw error;
+  }
+});
+
+// 打开开发者工具
+ipcMain.handle('open-dev-tools', async (event) => {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.webContents.isDevToolsOpened()) {
+        mainWindow.webContents.closeDevTools();
+        logger.log('已关闭开发者工具');
+      } else {
+        mainWindow.webContents.openDevTools();
+        logger.log('已打开开发者工具');
+      }
+    } else {
+      logger.error('主窗口不存在或已销毁');
+    }
+  } catch (error) {
+    logger.error('打开开发者工具失败:', error);
+    throw error;
+  }
+});
+
 // 手动检查更新
 ipcMain.handle('check-for-updates', async (event) => {
   try {

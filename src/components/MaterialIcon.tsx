@@ -6,6 +6,7 @@ interface MaterialIconProps {
   title?: string;
   style?: React.CSSProperties;
   className?: string;
+  color?: string;
 }
 
 // 本地后备 SVG 图标集合
@@ -17,14 +18,14 @@ const LocalIcons: Record<string, React.ReactNode> = {
   ),
 };
 
-const MaterialIcon: React.FC<MaterialIconProps> = ({ name, size = 18, title, style, className }) => {
+const MaterialIcon: React.FC<MaterialIconProps> = ({ name, size = 18, title, style, className, color }) => {
   const normalized = name.toLowerCase();
   const useFallback = normalized === 'ink_eraser' || normalized === 'ink-eraser' || normalized === 'eraser';
 
   if (useFallback) {
     return (
       <span
-        style={{ fontSize: size, lineHeight: 1, verticalAlign: 'middle', display: 'inline-flex', ...style }}
+        style={{ fontSize: size, lineHeight: 1, verticalAlign: 'middle', display: 'inline-flex', color: color || 'inherit', ...style }}
         aria-hidden="true"
         title={title}
         className={className}
@@ -37,7 +38,7 @@ const MaterialIcon: React.FC<MaterialIconProps> = ({ name, size = 18, title, sty
   return (
     <span
       className={`material-symbols-outlined${className ? ` ${className}` : ''}`}
-      style={{ fontSize: size, lineHeight: 1, verticalAlign: 'middle', ...style }}
+      style={{ fontSize: size, lineHeight: 1, verticalAlign: 'middle', color: color || 'inherit', ...style }}
       aria-hidden="true"
       title={title}
     >

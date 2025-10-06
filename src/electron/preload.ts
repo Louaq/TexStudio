@@ -101,6 +101,10 @@ const electronAPI: ElectronAPI = {
   setAlwaysOnTop: (alwaysOnTop: boolean) => ipcRenderer.invoke('set-always-on-top', alwaysOnTop),
   getAlwaysOnTop: () => ipcRenderer.invoke('get-always-on-top'),
   
+  // 打开外部链接和开发者工具
+  openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
+  openDevTools: () => ipcRenderer.invoke('open-dev-tools'),
+  
   // 添加设置最大监听器数量的方法
   setMaxListeners: (count: number) => {
     ipcRenderer.setMaxListeners(count);

@@ -3,186 +3,46 @@ import styled from 'styled-components';
 import { useDropzone } from 'react-dropzone';
 import { AppState, HistoryItem, ApiConfig, CopyMode } from './types';
 import { formatLatex, getCurrentTimestamp, validateApiConfig } from './utils/api';
-import MenuBar from './components/MenuBar';
-import ImageDisplay from './components/ImageDisplay';
-import LatexEditor from './components/LatexEditor';
-import FormulaPreview from './components/FormulaPreview';
-import FormulaExplanation from './components/FormulaExplanation';
-import ApiSettingsDialog from './components/ApiSettingsDialog';
-import ShortcutSettingsDialog from './components/ShortcutSettingsDialog';
-import HistoryDialog from './components/HistoryDialog';
-import AboutDialog from './components/AboutDialog';
+import Sidebar from './components/Sidebar';
+import HomeView from './views/HomeView';
+import SettingsView from './views/SettingsView';
+import HistoryView from './views/HistoryView';
+import AboutView from './views/AboutView';
 import UpdateDialog from './components/UpdateDialog';
 import UpdateProgressIndicator from './components/UpdateProgressIndicator';
 import CopyOptionsDialog from './components/CopyOptionsDialog';
 import ExportOptionsDialog from './components/ExportOptionsDialog';
-import HandwritingDialog from './components/HandwritingDialog'; // 导入手写公式组件
-import NotificationBar from './components/NotificationBar'; // 导入通知栏组件
+import HandwritingDialog from './components/HandwritingDialog';
+import NotificationBar from './components/NotificationBar';
 import * as path from 'path';
 
 const AppContainer = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100vh;
-  background: #f8f9fa;
+  background: var(--color-background);
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: var(--color-text);
+  overflow: hidden;
+`;
+
+const ContentContainer = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background-image: 
     linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),
     repeating-linear-gradient(
       45deg, 
-      rgba(240, 240, 245, 0.3), 
-      rgba(240, 240, 245, 0.3) 15px, 
+      var(--color-backgroundPattern), 
+      var(--color-backgroundPattern) 15px, 
       transparent 15px, 
       transparent 30px
     );
-  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
-  color: #2c3e50;
 `;
 
-const MainContent = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  padding-bottom: 8px; /* 减少底部内边距 */
-  gap: 16px;
-  overflow: hidden;
-  /* 禁用滚动条，内容自适应窗口大小 */
-  height: calc(100vh - 50px); /* 减去菜单栏的高度 */
-  background-color: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  
-  /* 确保有足够的间距，但不要过多 */
-  @media (min-height: 900px) {
-    gap: 20px;
-  }
-`;
-
-const TopSection = styled.div`
-  flex: 1;
-  min-height: 180px;
-  display: flex;
-  flex-direction: column;
-  /* 确保图片区域有合理的最小高度，虚线完全可见 */
-  overflow: visible;
-  /* 确保虚线边框不被裁切 */
-  padding: 2px;
-  background-color: rgba(255, 255, 255, 0.6);
-  border-radius: 8px;
-  
-  /* 根据不同屏幕大小调整比例 */
-  @media (min-height: 768px) {
-    flex: 1.5;
-  }
-  
-  @media (min-height: 900px) {
-    flex: 2;
-  }
-  
-  @media (min-height: 1080px) {
-    flex: 2.5;
-  }
-`;
-
-const BottomSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 20px; /* 进一步增加组件之间的间距 */
-  /* 调整高度以容纳所有组件 */
-  min-height: 540px;
-  max-height: 600px;
-  height: auto;
-  /* 确保不会覆盖图片区域的虚线 */
-  z-index: 1;
-  background-color: rgba(255, 255, 255, 0.6);
-  border-radius: 8px;
-  padding: 15px 15px 15px 15px; /* 增加内边距 */
-`;
-
-const PreviewAndEditorContainer = styled.div`
-  display: flex;
-  gap: 12px;
-  height: 245px; /* 进一步增加高度以确保边框完全可见 */
-  margin-bottom: 22px; /* 增加底部间距，确保边框完全可见 */
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    height: auto;
-    gap: 8px;
-  }
-  
-  @media (max-width: 768px) {
-    gap: 6px;
-  }
-  
-  /* 在大屏幕上自适应调整高度 */
-  @media (min-height: 900px) {
-    height: 245px;
-  }
-  
-  /* 在更大屏幕上进一步调整高度 */
-  @media (min-height: 1080px) {
-    height: 245px;
-  }
-`;
-
-const EditorWrapper = styled.div`
-  flex: 1;
-  min-width: 0;
-  height: 240px;
-  overflow: visible; /* 修改为visible，确保边框可见 */
-  position: relative;
-  padding-bottom: 2px; /* 添加底部内边距 */
-  
-  @media (min-height: 900px) {
-    height: 240px;
-  }
-  
-  @media (min-height: 1080px) {
-    height: 240px;
-  }
-`;
-
-const PreviewWrapper = styled.div`
-  flex: 1;
-  min-width: 0;
-  height: 240px;
-  overflow: visible; /* 修改为visible，确保边框可见 */
-  position: relative;
-  padding-bottom: 2px; /* 添加底部内边距 */
-  
-  @media (min-height: 900px) {
-    height: 240px;
-  }
-  
-  @media (min-height: 1080px) {
-    height: 240px;
-  }
-`;
-
-// 新增：AI解释区域独立容器
-const ExplanationSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 180px; /* 保持适中的高度 */
-  background-color: rgba(248, 250, 252, 0.8);
-  border-radius: 8px;
-  padding: 8px;
-  border: 2px solid rgba(203, 213, 225, 0.7); /* 增加边框宽度和对比度 */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  margin-top: 5px; /* 减少顶部间距，因为我们已经增加了PreviewAndEditorContainer的底部间距 */
-  
-  @media (min-height: 900px) {
-    height: 190px;
-  }
-  
-  @media (min-height: 1080px) {
-    height: 200px;
-  }
-`;
-
-
-
-// 删除StatusBarWrapper样式定义
+// 删除所有旧的样式定义，新的视图组件中已包含
 
 type UpdateStatus = 'idle' | 'checking' | 'available' | 'no-update' | 'downloading' | 'downloaded' | 'error';
 
@@ -193,7 +53,11 @@ interface UpdateInfoState {
   version: string;
 }
 
-function App() {
+interface AppProps {
+  onThemeChange?: (themeId: string) => void;
+}
+
+function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
   const [appState, setAppState] = useState<AppState>({
     currentImage: null,
     latexCode: '',
@@ -225,16 +89,15 @@ function App() {
   const [settings, setSettings] = useState<{
     apiConfig: ApiConfig;
     shortcuts: { capture: string; upload: string };
+    theme?: string;
   } | null>(null);
 
-  const [showApiSettings, setShowApiSettings] = useState(false);
-  const [showShortcutSettings, setShowShortcutSettings] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
-  const [showHelp, setShowHelp] = useState(false); // 新增
+  type ViewType = 'home' | 'settings' | 'history' | 'about';
+  const [currentView, setCurrentView] = useState<ViewType>('home');
+  
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
-  const [showHandwriting, setShowHandwriting] = useState(false); // 添加手写公式对话框状态
+  const [showHandwriting, setShowHandwriting] = useState(false);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
   const [isAutoRecognition, setIsAutoRecognition] = useState(true);
   
@@ -305,9 +168,17 @@ function App() {
           console.log('从Electron加载的设置:', appSettings);
           setSettings({
             apiConfig: appSettings.apiConfig,
-            shortcuts: appSettings.shortcuts
+            shortcuts: appSettings.shortcuts,
+            theme: appSettings.theme || 'default'
           });
           setAppState(prev => ({ ...prev, history: appSettings.history }));
+          
+          // 应用保存的主题
+          if (appSettings.theme) {
+            const { applyTheme, getTheme } = await import('./theme/themes');
+            const theme = getTheme(appSettings.theme);
+            applyTheme(theme);
+          }
         } else {
           const defaultSettings = {
             apiConfig: {
@@ -354,8 +225,16 @@ function App() {
             console.error('加载settings.json失败:', error);
           }
           
-          setSettings(defaultSettings);
+          setSettings({
+            ...defaultSettings,
+            theme: 'default'
+          });
           console.warn('运行在浏览器模式下，使用默认设置');
+          
+          // 应用默认主题
+          const { applyTheme, getTheme } = await import('./theme/themes');
+          const theme = getTheme('default');
+          applyTheme(theme);
         }
       } catch (error) {
         console.error('加载设置失败:', error);
@@ -1037,8 +916,8 @@ function App() {
       // 清空AI解释区域
       resetAIExplanation();
       
-      // 先关闭历史记录对话框
-      setShowHistory(false);
+      // 切换回主视图
+      setCurrentView('home');
       
       // 确保latex是有效的
       if (typeof latex === 'string' && latex.trim()) {
@@ -1052,8 +931,6 @@ function App() {
       }
     } catch (error) {
       console.error('使用历史记录项失败:', error);
-      // 确保即使出错也能关闭历史记录对话框
-      setShowHistory(false);
     }
   };
 
@@ -1066,7 +943,6 @@ function App() {
         console.error('清空历史记录失败:', error);
       }
     }
-    setShowHistory(false);
   };
   const handleDeleteHistoryItem = async (latex: string) => {
     const newHistory = appState.history.filter(item => item.latex !== latex);
@@ -1150,7 +1026,6 @@ function App() {
         setSettings(prev => prev ? { ...prev, apiConfig } : null);
       }
     }
-    setShowApiSettings(false);
   };
   const handleSaveShortcutSettings = async (shortcuts: { capture: string; upload: string }) => {
     if (window.electronAPI) {
@@ -1162,7 +1037,49 @@ function App() {
       }
     }
     setSettings(prev => prev ? { ...prev, shortcuts } : null);
-    setShowShortcutSettings(false);
+  };
+
+  const handleThemeChange = (themeId: string) => {
+    try {
+      // 动态导入主题模块并立即应用
+      import('./theme/themes').then(({ getTheme, applyTheme }) => {
+        const theme = getTheme(themeId);
+        
+        // 🔥 立即应用主题 - 不需要重启
+        applyTheme(theme);
+        
+        // 保存主题设置到localStorage（确保下次启动时也使用该主题）
+        localStorage.setItem('selectedTheme', themeId);
+        
+        // 更新应用状态
+        setSettings(prev => prev ? { ...prev, theme: themeId } : null);
+        
+        // 如果在Electron环境中，也保存到设置文件
+        if (window.electronAPI) {
+          window.electronAPI.saveSettings({ theme: themeId }).catch(console.error);
+        }
+        
+        // 显示成功提示
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: `✅ 主题已切换为 ${theme.name}`
+        }));
+        
+        // 2秒后清除提示
+        setTimeout(() => {
+          setAppState(prev => ({ 
+            ...prev, 
+            statusMessage: null
+          }));
+        }, 2000);
+      });
+    } catch (error) {
+      console.error('切换主题失败:', error);
+      setAppState(prev => ({ 
+        ...prev, 
+        statusMessage: '❌ 主题切换失败'
+      }));
+    }
   };
   const handleToggleAlwaysOnTop = async () => {
     if (!window.electronAPI) {
@@ -1494,10 +1411,13 @@ function App() {
 
   return (
     <AppContainer>
-      <MenuBar
+      {/* 左侧导航栏 */}
+      <Sidebar
+        currentView={currentView}
+        onViewChange={setCurrentView}
         onCapture={handleCapture}
         onUpload={handleUpload}
-        onHandwriting={handleHandwriting} // 添加手写公式处理函数
+        onHandwriting={handleHandwriting}
         onCopy={() => {
           if (appState.latexCode.trim() && !appState.isRecognizing) {
             setShowCopyOptions(true);
@@ -1509,105 +1429,75 @@ function App() {
           }
         }}
         onToggleRecognitionMode={handleToggleRecognitionMode}
-        onShowApiSettings={() => setShowApiSettings(true)}
-        onShowShortcutSettings={() => setShowShortcutSettings(true)}
-        onShowHistory={() => setShowHistory(true)}
-        onShowAbout={() => setShowAbout(true)}
         onCleanupTempFiles={handleCleanupTempFiles}
         onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
-        onCheckForUpdates={handleCheckForUpdates}
         isAlwaysOnTop={isAlwaysOnTop}
         isAutoRecognition={isAutoRecognition}
         copyDisabled={!appState.latexCode.trim() || appState.isRecognizing}
         exportDisabled={!appState.latexCode.trim() || appState.isRecognizing}
       />
-      
-      {/* 添加通知栏 */}
-      <NotificationBar 
-        message={appState.statusMessage}
-        onClose={() => setAppState(prev => ({ ...prev, statusMessage: null }))}
-      />
-      <MainContent {...getRootProps()}>
-        <TopSection>
-          <ImageDisplay
-            imageUrl={appState.currentImage}
-            isDragActive={isDragActive}
-            isAutoRecognition={isAutoRecognition}
+
+      {/* 右侧内容区 */}
+      <ContentContainer>
+        {/* 通知栏 */}
+        <NotificationBar 
+          message={appState.statusMessage}
+          onClose={() => setAppState(prev => ({ ...prev, statusMessage: null }))}
+        />
+
+        {/* 根据当前视图显示不同内容 */}
+        {currentView === 'home' && (
+          <HomeView
+            currentImage={appState.currentImage}
+            latexCode={appState.latexCode}
             isRecognizing={appState.isRecognizing}
+            isAutoRecognition={isAutoRecognition}
+            isDragActive={isDragActive}
+            apiConfig={settings?.apiConfig}
+            explanationResetKey={explanationResetKey}
             onUpload={handleUpload}
             onManualRecognize={handleManualRecognize}
+            onLatexChange={(code: string) => {
+              setAppState(prev => ({ 
+                ...prev, 
+                latexCode: code,
+                statusMessage: (!prev.latexCode && code) ? 'ℹ️ 正在手动编辑LaTeX代码' : prev.statusMessage
+              }));
+              if (code !== appState.latexCode) {
+                resetAIExplanation();
+              }
+            }}
+            getRootProps={getRootProps}
           />
-        </TopSection>
-        <BottomSection>
-          <PreviewAndEditorContainer>
-            <EditorWrapper>
-              <LatexEditor
-                value={appState.latexCode}
-                onChange={(code: string) => {
-                  setAppState(prev => ({ 
-                    ...prev, 
-                    latexCode: code,
-                    // 仅当从无内容变为有内容时显示通知
-                    statusMessage: (!prev.latexCode && code) ? 'ℹ️ 正在手动编辑LaTeX代码' : prev.statusMessage
-                  }));
-                  // 重置AI解释区域
-                  if (code !== appState.latexCode) {
-                    resetAIExplanation();
-                  }
-                }}
-                readOnly={appState.isRecognizing}
-              />
-            </EditorWrapper>
-            <PreviewWrapper>
-              <FormulaPreview
-                latex={appState.latexCode}
-                isLoading={appState.isRecognizing}
-              />
-            </PreviewWrapper>
-          </PreviewAndEditorContainer>
-          
-          <ExplanationSection>
-            <FormulaExplanation
-              latex={appState.latexCode}
-              deepSeekConfig={settings?.apiConfig?.deepSeek}
-              resetKey={explanationResetKey}
-            />
-          </ExplanationSection>
-        </BottomSection>
-      </MainContent>
+        )}
 
-      {/* 对话框 */}
-      {showApiSettings && (
-        <ApiSettingsDialog
-          apiConfig={settings?.apiConfig || { appId: '', appSecret: '', endpoint: '' }}
-          onSave={handleSaveApiSettings}
-          onClose={() => setShowApiSettings(false)}
-        />
-      )}
+        {currentView === 'settings' && (
+          <SettingsView
+            apiConfig={settings?.apiConfig || { appId: '', appSecret: '', endpoint: '' }}
+            shortcuts={settings?.shortcuts || { capture: '', upload: '' }}
+            currentTheme={settings?.theme || 'default'}
+            onSaveApi={handleSaveApiSettings}
+            onSaveShortcuts={handleSaveShortcutSettings}
+            onThemeChange={handleThemeChange}
+            onCheckForUpdates={handleCheckForUpdates}
+          />
+        )}
 
-      {showShortcutSettings && (
-        <ShortcutSettingsDialog
-          shortcuts={settings?.shortcuts || { capture: '', upload: '' }}
-          onSave={handleSaveShortcutSettings}
-          onClose={() => setShowShortcutSettings(false)}
-        />
-      )}
+        {currentView === 'history' && (
+          <HistoryView
+            history={appState.history}
+            onUse={handleUseHistory}
+            onDelete={handleDeleteHistoryItem}
+            onClear={handleClearHistory}
+          />
+        )}
 
-      {showHistory && (
-        <HistoryDialog
-          history={appState.history}
-          onUse={handleUseHistory}
-          onDelete={handleDeleteHistoryItem}
-          onClear={handleClearHistory}
-          onClose={() => setShowHistory(false)}
-        />
-      )}
+        {currentView === 'about' && (
+          <AboutView onCheckForUpdates={handleCheckForUpdates} />
+        )}
+      </ContentContainer>
 
-      {showAbout && (
-        <AboutDialog onClose={() => setShowAbout(false)} />
-      )}
-
-      {/* 手写公式对话框 */}
+      {/* 保留的对话框（手写公式、复制选项、导出选项、更新对话框） */}
       {showHandwriting && (
         <HandwritingDialog
           onClose={() => setShowHandwriting(false)}

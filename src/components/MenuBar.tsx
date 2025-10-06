@@ -58,10 +58,8 @@ const MenuIcon = {
   autoMode: Icon("smart_toy"),
   manualMode: Icon("back_hand"),
   history: Icon("history"),
-  api: Icon("vpn_key"),
-  shortcut: Icon("keyboard"),
+  settings: Icon("settings"),
   cleanup: Icon("cleaning_services"),
-  update: Icon("new_releases"),
   pin: Icon("push_pin"),
   about: Icon("info")
 };
@@ -73,13 +71,11 @@ interface MenuBarProps {
   onCopy: () => void;
   onExport: () => void;
   onToggleRecognitionMode: () => void;
-  onShowApiSettings: () => void;
-  onShowShortcutSettings: () => void;
+  onShowSettings: () => void;
   onShowHistory: () => void;
   onShowAbout: () => void;
   onCleanupTempFiles: () => void;
   onToggleAlwaysOnTop: () => void;
-  onCheckForUpdates?: () => void;
   isAlwaysOnTop: boolean;
   isAutoRecognition: boolean;
   copyDisabled?: boolean;
@@ -93,13 +89,11 @@ const MenuBar: React.FC<MenuBarProps> = ({
   onCopy,
   onExport,
   onToggleRecognitionMode,
-  onShowApiSettings,
-  onShowShortcutSettings,
+  onShowSettings,
   onShowHistory,
   onShowAbout,
   onCleanupTempFiles,
   onToggleAlwaysOnTop,
-  onCheckForUpdates,
   isAlwaysOnTop,
   isAutoRecognition,
   copyDisabled = false,
@@ -162,27 +156,15 @@ const MenuBar: React.FC<MenuBarProps> = ({
       
       <Divider />
       
-      {/* API设置 */}
-      <MenuItem onClick={onShowApiSettings} title="API设置">
-        {MenuIcon.api}
-      </MenuItem>
-      
-      {/* 快捷键设置 */}
-      <MenuItem onClick={onShowShortcutSettings} title="快捷键设置">
-        {MenuIcon.shortcut}
+      {/* 设置 */}
+      <MenuItem onClick={onShowSettings} title="设置">
+        {MenuIcon.settings}
       </MenuItem>
       
       {/* 清理临时文件 */}
       <MenuItem onClick={onCleanupTempFiles} title="清理临时文件">
         {MenuIcon.cleanup}
       </MenuItem>
-      
-      {/* 检查更新 */}
-      {onCheckForUpdates && (
-        <MenuItem onClick={onCheckForUpdates} title="检查更新">
-          {MenuIcon.update}
-        </MenuItem>
-      )}
       
       <Divider />
       

@@ -40,6 +40,7 @@ export interface AppSettings {
   apiConfig: ApiConfig;
   shortcuts: ShortcutConfig;
   history: HistoryItem[];
+  theme?: string; // 主题ID
 }
 export interface ShortcutConfig {
   capture: string;
@@ -140,6 +141,10 @@ export interface ElectronAPI {
   // 窗口置顶
   setAlwaysOnTop: (alwaysOnTop: boolean) => Promise<{ success: boolean; alwaysOnTop: boolean }>;
   getAlwaysOnTop: () => Promise<{ success: boolean; alwaysOnTop: boolean }>;
+  
+  // 打开外部链接和开发者工具
+  openExternal: (url: string) => Promise<void>;
+  openDevTools: () => Promise<void>;
   
   // IPC设置
   setMaxListeners: (count: number) => void;
