@@ -419,14 +419,16 @@ export const getTheme = (themeId: string): Theme => {
   if (themeId === 'custom') {
     const customTheme = getCustomTheme();
     if (customTheme) return customTheme;
-    // 如果没有自定义主题，返回默认主题的副本作为自定义主题模板
+    // 如果没有自定义主题，返回清新绿色主题的副本作为自定义主题模板
+    const greenTheme = themes.find(t => t.id === 'green') || themes[0];
     return {
       id: 'custom',
       name: '自定义主题',
-      colors: { ...themes[0].colors }
+      colors: { ...greenTheme.colors }
     };
   }
-  return themes.find(t => t.id === themeId) || themes[0];
+  const greenTheme = themes.find(t => t.id === 'green');
+  return themes.find(t => t.id === themeId) || greenTheme || themes[0];
 };
 
 // 应用主题到CSS变量 - 立即生效

@@ -176,7 +176,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           setSettings({
             apiConfig: appSettings.apiConfig,
             shortcuts: appSettings.shortcuts,
-            theme: appSettings.theme || 'default'
+            theme: appSettings.theme || 'green'
           });
           setAppState(prev => ({ ...prev, history: appSettings.history }));
           
@@ -234,13 +234,13 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           
           setSettings({
             ...defaultSettings,
-            theme: 'default'
+            theme: 'green'
           });
           console.warn('运行在浏览器模式下，使用默认设置');
           
           // 应用默认主题
           const { applyTheme, getTheme } = await import('./theme/themes');
-          const theme = getTheme('default');
+          const theme = getTheme('green');
           applyTheme(theme);
         }
       } catch (error) {
@@ -1485,7 +1485,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           <SettingsView
             apiConfig={settings?.apiConfig || { appId: '', appSecret: '', endpoint: '' }}
             shortcuts={settings?.shortcuts || { capture: '', upload: '' }}
-            currentTheme={settings?.theme || 'default'}
+            currentTheme={settings?.theme || 'green'}
             onSaveApi={handleSaveApiSettings}
             onSaveShortcuts={handleSaveShortcutSettings}
             onThemeChange={handleThemeChange}

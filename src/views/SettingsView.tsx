@@ -667,7 +667,7 @@ interface SettingsViewProps {
 const SettingsView: React.FC<SettingsViewProps> = ({
   apiConfig,
   shortcuts,
-  currentTheme = 'default',
+  currentTheme = 'green',
   onSaveApi,
   onSaveShortcuts,
   onThemeChange,
@@ -850,10 +850,11 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   const handleResetCustomTheme = () => {
+    const greenTheme = themes.find(t => t.id === 'green') || themes[0];
     const defaultTheme = {
       id: 'custom',
       name: '自定义主题',
-      colors: { ...themes[0].colors }
+      colors: { ...greenTheme.colors }
     };
     setCustomTheme(defaultTheme);
     saveCustomTheme(defaultTheme);

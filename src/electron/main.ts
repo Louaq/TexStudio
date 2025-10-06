@@ -58,6 +58,8 @@ interface AutoUpdaterFunctions {
 let autoUpdaterFunctions: AutoUpdaterFunctions;
 let isUpdating = false;
 let hasShownUpdateNotice = false;
+let isCheckingForUpdates = false; // 防止并发检查
+let checkUpdateTimeout: NodeJS.Timeout | null = null;
 function setupAutoUpdater() {
   autoUpdater.logger = logger;
   autoUpdater.autoDownload = false;
@@ -73,18 +75,53 @@ function setupAutoUpdater() {
   }
   autoUpdater.on('error', (error) => {
     logger.error('更新检查失败:', error);
+    isCheckingForUpdates = false; // 重置检查状态
+    if (checkUpdateTimeout) {
+      clearTimeout(checkUpdateTimeout);
+      checkUpdateTimeout = null;
+    }
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('update-error', error.message);
+      // 提供更详细的错误信息
+      let errorMsg = error.message || '未知错误';
+      if (errorMsg.includes('net::')) {
+        errorMsg = '网络连接失败，请检查网络后重试';
+      } else if (errorMsg.includes('ENOTFOUND') || errorMsg.includes('EAI_AGAIN')) {
+        errorMsg = 'DNS解析失败，请检查网络连接';
+      } else if (errorMsg.includes('timeout')) {
+        errorMsg = '连接超时，请稍后重试';
+      } else if (errorMsg.includes('403') || errorMsg.includes('rate limit')) {
+        errorMsg = 'GitHub API限流，请稍后再试';
+      }
+      mainWindow.webContents.send('update-error', errorMsg);
     }
   });
   autoUpdater.on('checking-for-update', () => {
     logger.log('正在检查更新...');
+    isCheckingForUpdates = true;
+    // 设置30秒超时
+    if (checkUpdateTimeout) {
+      clearTimeout(checkUpdateTimeout);
+    }
+    checkUpdateTimeout = setTimeout(() => {
+      if (isCheckingForUpdates) {
+        logger.error('检查更新超时（30秒）');
+        isCheckingForUpdates = false;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('update-error', '检查更新超时，请检查网络连接');
+        }
+      }
+    }, 30000); // 30秒超时
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('checking-for-update');
     }
   });
   autoUpdater.on('update-available', (info) => {
     logger.log('发现新版本:', info);
+    isCheckingForUpdates = false; // 重置检查状态
+    if (checkUpdateTimeout) {
+      clearTimeout(checkUpdateTimeout);
+      checkUpdateTimeout = null;
+    }
     if (mainWindow && !mainWindow.isDestroyed() && !hasShownUpdateNotice) {
       hasShownUpdateNotice = true;
       // 仅发送事件通知渲染进程，由渲染进程显示自己的对话框
@@ -95,6 +132,11 @@ function setupAutoUpdater() {
   // 没有可用更新
   autoUpdater.on('update-not-available', (info) => {
     logger.log('当前已是最新版本:', info);
+    isCheckingForUpdates = false; // 重置检查状态
+    if (checkUpdateTimeout) {
+      clearTimeout(checkUpdateTimeout);
+      checkUpdateTimeout = null;
+    }
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('update-not-available', info);
     }
@@ -119,24 +161,59 @@ function setupAutoUpdater() {
   return {
     shouldCheckForUpdates,
     checkForUpdates: () => {
+      // 防止并发检查
+      if (isCheckingForUpdates) {
+        logger.log('已有检查更新任务在进行中，跳过本次请求');
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('update-error', '正在检查更新，请稍候...');
+        }
+        return;
+      }
+      
       try {
         logger.log('手动触发检查更新');
-        autoUpdater.checkForUpdates();
+        autoUpdater.checkForUpdates().catch((error) => {
+          logger.error('checkForUpdates promise rejected:', error);
+          isCheckingForUpdates = false;
+          if (checkUpdateTimeout) {
+            clearTimeout(checkUpdateTimeout);
+            checkUpdateTimeout = null;
+          }
+        });
       } catch (error) {
         logger.error('检查更新失败:', error);
+        isCheckingForUpdates = false;
+        if (checkUpdateTimeout) {
+          clearTimeout(checkUpdateTimeout);
+          checkUpdateTimeout = null;
+        }
       }
     }
   };
 }
 
-// 手动检查更新
-function checkForUpdates() {
+// 手动检查更新（带重试机制）
+function checkForUpdates(retryCount: number = 0) {
   if (!app.isPackaged) {
     logger.log('开发模式不检查更新');
     return;
   }
+  
+  // 防止并发检查
+  if (isCheckingForUpdates) {
+    logger.log('已有检查更新任务在进行中，跳过本次请求');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-error', '正在检查更新，请稍候...');
+    }
+    return;
+  }
+  
+  const maxRetries = 3;
+  const retryDelayMs = 2000; // 2秒后重试
+  
   try {
-    logger.log('手动触发检查更新');
+    logger.log(`手动触发检查更新 (尝试 ${retryCount + 1}/${maxRetries})`);
+    
     autoUpdater.checkForUpdates()
       .then(result => {
         if (result && result.updateInfo) {
@@ -146,10 +223,51 @@ function checkForUpdates() {
         }
       })
       .catch(error => {
-        logger.error('检查更新出错:', error);
+        logger.error(`检查更新出错 (尝试 ${retryCount + 1}/${maxRetries}):`, error);
+        isCheckingForUpdates = false;
+        if (checkUpdateTimeout) {
+          clearTimeout(checkUpdateTimeout);
+          checkUpdateTimeout = null;
+        }
+        
+        // 如果还有重试次数，则自动重试
+        if (retryCount < maxRetries - 1) {
+          logger.log(`${retryDelayMs / 1000}秒后重试...`);
+          setTimeout(() => {
+            checkForUpdates(retryCount + 1);
+          }, retryDelayMs);
+        } else {
+          logger.error('已达到最大重试次数，检查更新失败');
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            let errorMsg = '检查更新失败，请稍后重试';
+            if (error.message) {
+              if (error.message.includes('net::') || error.message.includes('ENOTFOUND')) {
+                errorMsg = '网络连接失败，请检查网络后重试';
+              } else if (error.message.includes('timeout')) {
+                errorMsg = '连接超时，请检查网络后重试';
+              } else if (error.message.includes('403') || error.message.includes('rate limit')) {
+                errorMsg = 'GitHub API限流，请稍后再试';
+              }
+            }
+            mainWindow.webContents.send('update-error', errorMsg);
+          }
+        }
       });
   } catch (error) {
     logger.error('检查更新失败:', error);
+    isCheckingForUpdates = false;
+    if (checkUpdateTimeout) {
+      clearTimeout(checkUpdateTimeout);
+      checkUpdateTimeout = null;
+    }
+    
+    // 同样的重试逻辑
+    if (retryCount < maxRetries - 1) {
+      logger.log(`${retryDelayMs / 1000}秒后重试...`);
+      setTimeout(() => {
+        checkForUpdates(retryCount + 1);
+      }, retryDelayMs);
+    }
   }
 }
 
@@ -2139,6 +2257,8 @@ ipcMain.handle('update-window-theme', async (event, backgroundColor: string, tex
 });
 
 // 手动检查更新
+let lastCheckTime = 0;
+const CHECK_UPDATE_DEBOUNCE_MS = 5000; // 5秒防抖
 ipcMain.handle('check-for-updates', async (event) => {
   try {
     logger.log('手动触发检查更新');
@@ -2147,13 +2267,25 @@ ipcMain.handle('check-for-updates', async (event) => {
       return { success: false, message: '开发模式下不检查更新' };
     }
 
+    // 防抖：限制检查频率
+    const now = Date.now();
+    if (now - lastCheckTime < CHECK_UPDATE_DEBOUNCE_MS) {
+      const remainingTime = Math.ceil((CHECK_UPDATE_DEBOUNCE_MS - (now - lastCheckTime)) / 1000);
+      logger.log(`检查更新过于频繁，请等待 ${remainingTime} 秒`);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update-error', `请等待 ${remainingTime} 秒后再试`);
+      }
+      return { success: false, message: `请等待 ${remainingTime} 秒后再试` };
+    }
+    lastCheckTime = now;
+
     // 重置更新通知标志，确保手动检查时可以显示通知
     hasShownUpdateNotice = false;
 
     if (autoUpdaterFunctions) {
       autoUpdaterFunctions.checkForUpdates();
     } else {
-      checkForUpdates();
+      checkForUpdates(0); // 从第0次重试开始
     }
     return { success: true, message: '已开始检查更新' };
   } catch (error) {
