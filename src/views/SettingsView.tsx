@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { ApiConfig } from '../types';
+import { ApiConfig, SidebarConfig, SidebarItem } from '../types';
 import MaterialIcon from '../components/MaterialIcon';
 import { themes, getTheme, saveCustomTheme, Theme } from '../theme/themes';
 import { DataConfirmDialog, DataAlertDialog } from '../components/DataDialog';
+import { getDefaultSidebarConfig } from '../components/Sidebar';
 
 const SettingsContainer = styled.div`
   flex: 1;
@@ -654,30 +655,126 @@ const Toggle = styled.label`
   }
 `;
 
+const SidebarItemCard = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #fafbfc;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f1f3f5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+`;
+
+const SidebarItemInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+`;
+
+const SidebarItemIcon = styled.div`
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 8px;
+`;
+
+const SidebarItemText = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const SidebarItemName = styled.span`
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+`;
+
+const SidebarItemId = styled.span`
+  font-size: 12px;
+  color: var(--color-textSecondary);
+  font-family: "Cascadia Code", "Consolas", monospace;
+`;
+
+const SidebarItemControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const OrderButton = styled.button`
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: white;
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+`;
+
+const SidebarList = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
 interface SettingsViewProps {
   apiConfig: ApiConfig;
   shortcuts: { capture: string; upload: string };
   currentTheme?: string;
+  sidebarConfig?: SidebarConfig;
   onSaveApi: (config: ApiConfig) => void;
   onSaveShortcuts: (shortcuts: { capture: string; upload: string }) => void;
   onThemeChange?: (themeId: string) => void;
   onCheckForUpdates?: () => void;
+  onSaveSidebarConfig?: (config: SidebarConfig) => void;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({
   apiConfig,
   shortcuts,
   currentTheme = 'green',
+  sidebarConfig,
   onSaveApi,
   onSaveShortcuts,
   onThemeChange,
-  onCheckForUpdates
+  onCheckForUpdates,
+  onSaveSidebarConfig
 }) => {
   const [apiFormData, setApiFormData] = useState<ApiConfig>(apiConfig);
   const [shortcutFormData, setShortcutFormData] = useState(shortcuts);
   const [listeningFor, setListeningFor] = useState<'capture' | 'upload' | null>(null);
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
   const [customTheme, setCustomTheme] = useState<Theme>(getTheme('custom'));
+  const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>(
+    sidebarConfig?.items || getDefaultSidebarConfig().items
+  );
   
   // 数据设置相关状态
   const [simpleBackup, setSimpleBackup] = useState(false);
@@ -708,6 +805,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({
       setCustomTheme(getTheme('custom'));
     }
   }, [currentTheme]);
+
+  // 当外部配置变化时更新内部状态
+  useEffect(() => {
+    if (sidebarConfig?.items) {
+      setSidebarItems(sidebarConfig.items);
+    }
+  }, [sidebarConfig]);
 
   // API设置相关函数
   const handleApiChange = (field: keyof ApiConfig, value: string) => {
@@ -1104,6 +1208,51 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
+  // 侧边栏配置相关函数
+  const handleToggleVisibility = (id: string) => {
+    setSidebarItems(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, visible: !item.visible } : item
+      )
+    );
+  };
+
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return;
+    setSidebarItems(prev => {
+      const newItems = [...prev];
+      [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
+      // 重新计算 order
+      return newItems.map((item, idx) => ({ ...item, order: idx }));
+    });
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === sidebarItems.length - 1) return;
+    setSidebarItems(prev => {
+      const newItems = [...prev];
+      [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+      // 重新计算 order
+      return newItems.map((item, idx) => ({ ...item, order: idx }));
+    });
+  };
+
+  const handleSaveSidebar = () => {
+    if (onSaveSidebarConfig) {
+      onSaveSidebarConfig({ items: sidebarItems });
+      showAlert('保存成功', '侧边栏配置已保存', 'success');
+    }
+  };
+
+  const handleResetSidebar = () => {
+    const defaultConfig = getDefaultSidebarConfig();
+    setSidebarItems(defaultConfig.items);
+    if (onSaveSidebarConfig) {
+      onSaveSidebarConfig(defaultConfig);
+    }
+    showAlert('重置成功', '侧边栏配置已恢复默认', 'success');
+  };
+
   // 颜色标签的中文名称
   const colorLabels: Record<string, string> = {
     primary: '主色调',
@@ -1388,6 +1537,73 @@ const SettingsView: React.FC<SettingsViewProps> = ({
               <strong>提示</strong><br/>
               主题设置会自动保存，下次启动应用时会应用您选择的主题。自定义主题的配色也会被保存。
             </InfoNote>
+        </Section>
+
+        {/* 侧边栏配置 */}
+        <Section>
+          <SectionTitle>
+            <MaterialIcon name="view_sidebar" size={22} />
+            侧边栏配置
+          </SectionTitle>
+
+          <InfoNote style={{ marginBottom: '24px' }}>
+            可以调整侧边栏选项的显示顺序和可见性。使用上下箭头调整顺序，使用开关控制显示/隐藏。
+          </InfoNote>
+
+          <SidebarList>
+            {sidebarItems.map((item, index) => (
+              <SidebarItemCard key={item.id}>
+                <SidebarItemInfo>
+                  <SidebarItemIcon>
+                    <MaterialIcon name={item.icon} size={20} />
+                  </SidebarItemIcon>
+                  <SidebarItemText>
+                    <SidebarItemName>{item.label}</SidebarItemName>
+                    <SidebarItemId>{item.id}</SidebarItemId>
+                  </SidebarItemText>
+                </SidebarItemInfo>
+                
+                <SidebarItemControls>
+                  <OrderButton
+                    onClick={() => handleMoveUp(index)}
+                    disabled={index === 0}
+                    title="上移"
+                  >
+                    <MaterialIcon name="arrow_upward" size={18} />
+                  </OrderButton>
+                  <OrderButton
+                    onClick={() => handleMoveDown(index)}
+                    disabled={index === sidebarItems.length - 1}
+                    title="下移"
+                  >
+                    <MaterialIcon name="arrow_downward" size={18} />
+                  </OrderButton>
+                  <Toggle>
+                    <input
+                      type="checkbox"
+                      checked={item.visible}
+                      onChange={() => handleToggleVisibility(item.id)}
+                    />
+                    <span></span>
+                  </Toggle>
+                </SidebarItemControls>
+              </SidebarItemCard>
+            ))}
+          </SidebarList>
+
+          <ButtonGroup>
+            <Button variant="tertiary" onClick={handleResetSidebar}>
+              重置
+            </Button>
+            <Button variant="primary" onClick={handleSaveSidebar}>
+              保存
+            </Button>
+          </ButtonGroup>
+
+          <InfoNote style={{ marginTop: '16px' }}>
+            <strong>注意</strong><br/>
+            隐藏的选项将不会在侧边栏中显示。至少保留一个可见的选项以便访问应用功能。
+          </InfoNote>
         </Section>
 
         {/* 数据设置 */}

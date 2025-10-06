@@ -36,11 +36,26 @@ export interface SimpletexResponse {
     conf?: number;
   };
 }
+// 侧边栏菜单项配置
+export interface SidebarItem {
+  id: string;
+  label: string;
+  icon: string;
+  visible: boolean;
+  order: number;
+  type: 'view' | 'action';
+}
+
+export interface SidebarConfig {
+  items: SidebarItem[];
+}
+
 export interface AppSettings {
   apiConfig: ApiConfig;
   shortcuts: ShortcutConfig;
   history: HistoryItem[];
   theme?: string; // 主题ID
+  sidebarConfig?: SidebarConfig; // 侧边栏配置
 }
 export interface ShortcutConfig {
   capture: string;

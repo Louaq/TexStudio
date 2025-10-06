@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import MaterialIcon from './MaterialIcon';
+import { SidebarConfig } from '../types';
 
 const SidebarContainer = styled.div`
   width: 48px;
@@ -97,7 +98,24 @@ interface SidebarProps {
   isAlwaysOnTop: boolean;
   copyDisabled?: boolean;
   exportDisabled?: boolean;
+  sidebarConfig?: SidebarConfig;
 }
+
+// 默认侧边栏配置
+export const getDefaultSidebarConfig = (): SidebarConfig => ({
+  items: [
+    { id: 'home', label: '主页', icon: 'home', visible: true, order: 0, type: 'view' },
+    { id: 'capture', label: '截图', icon: 'photo_camera', visible: true, order: 1, type: 'action' },
+    { id: 'handwriting', label: '手写公式', icon: 'edit', visible: true, order: 2, type: 'action' },
+    { id: 'copy', label: '复制LaTeX', icon: 'content_copy', visible: true, order: 3, type: 'action' },
+    { id: 'export', label: '导出图片', icon: 'download', visible: true, order: 4, type: 'action' },
+    { id: 'history', label: '历史记录', icon: 'history', visible: true, order: 5, type: 'view' },
+    { id: 'alwaysOnTop', label: '窗口置顶', icon: 'push_pin', visible: true, order: 6, type: 'action' },
+    { id: 'cleanup', label: '清理临时文件', icon: 'cleaning_services', visible: true, order: 7, type: 'action' },
+    { id: 'settings', label: '设置', icon: 'settings', visible: true, order: 8, type: 'view' },
+    { id: 'about', label: '关于', icon: 'info', visible: true, order: 9, type: 'view' }
+  ]
+});
 
 const Sidebar: React.FC<SidebarProps> = ({
   currentView,
@@ -111,89 +129,140 @@ const Sidebar: React.FC<SidebarProps> = ({
   onToggleAlwaysOnTop,
   isAlwaysOnTop,
   copyDisabled = false,
-  exportDisabled = false
+  exportDisabled = false,
+  sidebarConfig
 }) => {
+  // 使用配置或默认配置
+  const config = useMemo(() => 
+    sidebarConfig || getDefaultSidebarConfig(), 
+    [sidebarConfig]
+  );
+
+  // 按顺序排序并过滤可见项
+  const sortedItems = useMemo(() => 
+    [...config.items]
+      .filter(item => item.visible)
+      .sort((a, b) => a.order - b.order),
+    [config]
+  );
+
+  // 渲染单个菜单项
+  const renderMenuItem = (item: typeof sortedItems[0]) => {
+    const commonProps = {
+      key: item.id,
+      title: item.label
+    };
+
+    switch (item.id) {
+      case 'home':
+        return (
+          <MenuItem 
+            {...commonProps}
+            $active={currentView === 'home'} 
+            onClick={() => onViewChange('home')}
+          >
+            <MaterialIcon name={item.icon} size={20} />
+          </MenuItem>
+        );
+      
+      case 'capture':
+        return (
+          <MenuItem {...commonProps} onClick={onCapture}>
+            <MaterialIcon name={item.icon} size={20} />
+          </MenuItem>
+        );
+      
+      case 'handwriting':
+        return (
+          <MenuItem {...commonProps} onClick={onHandwriting}>
+            <MaterialIcon name={item.icon} size={20} />
+          </MenuItem>
+        );
+      
+      case 'copy':
+        return (
+          <MenuItem 
+            {...commonProps}
+            onClick={copyDisabled ? undefined : onCopy} 
+            title={copyDisabled ? "请先识别或输入数学公式" : item.label}
+            disabled={copyDisabled}
+          >
+            <MaterialIcon name={item.icon} size={20} />
+          </MenuItem>
+        );
+      
+      case 'export':
+        return (
+          <MenuItem 
+            {...commonProps}
+            onClick={exportDisabled ? undefined : onExport} 
+            title={exportDisabled ? "请先识别或输入数学公式" : item.label}
+            disabled={exportDisabled}
+          >
+            <MaterialIcon name={item.icon} size={20} />
+          </MenuItem>
+        );
+      
+      case 'history':
+        return (
+          <MenuItem 
+            {...commonProps}
+            $active={currentView === 'history'} 
+            onClick={() => onViewChange('history')}
+          >
+            <MaterialIcon name={item.icon} size={20} />
+          </MenuItem>
+        );
+      
+      case 'alwaysOnTop':
+        return (
+          <MenuItem 
+            {...commonProps}
+            $highlighted={isAlwaysOnTop}
+            onClick={onToggleAlwaysOnTop} 
+            title={isAlwaysOnTop ? "取消置顶" : item.label}
+          >
+            <MaterialIcon name={item.icon} size={20} />
+          </MenuItem>
+        );
+      
+      case 'cleanup':
+        return (
+          <MenuItem {...commonProps} onClick={onCleanupTempFiles}>
+            <MaterialIcon name={item.icon} size={20} />
+          </MenuItem>
+        );
+      
+      case 'settings':
+        return (
+          <MenuItem 
+            {...commonProps}
+            $active={currentView === 'settings'} 
+            onClick={() => onViewChange('settings')}
+          >
+            <MaterialIcon name={item.icon} size={20} />
+          </MenuItem>
+        );
+      
+      case 'about':
+        return (
+          <MenuItem 
+            {...commonProps}
+            $active={currentView === 'about'} 
+            onClick={() => onViewChange('about')}
+          >
+            <MaterialIcon name={item.icon} size={item.id === 'about' ? 18 : 20} />
+          </MenuItem>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
   return (
     <SidebarContainer>
-      {/* 主页 */}
-        <MenuItem 
-          $active={currentView === 'home'} 
-          onClick={() => onViewChange('home')}
-          title="主页"
-        >
-          <MaterialIcon name="home" size={20} />
-        </MenuItem>
-  
-
-      {/* 截图 */}
-      <MenuItem onClick={onCapture} title="截图">
-        <MaterialIcon name="photo_camera" size={20} />
-      </MenuItem>
-
-      {/* 手写公式 */}
-      <MenuItem onClick={onHandwriting} title="手写公式">
-        <MaterialIcon name="edit" size={20} />
-      </MenuItem>
-
-      {/* 复制LaTeX */}
-      <MenuItem 
-        onClick={copyDisabled ? undefined : onCopy} 
-        title={copyDisabled ? "请先识别或输入数学公式" : "复制LaTeX代码"}
-        disabled={copyDisabled}
-      >
-        <MaterialIcon name="content_copy" size={20} />
-      </MenuItem>
-
-      {/* 导出图片 */}
-      <MenuItem 
-        onClick={exportDisabled ? undefined : onExport} 
-        title={exportDisabled ? "请先识别或输入数学公式" : "导出为图片"}
-        disabled={exportDisabled}
-      >
-        <MaterialIcon name="download" size={20} />
-      </MenuItem>
-
-      {/* 历史记录 */}
-      <MenuItem 
-        $active={currentView === 'history'} 
-        onClick={() => onViewChange('history')}
-        title="历史记录"
-      >
-        <MaterialIcon name="history" size={20} />
-      </MenuItem>
-
-
-      {/* 窗口置顶 */}
-      <MenuItem 
-        $highlighted={isAlwaysOnTop}
-        onClick={onToggleAlwaysOnTop} 
-        title={isAlwaysOnTop ? "取消置顶" : "窗口置顶"}
-      >
-        <MaterialIcon name="push_pin" size={20} />
-      </MenuItem>
-
-      {/* 清理临时文件 */}
-      <MenuItem onClick={onCleanupTempFiles} title="清理临时文件">
-        <MaterialIcon name="cleaning_services" size={20} />
-      </MenuItem>
-
-      {/* 设置 */}
-      <MenuItem 
-        $active={currentView === 'settings'} 
-        onClick={() => onViewChange('settings')}
-        title="设置"
-      >
-        <MaterialIcon name="settings" size={20} />
-      </MenuItem>
-
-      {/* 关于 */}
-      <MenuItem 
-        $active={currentView === 'about'} 
-        onClick={() => onViewChange('about')}
-        title="关于"
-      >
-        <MaterialIcon name="info" size={18} />
-      </MenuItem>
+      {sortedItems.map(item => renderMenuItem(item))}
     </SidebarContainer>
   );
 };

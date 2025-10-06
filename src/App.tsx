@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { useDropzone } from 'react-dropzone';
-import { AppState, HistoryItem, ApiConfig, CopyMode } from './types';
+import { AppState, HistoryItem, ApiConfig, CopyMode, SidebarConfig } from './types';
 import { formatLatex, getCurrentTimestamp, validateApiConfig } from './utils/api';
 import TitleBar from './components/TitleBar';
-import Sidebar from './components/Sidebar';
+import Sidebar, { getDefaultSidebarConfig } from './components/Sidebar';
 import HomeView from './views/HomeView';
 import SettingsView from './views/SettingsView';
 import HistoryView from './views/HistoryView';
@@ -97,6 +97,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
     apiConfig: ApiConfig;
     shortcuts: { capture: string; upload: string };
     theme?: string;
+    sidebarConfig?: SidebarConfig;
   } | null>(null);
 
   type ViewType = 'home' | 'settings' | 'history' | 'about';
@@ -126,7 +127,8 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           setSettings({
             apiConfig: appSettings.apiConfig,
             shortcuts: appSettings.shortcuts,
-            theme: selectedTheme
+            theme: selectedTheme,
+            sidebarConfig: appSettings.sidebarConfig || getDefaultSidebarConfig()
           });
           setAppState(prev => ({ ...prev, history: appSettings.history }));
           
@@ -188,7 +190,8 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           
           setSettings({
             ...defaultSettings,
-            theme: 'green'
+            theme: 'green',
+            sidebarConfig: getDefaultSidebarConfig()
           });
           console.warn('运行在浏览器模式下，使用默认设置');
           
@@ -1086,6 +1089,33 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
       }));
     }
   };
+
+  const handleSaveSidebarConfig = async (sidebarConfig: SidebarConfig) => {
+    if (window.electronAPI) {
+      try {
+        await window.electronAPI.saveSettings({ sidebarConfig });
+        setSettings(prev => prev ? { ...prev, sidebarConfig } : null);
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '✅ 侧边栏配置已保存' 
+        }));
+        setTimeout(() => {
+          setAppState(prev => ({ 
+            ...prev, 
+            statusMessage: null
+          }));
+        }, 2000);
+      } catch (error) {
+        console.error('保存侧边栏配置失败:', error);
+        setAppState(prev => ({ 
+          ...prev, 
+          statusMessage: '❌ 侧边栏配置保存失败' 
+        }));
+      }
+    } else {
+      setSettings(prev => prev ? { ...prev, sidebarConfig } : null);
+    }
+  };
   const handleToggleAlwaysOnTop = async () => {
     if (!window.electronAPI) {
       setAppState(prev => ({ 
@@ -1446,6 +1476,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           isAlwaysOnTop={isAlwaysOnTop}
           copyDisabled={!appState.latexCode.trim() || appState.isRecognizing}
           exportDisabled={!appState.latexCode.trim() || appState.isRecognizing}
+          sidebarConfig={settings?.sidebarConfig}
       />
 
       {/* 右侧内容区 */}
@@ -1485,10 +1516,12 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
             apiConfig={settings?.apiConfig || { appId: '', appSecret: '', endpoint: '' }}
             shortcuts={settings?.shortcuts || { capture: '', upload: '' }}
             currentTheme={settings?.theme || 'green'}
+            sidebarConfig={settings?.sidebarConfig}
             onSaveApi={handleSaveApiSettings}
             onSaveShortcuts={handleSaveShortcutSettings}
             onThemeChange={handleThemeChange}
             onCheckForUpdates={handleCheckForUpdates}
+            onSaveSidebarConfig={handleSaveSidebarConfig}
           />
         )}
 
