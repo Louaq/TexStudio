@@ -1,6 +1,6 @@
 {
   "name": "latex-ocr-electron",
-  "version": "4.6.1",
+  "version": "4.6.2",
   "description": "TxStudio OCR",
   "author": {
     "name": "TexStudio",
@@ -129,9 +129,15 @@
       ],
       "artifactName": "${productName}-${version}-${arch}.${ext}",
       "category": "Office",
-      "maintainer": "TexStudio <texstudio@example.com>"
+      "maintainer": "TexStudio <admin@visual-medical.org>"
     },
-    "publish": null
+    "publish": {
+      "provider": "github",
+      "owner": "Louaq",
+      "repo": "TexStudio",
+      "private": false,
+      "releaseType": "release"
+    }
   },
   "browserslist": {
     "production": [
