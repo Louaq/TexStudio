@@ -1,6 +1,6 @@
 {
   "name": "latex-ocr-electron",
-  "version": "4.6.1",
+  "version": "4.6.2",
   "description": "TxStudio OCR",
   "author": "TexStudio",
   "main": "dist/electron/electron/main.js",
@@ -78,13 +78,13 @@
       "dist/**/*",
       "node_modules/**/*",
       "settings.json",
-      "!assets/**/*"
+      "assets/icon-512.png"
     ],
     "extraMetadata": {
       "main": "dist/electron/electron/main.js"
     },
     "win": {
-      "icon": null,
+      "icon": "assets/icon-512.png",
       "target": [
         {
           "target": "nsis",
@@ -103,7 +103,7 @@
       "deleteAppDataOnUninstall": true
     },
     "mac": {
-      "icon": null,
+      "icon": "assets/icon-512.png",
       "target": [
         {
           "target": "dmg",
@@ -114,11 +114,10 @@
       "category": "public.app-category.productivity"
     },
     "dmg": {
-      "title": "${productName} ${version}",
-      "icon": null
+      "title": "${productName} ${version}"
     },
     "linux": {
-      "icon": null,
+      "icon": "assets/icon-512.png",
       "target": [
         {
           "target": "AppImage",
