@@ -1,8 +1,11 @@
 {
   "name": "latex-ocr-electron",
-  "version": "4.6.3",
+  "version": "4.6.4",
   "description": "TxStudio OCR",
-  "author": "TexStudio",
+  "author": {
+    "name": "TexStudio",
+    "email": "admin@visual-medical.org"
+  },
   "main": "dist/electron/electron/main.js",
   "scripts": {
     "start": "electron . --expose-gc --max-old-space-size=512",
@@ -77,14 +80,12 @@
       "build/**/*",
       "dist/**/*",
       "node_modules/**/*",
-      "settings.json",
-      "assets/icon-512.png"
+      "settings.json"
     ],
     "extraMetadata": {
       "main": "dist/electron/electron/main.js"
     },
     "win": {
-      "icon": "assets/icon-512.png",
       "target": [
         {
           "target": "nsis",
@@ -103,7 +104,6 @@
       "deleteAppDataOnUninstall": true
     },
     "mac": {
-      "icon": "assets/icon-512.png",
       "target": [
         {
           "target": "dmg",
@@ -117,7 +117,6 @@
       "title": "${productName} ${version}"
     },
     "linux": {
-      "icon": "assets/icon-512.png",
       "target": [
         {
           "target": "AppImage",
@@ -129,7 +128,8 @@
         }
       ],
       "artifactName": "${productName}-${version}-${arch}.${ext}",
-      "category": "Office"
+      "category": "Office",
+      "maintainer": "TexStudio <texstudio@example.com>"
     },
     "publish": null
   },
