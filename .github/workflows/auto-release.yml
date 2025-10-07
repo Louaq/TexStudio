@@ -148,12 +148,27 @@ jobs:
           echo "=== 收集的所有构建产物 ==="
           find artifacts -type f
           
-          # 复制所有安装包到统一目录
-          find artifacts -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" \) -exec cp {} release-files/ \;
+          # 只复制符合命名规范的安装包文件
+          echo ""
+          echo "=== 复制安装包文件 ==="
+          
+          # Windows 安装包: TexStudio-*-*-setup.exe (包含版本号和架构)
+          find artifacts -type f -name "TexStudio-*-*-setup.exe" -exec cp {} release-files/ \;
+          
+          # macOS 安装包: TexStudio-*-*.dmg (包含版本号和架构)
+          find artifacts -type f -name "TexStudio-*.dmg" ! -name "TexStudio.dmg" -exec cp {} release-files/ \;
+          
+          # Linux AppImage: TexStudio-*.AppImage (包含版本号)
+          find artifacts -type f -name "TexStudio-*.AppImage" -exec cp {} release-files/ \;
+          
+          # Linux deb: TexStudio-*.deb (包含版本号)
+          find artifacts -type f -name "TexStudio-*.deb" -exec cp {} release-files/ \;
           
           echo ""
           echo "=== 准备发布的文件 ==="
           ls -lh release-files/
+          echo ""
+          echo "文件数量: $(ls -1 release-files/ | wc -l)"
         shell: bash
       
       - name: 创建 GitHub Release
