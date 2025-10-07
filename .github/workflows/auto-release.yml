@@ -197,10 +197,7 @@ jobs:
             - `TexStudio-${{ needs.check-version.outputs.version }}-arm64.AppImage` - Linux ARM64 AppImage
             - `TexStudio-${{ needs.check-version.outputs.version }}-amd64.deb` - Debian/Ubuntu 64位
             - `TexStudio-${{ needs.check-version.outputs.version }}-arm64.deb` - Debian/Ubuntu ARM64
-            
-            ### 🔄 自动更新
-            应用内自动更新功能已启用，无需手动下载。已安装的应用会自动检测并提示更新。
-            
+          
             ---
             *自动构建于 ${{ github.sha }}*
           files: release-files/*

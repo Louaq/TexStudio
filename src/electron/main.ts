@@ -322,7 +322,6 @@ interface AppSettings {
   };
   history: HistoryItem[];
   theme?: string; // 主题ID
-  hardwareAcceleration?: boolean; // 硬件加速
 }
 
 interface ApiConfig {
@@ -1060,20 +1059,12 @@ function createScreenshotWindows(): void {
   createSimpleScreenshotWindow();
 }
 
-
-// 根据用户设置决定是否禁用硬件加速
-// 默认在 Windows 上禁用硬件加速以避免某些图形问题
-const hardwareAccelerationEnabled = store.get('hardwareAcceleration', false) as boolean;
-if (!hardwareAccelerationEnabled) {
-  app.disableHardwareAcceleration();
-  if (process.platform === 'win32') {
-    app.commandLine.appendSwitch('disable-gpu');
-    app.commandLine.appendSwitch('disable-gpu-compositing');
-    app.commandLine.appendSwitch('disable-gpu-sandbox');
-  }
-  logger.log('硬件加速已禁用');
-} else {
-  logger.log('硬件加速已启用');
+// 默认禁用硬件加速以避免某些图形问题
+app.disableHardwareAcceleration();
+if (process.platform === 'win32') {
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-gpu-compositing');
+  app.commandLine.appendSwitch('disable-gpu-sandbox');
 }
 
 if (process.platform === 'win32') {
@@ -2695,12 +2686,23 @@ ipcMain.handle('backup-data', async (event, simple: boolean) => {
     const settingsPath = path.join(userData, 'config.json');
     const historyPath = path.join(userData, 'history.json');
 
+    let fileCount = 0;
+
     // 始终备份设置和历史
     if (fs.existsSync(settingsPath)) {
       archive.file(settingsPath, { name: 'config.json' });
+      fileCount++;
+      logger.log('已添加 config.json 到备份');
+    } else {
+      logger.warn('config.json 不存在，跳过备份');
     }
+    
     if (fs.existsSync(historyPath)) {
       archive.file(historyPath, { name: 'history.json' });
+      fileCount++;
+      logger.log('已添加 history.json 到备份');
+    } else {
+      logger.warn('history.json 不存在，跳过备份');
     }
 
     // 非精简备份：备份临时文件（截图等）
@@ -2708,14 +2710,17 @@ ipcMain.handle('backup-data', async (event, simple: boolean) => {
       const tempDir = app.getPath('temp');
       if (fs.existsSync(tempDir)) {
         const files = fs.readdirSync(tempDir);
+        let tempFileCount = 0;
+        
         for (const file of files) {
           // 只备份应用创建的临时文件
           if (file.startsWith(TEMP_FILE_PREFIX) || file.startsWith(SCREENSHOT_PREFIX)) {
             try {
-              const filePath = path.join(tempDir, file);
-              const stats = fs.statSync(filePath);
+              const tempFilePath = path.join(tempDir, file);
+              const stats = fs.statSync(tempFilePath);
               if (stats.isFile()) {
-                archive.file(filePath, { name: `temp/${file}` });
+                archive.file(tempFilePath, { name: `temp/${file}` });
+                tempFileCount++;
               }
             } catch (error) {
               // 忽略单个文件的错误
@@ -2724,16 +2729,31 @@ ipcMain.handle('backup-data', async (event, simple: boolean) => {
             }
           }
         }
+        
+        fileCount += tempFileCount;
+        logger.log(`已添加 ${tempFileCount} 个临时文件到备份`);
       }
+    } else {
+      logger.log('精简备份模式：跳过临时文件');
     }
 
     await archive.finalize();
 
+    logger.log(`备份完成，共 ${fileCount} 个文件，保存至: ${filePath}`);
+
     return new Promise<{ success: boolean; filePath?: string; message?: string }>((resolve) => {
       output.on('close', () => {
+        const totalBytes = archive.pointer();
+        const totalMB = (totalBytes / 1024 / 1024).toFixed(2);
+        logger.log(`备份文件大小: ${totalMB}MB`);
         resolve({ success: true, filePath });
       });
       archive.on('error', (err: Error) => {
+        logger.error('创建备份压缩包失败:', err);
+        resolve({ success: false, message: err.message });
+      });
+      output.on('error', (err: Error) => {
+        logger.error('写入备份文件失败:', err);
         resolve({ success: false, message: err.message });
       });
     });
@@ -2759,27 +2779,91 @@ ipcMain.handle('restore-data', async () => {
       return { success: false, message: '用户取消' };
     }
 
+    logger.log('开始恢复数据，备份文件:', filePaths[0]);
+
     const extract = require('extract-zip');
     const userData = app.getPath('userData');
     const tempExtractDir = path.join(app.getPath('temp'), `texstudio-restore-${Date.now()}`);
 
+    // 解压备份文件
+    logger.log('正在解压备份文件到:', tempExtractDir);
     await extract(filePaths[0], { dir: tempExtractDir });
+    logger.log('备份文件解压完成');
+
+    let restoredCount = 0;
 
     // 恢复配置文件
     const configSrc = path.join(tempExtractDir, 'config.json');
     const historySrc = path.join(tempExtractDir, 'history.json');
     
     if (fs.existsSync(configSrc)) {
-      fs.copyFileSync(configSrc, path.join(userData, 'config.json'));
+      const configDest = path.join(userData, 'config.json');
+      fs.copyFileSync(configSrc, configDest);
+      restoredCount++;
+      logger.log('已恢复 config.json');
+    } else {
+      logger.warn('备份中不包含 config.json');
     }
+    
     if (fs.existsSync(historySrc)) {
-      fs.copyFileSync(historySrc, path.join(userData, 'history.json'));
+      const historyDest = path.join(userData, 'history.json');
+      fs.copyFileSync(historySrc, historyDest);
+      restoredCount++;
+      logger.log('已恢复 history.json');
+    } else {
+      logger.warn('备份中不包含 history.json');
     }
 
-    // 清理临时文件
-    fs.rmSync(tempExtractDir, { recursive: true, force: true });
+    // 恢复临时文件（如果备份中包含）
+    const tempBackupDir = path.join(tempExtractDir, 'temp');
+    if (fs.existsSync(tempBackupDir)) {
+      const tempDir = app.getPath('temp');
+      const tempFiles = fs.readdirSync(tempBackupDir);
+      let tempFileCount = 0;
+      
+      logger.log(`发现 ${tempFiles.length} 个临时文件，开始恢复...`);
+      
+      for (const file of tempFiles) {
+        try {
+          const srcPath = path.join(tempBackupDir, file);
+          const destPath = path.join(tempDir, file);
+          
+          // 只恢复应用相关的临时文件
+          if (file.startsWith(TEMP_FILE_PREFIX) || file.startsWith(SCREENSHOT_PREFIX)) {
+            const stats = fs.statSync(srcPath);
+            if (stats.isFile()) {
+              fs.copyFileSync(srcPath, destPath);
+              tempFileCount++;
+            }
+          }
+        } catch (error) {
+          // 忽略单个文件的错误，继续恢复其他文件
+          logger.error('恢复临时文件失败:', file, error);
+          continue;
+        }
+      }
+      
+      restoredCount += tempFileCount;
+      logger.log(`已恢复 ${tempFileCount} 个临时文件`);
+    } else {
+      logger.log('备份中不包含临时文件（可能是精简备份）');
+    }
 
-    return { success: true };
+    // 清理临时解压目录
+    try {
+      fs.rmSync(tempExtractDir, { recursive: true, force: true });
+      logger.log('已清理临时解压目录');
+    } catch (error) {
+      // 清理失败不影响恢复结果
+      logger.error('清理临时目录失败:', error);
+    }
+
+    logger.log(`数据恢复完成，共恢复 ${restoredCount} 个文件`);
+
+    return { 
+      success: true,
+      message: `成功恢复 ${restoredCount} 个文件`
+    };
   } catch (error) {
     logger.error('恢复数据失败:', error);
     return {
@@ -2899,21 +2983,4 @@ ipcMain.handle('reset-all-data', async () => {
 ipcMain.handle('restart-app', async () => {
   app.relaunch();
   app.exit(0);
-});
-
-// 获取硬件加速状态
-ipcMain.handle('get-hardware-acceleration', () => {
-  return store.get('hardwareAcceleration', false);
-});
-
-// 设置硬件加速
-ipcMain.handle('set-hardware-acceleration', async (event, enabled: boolean) => {
-  try {
-    store.set('hardwareAcceleration', enabled);
-    logger.log(`硬件加速设置已更改为: ${enabled ? '启用' : '禁用'}`);
-    return { success: true };
-  } catch (error) {
-    logger.error('设置硬件加速失败:', error);
-    return { success: false };
-  }
 });

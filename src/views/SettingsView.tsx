@@ -766,7 +766,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   const [dataPath, setDataPath] = useState('');
   const [logPath, setLogPath] = useState('');
   const [cacheSize, setCacheSize] = useState('0MB');
-  const [hardwareAcceleration, setHardwareAcceleration] = useState(false);
   
   // 对话框状态
   const [dialogState, setDialogState] = useState<{
@@ -1018,9 +1017,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           
           const cache = await window.electronAPI.getCacheSize();
           setCacheSize(cache.size);
-          
-          const hwAccel = await window.electronAPI.getHardwareAcceleration();
-          setHardwareAcceleration(hwAccel);
         } catch (error) {
           console.error('加载数据信息失败:', error);
         }
@@ -1068,7 +1064,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({
       if (result.success) {
         await showAlert(
           '恢复成功',
-          '数据恢复成功！应用将重启以加载新数据。',
+          <>
+            {result.message || '数据恢复成功！'}<br />
+            应用将重启以加载新数据。
+          </>,
           'success'
         );
         window.electronAPI.restartApp();
@@ -1194,30 +1193,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     } catch (error) {
       console.error('重置数据失败:', error);
       await showAlert('重置失败', '重置数据时发生错误', 'error');
-    }
-  };
-
-  const handleHardwareAccelerationChange = async (enabled: boolean) => {
-    if (!window.electronAPI) return;
-    
-    try {
-      const result = await window.electronAPI.setHardwareAcceleration(enabled);
-      if (result.success) {
-        setHardwareAcceleration(enabled);
-        await showAlert(
-          '设置成功',
-          <>
-            硬件加速已{enabled ? '启用' : '禁用'}。<br /><br />
-            <strong>注意：</strong>需要重启应用才能生效。
-          </>,
-          'success'
-        );
-      } else {
-        await showAlert('设置失败', '硬件加速设置失败', 'error');
-      }
-    } catch (error) {
-      console.error('设置硬件加速失败:', error);
-      await showAlert('设置失败', '设置硬件加速时发生错误', 'error');
     }
   };
 
@@ -1645,33 +1620,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                   type="checkbox"
                   checked={simpleBackup}
                   onChange={(e) => setSimpleBackup(e.target.checked)}
-                />
-                <span></span>
-              </Toggle>
-            </DataActions>
-          </DataRow>
-        </Section>
-
-        {/* 性能设置 */}
-        <Section>
-          <SectionTitle>
-            <MaterialIcon name="settings" size={22} />
-            性能设置
-          </SectionTitle>
-
-          <DataRow>
-            <DataLabel>
-              <DataTitle>硬件加速</DataTitle>
-              <DataDescription>
-                启用GPU硬件加速以提升渲染性能。部分系统可能会出现图形问题，如遇到界面异常可尝试关闭此选项。修改后需要重启应用才能生效。
-              </DataDescription>
-            </DataLabel>
-            <DataActions>
-              <Toggle>
-                <input
-                  type="checkbox"
-                  checked={hardwareAcceleration}
-                  onChange={(e) => handleHardwareAccelerationChange(e.target.checked)}
                 />
                 <span></span>
               </Toggle>
