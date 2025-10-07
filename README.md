@@ -20,7 +20,6 @@
    git clone <repository-url>
    cd TexStudio
    ```
-
 2. **安装依赖**
    
    **手动安装方法：**
