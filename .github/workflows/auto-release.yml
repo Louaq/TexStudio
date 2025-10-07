@@ -145,20 +145,20 @@ jobs:
           echo "=== 收集的所有构建产物 ==="
           find artifacts -type f
           
-          # 只复制符合命名规范的安装包文件
+          # 只复制符合命名规范的安装包文件（统一使用连字符）
           echo ""
           echo "=== 复制安装包文件 ==="
           
-          # Windows 安装包: TexStudio Setup *.exe 或 TexStudio-*.exe
-          find artifacts -type f \( -name "TexStudio Setup *.exe" -o -name "TexStudio-*-setup.exe" \) ! -name "TexStudio.exe" -exec cp {} release-files/ \;
+          # Windows 安装包: TexStudio-*-setup.exe
+          find artifacts -type f -name "TexStudio-*-setup.exe" -exec cp {} release-files/ \;
           
-          # macOS 安装包: TexStudio-*-*.dmg (包含版本号和架构)
+          # macOS 安装包: TexStudio-*.dmg (包含版本号)
           find artifacts -type f -name "TexStudio-*.dmg" ! -name "TexStudio.dmg" -exec cp {} release-files/ \;
           
-          # Linux AppImage: TexStudio-*.AppImage (包含版本号)
+          # Linux AppImage: TexStudio-*.AppImage (支持 x86_64 和 arm64)
           find artifacts -type f -name "TexStudio-*.AppImage" -exec cp {} release-files/ \;
           
-          # Linux deb: TexStudio-*.deb (包含版本号)
+          # Linux deb: TexStudio-*.deb (支持 amd64 和 arm64)
           find artifacts -type f -name "TexStudio-*.deb" -exec cp {} release-files/ \;
           
           # 复制自动更新元数据文件 (latest.yml, latest-mac.yml, latest-linux.yml)
@@ -186,16 +186,16 @@ jobs:
             ### 📦 下载安装包
             
             **Windows:**
-            - `TexStudio Setup ${{ needs.check-version.outputs.version }}.exe` - Windows 64位 (Intel/AMD)
+            - `TexStudio-${{ needs.check-version.outputs.version }}-setup.exe` - Windows 64位 (Intel/AMD)
             
             **macOS:**
             - `TexStudio-${{ needs.check-version.outputs.version }}-x64.dmg` - macOS Intel
             - `TexStudio-${{ needs.check-version.outputs.version }}-arm64.dmg` - macOS Apple Silicon (M1/M2/M3)
             
             **Linux:**
-            - `TexStudio-${{ needs.check-version.outputs.version }}-x64.AppImage` - Linux 64位 AppImage (通用)
+            - `TexStudio-${{ needs.check-version.outputs.version }}-x86_64.AppImage` - Linux 64位 AppImage (通用)
             - `TexStudio-${{ needs.check-version.outputs.version }}-arm64.AppImage` - Linux ARM64 AppImage
-            - `TexStudio-${{ needs.check-version.outputs.version }}-x64.deb` - Debian/Ubuntu 64位
+            - `TexStudio-${{ needs.check-version.outputs.version }}-amd64.deb` - Debian/Ubuntu 64位
             - `TexStudio-${{ needs.check-version.outputs.version }}-arm64.deb` - Debian/Ubuntu ARM64
             
             ### 🔄 自动更新
@@ -217,7 +217,7 @@ jobs:
           if [ "${{ needs.create-release.result }}" == "success" ]; then
             echo "✅ 版本 ${{ needs.check-version.outputs.version }} 已成功发布!"
             echo "📦 已发布以下平台的安装包："
-            echo "   - Windows (x64, ARM64)"
+            echo "   - Windows (x64)"
             echo "   - macOS (x64, ARM64)"
             echo "   - Linux (x64, ARM64)"
           else
