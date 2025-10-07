@@ -272,7 +272,7 @@ interface HistoryViewProps {
   onClear: () => void;
 }
 
-const ITEMS_PER_PAGE = 12; // 每页显示12个公式
+const ITEMS_PER_PAGE = 6; // 每页显示6个公式
 
 const HistoryView: React.FC<HistoryViewProps> = ({
   history,
