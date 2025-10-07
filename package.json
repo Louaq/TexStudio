@@ -1,6 +1,6 @@
 {
   "name": "latex-ocr-electron",
-  "version": "4.6.0",
+  "version": "4.6.1",
   "description": "TxStudio OCR",
   "author": "TexStudio",
   "main": "dist/electron/electron/main.js",
@@ -14,6 +14,10 @@
     "build:electron": "tsc -p tsconfig.electron.json",
     "package": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
     "dist": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=never",
+    "dist:win": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --publish=never",
+    "dist:mac": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --publish=never",
+    "dist:linux": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --linux --publish=never",
+    "dist:all": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --mac --linux --publish=never",
     "publish": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=always"
   },
   "dependencies": {
@@ -81,8 +85,13 @@
     },
     "win": {
       "icon": null,
-      "target": "nsis",
-      "artifactName": "TexStudio-${version}.exe"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}-setup.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -93,14 +102,37 @@
       "shortcutName": "TexStudio",
       "deleteAppDataOnUninstall": true
     },
-    "publish": {
-      "provider": "github",
-      "owner": "Louaq",
-      "repo": "SimpleTex-OCR",
-      "private": false,
-      "releaseType": "release",
-      "vPrefixedTagName": true
-    }
+    "mac": {
+      "icon": null,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "category": "public.app-category.productivity"
+    },
+    "dmg": {
+      "title": "${productName} ${version}",
+      "icon": null
+    },
+    "linux": {
+      "icon": null,
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "category": "Office"
+    },
+    "publish": null
   },
   "browserslist": {
     "production": [

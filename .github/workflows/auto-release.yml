@@ -54,8 +54,25 @@ jobs:
     
     strategy:
       matrix:
-        os: [windows-latest]
-        # 未来可以添加: macos-latest, ubuntu-latest
+        include:
+          - os: windows-latest
+            platform: win
+            arch: x64
+          - os: windows-latest
+            platform: win
+            arch: arm64
+          - os: macos-latest
+            platform: mac
+            arch: x64
+          - os: macos-latest
+            platform: mac
+            arch: arm64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
     
     steps:
       - name: 检出代码
@@ -77,108 +94,113 @@ jobs:
       - name: 安装依赖
         run: npm ci
       
-      - name: 构建应用
-        run: npm run build
-        env:
-          CI: false
-        
       - name: 获取版本号
         id: package_version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
         shell: bash
       
-      - name: 创建NSIS安装包
-        run: npm run package
+      - name: 构建应用 (Windows)
+        if: matrix.platform == 'win'
+        run: npm run dist:win -- --${{ matrix.arch }}
         env:
           CI: false
       
-      - name: 清理临时文件并确认最终产物
-        run: |
-          Write-Host "=== 清理前的文件列表 ==="
-          Get-ChildItem -Path release -Recurse -File | Select-Object FullName, @{Name="Size(MB)";Expression={[math]::Round($_.Length/1MB, 2)}} | Format-Table -AutoSize
-          
-          # 清理临时目录
-          Write-Host "`n=== 清理临时目录 ==="
-          if (Test-Path -Path "release\win-unpacked") {
-            Remove-Item -Path "release\win-unpacked" -Recurse -Force
-            Write-Host "已删除 win-unpacked 目录"
-          }
-          
-          if (Test-Path -Path "release\.icon-ico") {
-            Remove-Item -Path "release\.icon-ico" -Recurse -Force
-            Write-Host "已删除 .icon-ico 目录"
-          }
-          
-          # 重命名安装程序
-          $version = "${{ steps.package_version.outputs.version }}"
-          Write-Host "`n=== 重命名安装程序 ==="
-          $setupFile = Get-ChildItem -Path "release" -Filter "*.exe" | Where-Object { $_.Name -like "TexStudio*" -or $_.Name -like "*-setup-*.exe" } | Select-Object -First 1
-          if ($setupFile) {
-            $newName = "LaTeX-latest.exe"
-            $newPath = Join-Path -Path "release" -ChildPath $newName
-            Rename-Item -Path $setupFile.FullName -NewName $newName -Force
-            Write-Host "已将 $($setupFile.Name) 重命名为: $newName"
-          } else {
-            Write-Host "警告: 找不到安装程序文件!"
-            Get-ChildItem -Path "release" -File | ForEach-Object { Write-Host " - $($_.Name)" }
-          }
-          
-          # 修改latest.yml文件
-          if (Test-Path -Path "release\latest.yml") {
-            # 修改latest.yml文件内容，更新文件名
-            $ymlContent = Get-Content -Path "release\latest.yml" -Raw
-            $ymlContent = $ymlContent -replace "TexStudio-$version.exe", "LaTeX-latest.exe"
-            $ymlContent = $ymlContent -replace "path: TexStudio-$version.exe", "path: LaTeX-latest.exe"
-            Set-Content -Path "release\latest.yml" -Value $ymlContent
-            
-            Write-Host "已处理latest.yml文件"
-          } else {
-            Write-Host "警告: 找不到latest.yml文件!"
-          }
-          
-          # 删除不需要的文件
-          Write-Host "`n=== 删除多余文件 ==="
-          Get-ChildItem -Path "release" -File | Where-Object { 
-            $_.Name -ne "LaTeX-latest.exe" -and 
-            $_.Name -ne "latest.yml"
-          } | ForEach-Object {
-            Remove-Item -Path $_.FullName -Force
-            Write-Host "已删除文件: $($_.Name)"
-          }
-          
-          Write-Host "`n=== 最终文件列表 ==="
-          Get-ChildItem -Path release -File | Select-Object Name, @{Name="Size(MB)";Expression={[math]::Round($_.Length/1MB, 2)}} | Format-Table -AutoSize
-        shell: pwsh
-      
-      - name: 创建 Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.package_version.outputs.version }}
-          name: Release v${{ steps.package_version.outputs.version }}
-          draft: false
-          prerelease: false
-          files: |
-            ./release/LaTeX-latest.exe
-            ./release/latest.yml
+      - name: 构建应用 (macOS)
+        if: matrix.platform == 'mac'
+        run: npm run dist:mac -- --${{ matrix.arch }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI: false
+      
+      - name: 构建应用 (Linux)
+        if: matrix.platform == 'linux'
+        run: npm run dist:linux -- --${{ matrix.arch }}
+        env:
+          CI: false
+      
+      - name: 列出生成的文件
+        run: |
+          echo "=== 构建产物列表 ==="
+          ls -lh release/
+        shell: bash
       
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: LaTeX-installer
-          path: |
-            release/LaTeX-latest.exe
+          name: ${{ matrix.platform }}-${{ matrix.arch }}-installer
+          path: release/*
+
+  create-release:
+    needs: [check-version, build-and-release]
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 下载所有构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: 整理发布文件
+        run: |
+          mkdir -p release-files
+          echo "=== 收集的所有构建产物 ==="
+          find artifacts -type f
+          
+          # 复制所有安装包到统一目录
+          find artifacts -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" \) -exec cp {} release-files/ \;
+          
+          echo ""
+          echo "=== 准备发布的文件 ==="
+          ls -lh release-files/
+        shell: bash
+      
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.check-version.outputs.version }}
+          name: Release v${{ needs.check-version.outputs.version }}
+          draft: false
+          prerelease: false
+          body: |
+            ## TexStudio v${{ needs.check-version.outputs.version }}
+            
+            ### 📦 下载安装包
+            
+            **Windows:**
+            - `TexStudio-${{ needs.check-version.outputs.version }}-x64-setup.exe` - Windows 64位 (Intel/AMD)
+            - `TexStudio-${{ needs.check-version.outputs.version }}-arm64-setup.exe` - Windows ARM64
+            
+            **macOS:**
+            - `TexStudio-${{ needs.check-version.outputs.version }}-x64.dmg` - macOS Intel
+            - `TexStudio-${{ needs.check-version.outputs.version }}-arm64.dmg` - macOS Apple Silicon (M1/M2/M3)
+            
+            **Linux:**
+            - `TexStudio-${{ needs.check-version.outputs.version }}-x64.AppImage` - Linux 64位 AppImage (通用)
+            - `TexStudio-${{ needs.check-version.outputs.version }}-arm64.AppImage` - Linux ARM64 AppImage
+            - `TexStudio-${{ needs.check-version.outputs.version }}-x64.deb` - Debian/Ubuntu 64位
+            - `TexStudio-${{ needs.check-version.outputs.version }}-arm64.deb` - Debian/Ubuntu ARM64
+            
+            ---
+            *自动构建于 ${{ github.sha }}*
+          files: release-files/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
-    needs: [check-version, build-and-release]
+    needs: [check-version, build-and-release, create-release]
     if: always() && needs.check-version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: 发布状态通知
         run: |
-          if [ "${{ needs.build-and-release.result }}" == "success" ]; then
+          if [ "${{ needs.create-release.result }}" == "success" ]; then
             echo "✅ 版本 ${{ needs.check-version.outputs.version }} 已成功发布!"
+            echo "📦 已发布以下平台的安装包："
+            echo "   - Windows (x64, ARM64)"
+            echo "   - macOS (x64, ARM64)"
+            echo "   - Linux (x64, ARM64)"
           else
             echo "❌ 版本 ${{ needs.check-version.outputs.version }} 发布失败!"
           fi
