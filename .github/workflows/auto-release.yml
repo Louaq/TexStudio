@@ -58,9 +58,6 @@ jobs:
           - os: windows-latest
             platform: win
             arch: x64
-          - os: windows-latest
-            platform: win
-            arch: arm64
           - os: macos-latest
             platform: mac
             arch: x64
@@ -101,7 +98,7 @@ jobs:
       
       - name: 构建应用 (Windows)
         if: matrix.platform == 'win'
-        run: npm run dist:win -- --${{ matrix.arch }}
+        run: npm run dist:win
         env:
           CI: false
       
@@ -152,8 +149,8 @@ jobs:
           echo ""
           echo "=== 复制安装包文件 ==="
           
-          # Windows 安装包: TexStudio-*-*-setup.exe (包含版本号和架构)
-          find artifacts -type f -name "TexStudio-*-*-setup.exe" -exec cp {} release-files/ \;
+          # Windows 安装包: TexStudio Setup *.exe 或 TexStudio-*.exe
+          find artifacts -type f \( -name "TexStudio Setup *.exe" -o -name "TexStudio-*-setup.exe" \) ! -name "TexStudio.exe" -exec cp {} release-files/ \;
           
           # macOS 安装包: TexStudio-*-*.dmg (包含版本号和架构)
           find artifacts -type f -name "TexStudio-*.dmg" ! -name "TexStudio.dmg" -exec cp {} release-files/ \;
@@ -189,8 +186,7 @@ jobs:
             ### 📦 下载安装包
             
             **Windows:**
-            - `TexStudio-${{ needs.check-version.outputs.version }}-x64-setup.exe` - Windows 64位 (Intel/AMD)
-            - `TexStudio-${{ needs.check-version.outputs.version }}-arm64-setup.exe` - Windows ARM64
+            - `TexStudio Setup ${{ needs.check-version.outputs.version }}.exe` - Windows 64位 (Intel/AMD)
             
             **macOS:**
             - `TexStudio-${{ needs.check-version.outputs.version }}-x64.dmg` - macOS Intel

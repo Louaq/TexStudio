@@ -1,6 +1,6 @@
 {
   "name": "latex-ocr-electron",
-  "version": "4.6.2",
+  "version": "4.6.3",
   "description": "TxStudio OCR",
   "author": {
     "name": "TexStudio",
@@ -89,10 +89,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "arm64"]
+          "arch": ["x64"]
         }
-      ],
-      "artifactName": "${productName}-${version}-${arch}-setup.${ext}"
+      ]
     },
     "nsis": {
       "oneClick": false,
