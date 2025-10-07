@@ -95,7 +95,9 @@ const ExplanationSection = styled.div`
   padding: 8px;
   border: 2px solid var(--color-borderLight);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  margin-top: 5px;
+  /* 与上方图片区域的内边距(TopSection 2px + ImageDisplay Container 5px)对齐：
+     BottomSection 2px + 这里左右 5px 的外边距，保证左右边框对齐 */
+  margin: 5px 5px 0 5px;
   
   @media (min-height: 900px) {
     height: 190px;

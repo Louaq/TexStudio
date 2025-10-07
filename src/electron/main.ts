@@ -569,9 +569,9 @@ let splashWindow: BrowserWindow | null = null;
 async function createMainWindow(): Promise<void> {
   mainWindow = new BrowserWindow({
     width: 1051,
-    height: 820,
+    height: 780,
     minWidth: 1051,
-    minHeight: 820,
+    minHeight: 780,
     frame: false, // 移除默认标题栏，使用自定义标题栏
     webPreferences: {
       nodeIntegration: false,

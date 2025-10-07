@@ -287,8 +287,8 @@ const ShortcutGrid = styled.div`
 `;
 
 const ShortcutCard = styled.div`
-  background: #fafbfc;
-  border: 1px solid #e9ecef;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 20px;
   display: flex;
@@ -300,7 +300,7 @@ const ShortcutLabel = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #2c3e50;
+  color: var(--color-text);
   font-size: 13px;
   font-weight: 600;
 `;
@@ -308,18 +308,21 @@ const ShortcutLabel = styled.div`
 const ShortcutButton = styled.button<{ $isListening?: boolean; $isSet?: boolean }>`
   padding: 10px 16px;
   border: 1px solid ${props => 
-    props.$isListening ? '#e74c3c' : 
-    props.$isSet ? '#27ae60' : '#d1d5db'
+    props.$isListening ? 'var(--color-primary)' : 
+    props.$isSet ? 'var(--color-primary)' : 'var(--color-border)'
   };
   border-radius: 6px;
   background: ${props => 
-    props.$isListening ? 'rgba(231, 76, 60, 0.08)' : 
-    props.$isSet ? 'rgba(39, 174, 96, 0.08)' : 'white'
+    props.$isListening 
+      ? 'color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))' 
+      : props.$isSet 
+        ? 'color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))' 
+        : 'var(--color-surface)'
   };
   font-size: 12px;
   color: ${props => 
-    props.$isListening ? '#e74c3c' : 
-    props.$isSet ? '#27ae60' : '#2c3e50'
+    props.$isListening ? 'var(--color-primary)' : 
+    props.$isSet ? 'var(--color-primary)' : 'var(--color-text)'
   };
   transition: all 0.2s ease;
   font-family: "Cascadia Code", "Consolas", monospace;
@@ -333,12 +336,15 @@ const ShortcutButton = styled.button<{ $isListening?: boolean; $isSet?: boolean 
 
   &:hover {
     background: ${props => 
-      props.$isListening ? 'rgba(231, 76, 60, 0.12)' : 
-      props.$isSet ? 'rgba(39, 174, 96, 0.12)' : 'rgba(74, 144, 226, 0.05)'
+      props.$isListening 
+        ? 'color-mix(in srgb, var(--color-primary) 12%, var(--color-surface))' 
+        : props.$isSet 
+          ? 'color-mix(in srgb, var(--color-primary) 12%, var(--color-surface))' 
+          : 'color-mix(in srgb, var(--color-primary) 6%, var(--color-surface))'
     };
     border-color: ${props => 
-      props.$isListening ? '#e74c3c' : 
-      props.$isSet ? '#27ae60' : '#4a90e2'
+      props.$isListening ? 'var(--color-primary)' : 
+      props.$isSet ? 'var(--color-primary)' : 'var(--color-primary)'
     };
   }
 
@@ -346,9 +352,9 @@ const ShortcutButton = styled.button<{ $isListening?: boolean; $isSet?: boolean 
     animation: pulse 1.5s infinite;
     
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
-      70% { box-shadow: 0 0 0 8px rgba(231, 76, 60, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+      0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 40%, transparent); }
+      70% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-primary) 0%, transparent); }
+      100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent); }
     }
   `}
 `;
