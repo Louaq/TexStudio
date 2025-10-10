@@ -1,4 +1,4 @@
-name: 构建与自动发布
+name: 自动发布
 
 on:
   push:
