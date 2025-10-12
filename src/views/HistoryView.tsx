@@ -18,6 +18,13 @@ const HistoryContainer = styled.div`
 
 const Content = styled.div`
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const ScrollableContent = styled.div`
+  flex: 1;
   overflow-y: auto;
   padding: 24px;
 
@@ -37,6 +44,12 @@ const Content = styled.div`
   &::-webkit-scrollbar-thumb:hover {
     background: #a0aec0;
   }
+`;
+
+const FixedPagination = styled.div`
+  flex-shrink: 0;
+  background: var(--color-background);
+  padding: 20px 24px;
 `;
 
 const HintBar = styled.div`
@@ -228,8 +241,6 @@ const PaginationContainer = styled.div`
   justify-content: center;
   align-items: center;
   gap: 12px;
-  margin-top: 32px;
-  padding: 20px 0;
 `;
 
 const PageButton = styled.button<{ $active?: boolean }>`
@@ -368,114 +379,118 @@ const HistoryView: React.FC<HistoryViewProps> = ({
         onCopy={handleCopy}
       />
       <Content>
-        {history.length === 0 ? (
-          <EmptyState>
-            <EmptyIcon>
-              <MaterialIcon name="history" size={80} />
-            </EmptyIcon>
-            <EmptyText>暂无历史记录</EmptyText>
-            <p style={{ fontSize: '14px', color: '#95a5a6' }}>
-              识别或输入的公式会自动保存到这里
-            </p>
-          </EmptyState>
-        ) : (
-          <>
-            <HintBar>
-              <MaterialIcon name="info" size={18} />
-              <span>💡 点击公式可编辑，点击复制按钮选择格式 | 共 {history.length} 条记录</span>
-            </HintBar>
-            <HistoryList>
-              {currentItems.map((item, index) => (
-                <HistoryCard key={startIndex + index}>
-                  <HistoryHeader>
-                    <HeaderLeft>
-                      <HeaderTitle>识别结果</HeaderTitle>
-                      <HistoryDate>
-                        {item.date}
-                      </HistoryDate>
-                      <FormulaTag>公式</FormulaTag>
-                    </HeaderLeft>
-                    <HistoryActions>
-                      <IconButton 
-                        onClick={() => handleOpenCopyDialog(item.latex)} 
-                        title="复制"
-                      >
-                        <MaterialIcon name="content_copy" size={20} />
-                      </IconButton>
-                      <IconButton onClick={() => handleDelete(item.latex)} title="删除">
-                        <MaterialIcon name="delete" size={20} />
-                      </IconButton>
-                    </HistoryActions>
-                  </HistoryHeader>
-                  <FormulaDisplay onClick={() => onUse(item.latex)}>
-                    {(() => {
-                      try {
-                        return <BlockMath math={item.latex} errorColor={'#e74c3c'} />;
-                      } catch (error) {
-                        return <FormulaError>公式渲染失败</FormulaError>;
-                      }
-                    })()}
-                  </FormulaDisplay>
-                </HistoryCard>
-              ))}
-            </HistoryList>
+        <ScrollableContent>
+          {history.length === 0 ? (
+            <EmptyState>
+              <EmptyIcon>
+                <MaterialIcon name="history" size={80} />
+              </EmptyIcon>
+              <EmptyText>暂无历史记录</EmptyText>
+              <p style={{ fontSize: '14px', color: '#95a5a6' }}>
+                识别或输入的公式会自动保存到这里
+              </p>
+            </EmptyState>
+          ) : (
+            <>
+              <HintBar>
+                <MaterialIcon name="info" size={18} />
+                <span>💡 点击公式可编辑，点击复制按钮选择格式 | 共 {history.length} 条记录</span>
+              </HintBar>
+              <HistoryList>
+                {currentItems.map((item, index) => (
+                  <HistoryCard key={startIndex + index}>
+                    <HistoryHeader>
+                      <HeaderLeft>
+                        <HeaderTitle>识别结果</HeaderTitle>
+                        <HistoryDate>
+                          {item.date}
+                        </HistoryDate>
+                        <FormulaTag>公式</FormulaTag>
+                      </HeaderLeft>
+                      <HistoryActions>
+                        <IconButton 
+                          onClick={() => handleOpenCopyDialog(item.latex)} 
+                          title="复制"
+                        >
+                          <MaterialIcon name="content_copy" size={20} />
+                        </IconButton>
+                        <IconButton onClick={() => handleDelete(item.latex)} title="删除">
+                          <MaterialIcon name="delete" size={20} />
+                        </IconButton>
+                      </HistoryActions>
+                    </HistoryHeader>
+                    <FormulaDisplay onClick={() => onUse(item.latex)}>
+                      {(() => {
+                        try {
+                          return <BlockMath math={item.latex} errorColor={'#e74c3c'} />;
+                        } catch (error) {
+                          return <FormulaError>公式渲染失败</FormulaError>;
+                        }
+                      })()}
+                    </FormulaDisplay>
+                  </HistoryCard>
+                ))}
+              </HistoryList>
 
-            {/* 分页控件 */}
-            {totalPages > 1 && (
-              <PaginationContainer>
-                <PageButton
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  title="上一页"
-                >
-                  <MaterialIcon name="chevron_left" size={20} />
-                </PageButton>
+              {totalPages <= 1 && <NoMoreText>─ 暂无更多记录 ─</NoMoreText>}
+            </>
+          )}
+        </ScrollableContent>
 
-                {/* 页码按钮 */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                  // 智能显示页码：显示首页、尾页、当前页及其邻近页
-                  const showPage = 
-                    page === 1 || 
-                    page === totalPages || 
-                    Math.abs(page - currentPage) <= 1;
-                  
-                  const showEllipsis = 
-                    (page === 2 && currentPage > 3) || 
-                    (page === totalPages - 1 && currentPage < totalPages - 2);
+        {/* 固定在底部的分页控件 */}
+        {totalPages > 1 && (
+          <FixedPagination>
+            <PaginationContainer>
+              <PageButton
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                title="上一页"
+              >
+                <MaterialIcon name="chevron_left" size={20} />
+              </PageButton>
 
-                  if (showEllipsis) {
-                    return <PageInfo key={`ellipsis-${page}`}>...</PageInfo>;
-                  }
+              {/* 页码按钮 */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                // 智能显示页码：显示首页、尾页、当前页及其邻近页
+                const showPage = 
+                  page === 1 || 
+                  page === totalPages || 
+                  Math.abs(page - currentPage) <= 1;
+                
+                const showEllipsis = 
+                  (page === 2 && currentPage > 3) || 
+                  (page === totalPages - 1 && currentPage < totalPages - 2);
 
-                  if (!showPage) return null;
+                if (showEllipsis) {
+                  return <PageInfo key={`ellipsis-${page}`}>...</PageInfo>;
+                }
 
-                  return (
-                    <PageButton
-                      key={page}
-                      $active={currentPage === page}
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </PageButton>
-                  );
-                })}
+                if (!showPage) return null;
 
-                <PageButton
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  title="下一页"
-                >
-                  <MaterialIcon name="chevron_right" size={20} />
-                </PageButton>
+                return (
+                  <PageButton
+                    key={page}
+                    $active={currentPage === page}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </PageButton>
+                );
+              })}
 
-                <PageInfo>
-                  第 {currentPage} / {totalPages} 页
-                </PageInfo>
-              </PaginationContainer>
-            )}
+              <PageButton
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                title="下一页"
+              >
+                <MaterialIcon name="chevron_right" size={20} />
+              </PageButton>
 
-            {totalPages <= 1 && <NoMoreText>─ 暂无更多记录 ─</NoMoreText>}
-          </>
+              <PageInfo>
+                第 {currentPage} / {totalPages} 页
+              </PageInfo>
+            </PaginationContainer>
+          </FixedPagination>
         )}
       </Content>
 
