@@ -161,7 +161,7 @@ const HomeView: React.FC<HomeViewProps> = ({
         <ExplanationSection>
           <FormulaExplanation
             latex={latexCode}
-            deepSeekConfig={apiConfig?.deepSeek}
+            modelScopeConfig={apiConfig?.modelScope}
             resetKey={explanationResetKey}
           />
         </ExplanationSection>

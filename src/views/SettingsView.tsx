@@ -5,6 +5,7 @@ import MaterialIcon from '../components/MaterialIcon';
 import { themes, getTheme, saveCustomTheme, Theme } from '../theme/themes';
 import { DataConfirmDialog, DataAlertDialog } from '../components/DataDialog';
 import { getDefaultSidebarConfig } from '../components/Sidebar';
+import { getModelScopeModels } from '../utils/api';
 
 const SettingsContainer = styled.div`
   flex: 1;
@@ -152,6 +153,96 @@ const ButtonGroup = styled.div`
   gap: 12px;
   margin-top: 24px;
   justify-content: flex-end;
+`;
+
+const Select = styled.select`
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--color-inputBorder);
+  border-radius: 8px;
+  background: var(--color-inputBackground);
+  font-size: 15px;
+  color: var(--color-text);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  font-weight: 500;
+  height: 44px;
+  line-height: 20px;
+  -webkit-appearance: menulist;
+  appearance: menulist;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-inputFocus);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  option {
+    font-size: 15px;
+    padding: 8px;
+    line-height: 1.5;
+  }
+`;
+
+const LoadButton = styled.button`
+  border: none;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #a4b3b6 0%, #8e9b9d 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const ModelSelectHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  min-height: 24px;
+`;
+
+const ButtonRow = styled.div`
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 24px;
+  height: 28px;
+`;
+
+const LoadingIndicator = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #7f8c8d;
+  font-size: 12px;
 `;
 
 const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>`
@@ -773,6 +864,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   const [logPath, setLogPath] = useState('');
   const [cacheSize, setCacheSize] = useState('0MB');
   
+  // 魔搭模型列表相关状态
+  const [availableModels, setAvailableModels] = useState<Array<{id: string, name: string}>>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  
   // 对话框状态
   const [dialogState, setDialogState] = useState<{
     type: 'alert' | 'confirm' | null;
@@ -809,12 +904,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     setApiFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleDeepSeekChange = (field: string, value: string | boolean) => {
+  const handleModelScopeChange = (field: string, value: string | boolean) => {
     setApiFormData(prev => ({
       ...prev,
-      deepSeek: {
-        apiKey: prev.deepSeek?.apiKey || '',
-        enabled: prev.deepSeek?.enabled || false,
+      modelScope: {
+        apiKey: prev.modelScope?.apiKey || '',
+        enabled: prev.modelScope?.enabled || false,
+        model: prev.modelScope?.model || 'Qwen/Qwen2.5-7B-Instruct',
         [field]: value
       }
     }));
@@ -822,6 +918,38 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
   const handleSaveApi = () => {
     onSaveApi(apiFormData);
+  };
+  
+  // 加载魔搭模型列表
+  const handleLoadModels = async () => {
+    const apiKey = apiFormData.modelScope?.apiKey;
+    if (!apiKey) {
+      alert('请先输入API Key');
+      return;
+    }
+
+    setIsLoadingModels(true);
+    
+    try {
+      const models = await getModelScopeModels(apiKey);
+      setAvailableModels(models);
+      console.log('加载的模型列表:', models);
+    } catch (error) {
+      console.error('加载模型列表失败:', error);
+      alert(`加载模型列表失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  // 使用默认浏览器打开链接
+  const handleOpenLink = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+    e.preventDefault();
+    if (window.electronAPI?.openExternal) {
+      window.electronAPI.openExternal(url);
+    } else {
+      window.open(url, '_blank');
+    }
   };
 
   // 快捷键设置相关函数
@@ -1316,49 +1444,84 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
             <SectionTitle style={{ fontSize: '18px' }}>
               <MaterialIcon name="psychology" size={20} />
-              DeepSeek AI 配置
+              魔搭 AI 配置
             </SectionTitle>
 
             <FormGroup>
               <CheckboxWrapper>
                 <Checkbox
-                  id="deepseek-enabled"
+                  id="modelscope-enabled"
                   type="checkbox"
-                  checked={apiFormData.deepSeek?.enabled || false}
-                  onChange={(e) => handleDeepSeekChange('enabled', e.target.checked)}
+                  checked={apiFormData.modelScope?.enabled || false}
+                  onChange={(e) => handleModelScopeChange('enabled', e.target.checked)}
                 />
-                <CheckboxLabel htmlFor="deepseek-enabled">
-                  启用 DeepSeek AI 公式解释功能
+                <CheckboxLabel htmlFor="modelscope-enabled">
+                  启用魔搭 AI 公式解释功能
                 </CheckboxLabel>
               </CheckboxWrapper>
             </FormGroup>
 
             <FormGroup>
-              <Label>DeepSeek API Key</Label>
+              <Label>魔搭 API Key</Label>
               <Input
                 type="password"
-                value={apiFormData.deepSeek?.apiKey || ''}
-                onChange={(e) => handleDeepSeekChange('apiKey', e.target.value)}
-                placeholder="请输入 DeepSeek API Key"
+                value={apiFormData.modelScope?.apiKey || ''}
+                onChange={(e) => handleModelScopeChange('apiKey', e.target.value)}
+                placeholder="请输入魔搭 API Key"
                 autoComplete="off"
-                disabled={!apiFormData.deepSeek?.enabled}
+                disabled={!apiFormData.modelScope?.enabled}
               />
               <InfoNote>
                 <strong>
                   <MaterialIcon name="edit_note" size={16} /> 获取 API Key 说明：
                 </strong>
-                1. 访问 <a href="https://platform.deepseek.com" target="_blank" rel="noopener noreferrer">DeepSeek 官网</a> 注册账号<br/>
-                2. 在控制台创建 API Key<br/>
+                1. 访问 <a 
+                  href="https://modelscope.cn/my/myaccesstoken" 
+                  onClick={(e) => handleOpenLink(e, 'https://modelscope.cn/my/myaccesstoken')}
+                  style={{ cursor: 'pointer'}}
+                >魔搭控制台</a> 注册账号<br/>
+                2. 创建 API Key<br/>
                 3. 将 API Key 填入上方输入框<br/>
                 4. 启用功能后即可使用 AI 解释数学公式
               </InfoNote>
             </FormGroup>
 
-            <ButtonGroup>
+            <FormGroup>
+              <ModelSelectHeader>
+                <Label style={{ marginBottom: 0, fontSize: '14px' }}>选择模型</Label>
+                {isLoadingModels && (
+                  <LoadingIndicator>
+                    <MaterialIcon name="hourglass_empty" size={14} /> 加载中...
+                  </LoadingIndicator>
+                )}
+              </ModelSelectHeader>
+              <Select
+                value={apiFormData.modelScope?.model || ''}
+                onChange={(e) => handleModelScopeChange('model', e.target.value)}
+                disabled={!apiFormData.modelScope?.enabled || isLoadingModels}
+              >
+                <option value="">{availableModels.length === 0 ? '请先加载模型列表' : '请选择模型'}</option>
+                {availableModels.map(model => (
+                  <option key={model.id} value={model.id}>
+                    {model.name}
+                  </option>
+                ))}
+              </Select>
+            </FormGroup>
+
+            <ButtonRow>
+              <LoadButton
+                type="button"
+                onClick={handleLoadModels}
+                disabled={!apiFormData.modelScope?.enabled || !apiFormData.modelScope?.apiKey || isLoadingModels}
+              >
+                <MaterialIcon name={isLoadingModels ? "hourglass_empty" : "refresh"} size={16} />
+                {isLoadingModels ? '加载中' : '从API加载'}
+              </LoadButton>
               <Button variant="primary" onClick={handleSaveApi}>
                 保存
               </Button>
-            </ButtonGroup>
+            </ButtonRow>
         </Section>
 
         {/* 快捷键设置 */}

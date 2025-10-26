@@ -145,9 +145,10 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
               appId: '',
               appSecret: '',
               endpoint: 'https://server.simpletex.cn/api/latex_ocr',
-              deepSeek: {
+              modelScope: {
                 apiKey: '',
-                enabled: false
+                enabled: false,
+                model: 'Qwen/Qwen2.5-7B-Instruct'
               }
             },
             shortcuts: {
@@ -168,15 +169,16 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
                 console.warn('settings.json中未找到有效的API配置');
               }
               
-              // 加载DeepSeek配置
-              if (settings.deepseek_api_key !== undefined || settings.deepseek_enabled !== undefined) {
-                defaultSettings.apiConfig.deepSeek = {
-                  apiKey: settings.deepseek_api_key || '',
-                  enabled: settings.deepseek_enabled || false
+              // 加载魔搭配置
+              if (settings.modelscope_api_key !== undefined || settings.modelscope_enabled !== undefined) {
+                defaultSettings.apiConfig.modelScope = {
+                  apiKey: settings.modelscope_api_key || '',
+                  enabled: settings.modelscope_enabled || false,
+                  model: settings.modelscope_model || 'Qwen/Qwen2.5-7B-Instruct'
                 };
-                console.log('从settings.json加载DeepSeek配置成功');
+                console.log('从settings.json加载魔搭配置成功');
               } else {
-                console.log('settings.json中使用默认DeepSeek配置');
+                console.log('settings.json中使用默认魔搭配置');
               }
             } else {
               console.warn('无法加载settings.json文件');

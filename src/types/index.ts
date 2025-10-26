@@ -4,18 +4,19 @@ export interface HistoryItem {
   latex: string;
 }
 
-// DeepSeek API 配置
-export interface DeepSeekConfig {
+// AI模型提供商配置
+export interface ModelScopeConfig {
   apiKey: string;
   enabled: boolean;
+  model: string; // 选中的模型名称
 }
 
-// 扩展 API 配置，支持 DeepSeek
+// 扩展 API 配置，支持魔搭
 export interface ApiConfig {
   appId: string;
   appSecret: string;
   endpoint?: string;
-  deepSeek?: DeepSeekConfig;
+  modelScope?: ModelScopeConfig;
 }
 
 // 公式解释结果

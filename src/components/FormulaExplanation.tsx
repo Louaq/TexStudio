@@ -5,8 +5,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { FormulaExplanation as ExplanationType, DeepSeekConfig } from '../types';
-import { explainFormulaWithDeepSeek } from '../utils/api';
+import { FormulaExplanation as ExplanationType, ModelScopeConfig } from '../types';
+import { explainFormulaWithModelScope } from '../utils/api';
 
 const Container = styled.div`
   display: flex;
@@ -345,13 +345,13 @@ const ConfigMissingText = styled.div`
 
 interface FormulaExplanationProps {
   latex: string;
-  deepSeekConfig?: DeepSeekConfig;
+  modelScopeConfig?: ModelScopeConfig;
   resetKey?: number;
 }
 
 const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
   latex,
-  deepSeekConfig,
+  modelScopeConfig,
   resetKey
 }) => {
   const [explanation, setExplanation] = useState<ExplanationType>({
@@ -376,10 +376,10 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
       return;
     }
 
-    if (!deepSeekConfig?.apiKey || !deepSeekConfig.enabled) {
+    if (!modelScopeConfig?.apiKey || !modelScopeConfig.enabled) {
       setExplanation(prev => ({
         ...prev,
-        error: '请先在设置中配置 DeepSeek API 密钥并启用功能'
+        error: '请先在设置中配置魔搭 API 密钥并启用功能'
       }));
       return;
     }
@@ -392,7 +392,11 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
     });
 
     try {
-      const result = await explainFormulaWithDeepSeek(latex, deepSeekConfig.apiKey);
+      const result = await explainFormulaWithModelScope(
+        latex, 
+        modelScopeConfig.apiKey,
+        modelScopeConfig.model
+      );
       const timestamp = new Date().toLocaleString('zh-CN');
       
       setExplanation({
@@ -428,11 +432,11 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
       );
     }
 
-    if (!deepSeekConfig?.apiKey || !deepSeekConfig.enabled) {
+    if (!modelScopeConfig?.apiKey || !modelScopeConfig.enabled) {
       return (
         <ConfigMissingText>
           <span style={{display:'inline-flex',alignItems:'center',gap:4, fontStyle:'italic', color:'#95a5a6', padding: '0 10px'}}>
-            请先在设置中配置 DeepSeek API 密钥并启用此功能
+            请先在设置中配置魔搭 API 密钥并启用此功能
           </span>
         </ConfigMissingText>
       );
@@ -502,8 +506,8 @@ const FormulaExplanationComponent: React.FC<FormulaExplanationProps> = ({
   };
 
   const isExplainDisabled = !latex.trim() || 
-                           !deepSeekConfig?.apiKey || 
-                           !deepSeekConfig.enabled || 
+                           !modelScopeConfig?.apiKey || 
+                           !modelScopeConfig.enabled || 
                            explanation.isLoading;
 
   const isClearDisabled = !explanation.content && 

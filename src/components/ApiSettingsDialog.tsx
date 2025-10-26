@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
-import { ApiConfig, DeepSeekConfig } from '../types';
+import { ApiConfig, ModelScopeConfig } from '../types';
 import MaterialIcon from './MaterialIcon';
+import { getModelScopeModels } from '../utils/api';
 
 const Overlay = styled.div`
   position: fixed;
@@ -188,7 +189,7 @@ const SectionDivider = styled.div`
   position: relative;
 
   &::after {
-    content: 'DeepSeek AI 配置';
+    content: '魔搭 AI 配置';
     position: absolute;
     top: -8px;
     left: 50%;
@@ -222,7 +223,29 @@ const CheckboxLabel = styled.label`
   user-select: none;
 `;
 
-const DeepSeekNote = styled.div`
+const Select = styled.select`
+  padding: 12px 16px;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-inputBackground);
+  font-size: 14px;
+  color: var(--color-text);
+  transition: all 0.3s ease;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-inputFocus);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const ModelScopeNote = styled.div`
   background: rgba(52, 152, 219, 0.1);
   border: 1px solid var(--color-info);
   border-radius: 8px;
@@ -247,6 +270,36 @@ const DeepSeekNote = styled.div`
   }
 `;
 
+const LoadModelsButton = styled.button`
+  padding: 8px 16px;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  font-size: 13px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const LoadingIndicator = styled.span`
+  color: var(--color-textSecondary);
+  font-size: 12px;
+`;
+
 interface ApiSettingsDialogProps {
   apiConfig: ApiConfig;
   onSave: (config: ApiConfig) => void;
@@ -262,9 +315,10 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
   const [formData, setFormData] = useState<ApiConfig>({
     appId: apiConfig?.appId || '',
     appSecret: apiConfig?.appSecret || '',
-    deepSeek: {
-      apiKey: apiConfig?.deepSeek?.apiKey || '',
-      enabled: apiConfig?.deepSeek?.enabled || false
+    modelScope: {
+      apiKey: apiConfig?.modelScope?.apiKey || '',
+      enabled: apiConfig?.modelScope?.enabled || false,
+      model: apiConfig?.modelScope?.model || 'Qwen/Qwen2.5-7B-Instruct'
     }
   });
   
@@ -272,6 +326,33 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
   console.log('初始化的formData:', formData);
   
   const [isDragging, setIsDragging] = useState(false);
+  const [availableModels, setAvailableModels] = useState<Array<{id: string, name: string}>>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [modelLoadError, setModelLoadError] = useState<string | null>(null);
+  
+  // 加载可用模型列表
+  const handleLoadModels = async () => {
+    const apiKey = formData.modelScope?.apiKey;
+    if (!apiKey) {
+      alert('请先输入API Key');
+      return;
+    }
+
+    setIsLoadingModels(true);
+    setModelLoadError(null);
+    
+    try {
+      const models = await getModelScopeModels(apiKey);
+      setAvailableModels(models);
+      console.log('加载的模型列表:', models);
+    } catch (error) {
+      console.error('加载模型列表失败:', error);
+      setModelLoadError(error instanceof Error ? error.message : '加载模型列表失败');
+      alert(`加载模型列表失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
   
   // 处理表单提交
   const handleSubmit = (e: React.FormEvent) => {
@@ -282,9 +363,10 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
     const validFormData = {
       appId: formData.appId || '',
       appSecret: formData.appSecret || '',
-      deepSeek: {
-        apiKey: formData.deepSeek?.apiKey || '',
-        enabled: formData.deepSeek?.enabled || false
+      modelScope: {
+        apiKey: formData.modelScope?.apiKey || '',
+        enabled: formData.modelScope?.enabled || false,
+        model: formData.modelScope?.model || 'Qwen/Qwen2.5-7B-Instruct'
       }
     };
     
@@ -302,15 +384,15 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
     });
   };
 
-  // 处理 DeepSeek 配置变化
-  const handleDeepSeekChange = (field: keyof DeepSeekConfig, value: string | boolean) => {
-    console.log(`DeepSeek配置变化: ${field} = ${value}`);
+  // 处理魔搭配置变化
+  const handleModelScopeChange = (field: keyof ModelScopeConfig, value: string | boolean) => {
+    console.log(`魔搭配置变化: ${field} = ${value}`);
     setFormData(prev => {
-      const currentDeepSeek = prev.deepSeek || { apiKey: '', enabled: false };
+      const currentModelScope = prev.modelScope || { apiKey: '', enabled: false, model: 'Qwen/Qwen2.5-7B-Instruct' };
       const newData = {
         ...prev,
-        deepSeek: {
-          ...currentDeepSeek,
+        modelScope: {
+          ...currentModelScope,
           [field]: value
         }
       };
@@ -361,9 +443,10 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
         setFormData({
           appId: '',
           appSecret: '',
-          deepSeek: {
+          modelScope: {
             apiKey: '',
-            enabled: false
+            enabled: false,
+            model: 'Qwen/Qwen2.5-7B-Instruct'
           }
         });
         
@@ -372,9 +455,10 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
         onSave({
           appId: '',
           appSecret: '',
-          deepSeek: {
+          modelScope: {
             apiKey: '',
-            enabled: false
+            enabled: false,
+            model: 'Qwen/Qwen2.5-7B-Instruct'
           }
         });
       } catch (error) {
@@ -429,46 +513,92 @@ const ApiSettingsDialog: React.FC<ApiSettingsDialogProps> = ({
           <FormGroup>
             <CheckboxWrapper>
               <Checkbox
-                id="deepseek-enabled"
+                id="modelscope-enabled"
                 type="checkbox"
-                checked={formData.deepSeek?.enabled || false}
+                checked={formData.modelScope?.enabled || false}
                 onChange={(e) => {
-                  handleDeepSeekChange('enabled', e.target.checked);
+                  handleModelScopeChange('enabled', e.target.checked);
                 }}
               />
-              <CheckboxLabel htmlFor="deepseek-enabled">
-                启用 DeepSeek AI 公式解释功能
+              <CheckboxLabel htmlFor="modelscope-enabled">
+                启用魔搭 AI 公式解释功能
               </CheckboxLabel>
             </CheckboxWrapper>
           </FormGroup>
 
           <FormGroup>
-            <Label>DeepSeek API Key</Label>
+            <Label>魔搭 API Key</Label>
             <Input
               type="password"
-              value={formData.deepSeek?.apiKey || ''}
+              value={formData.modelScope?.apiKey || ''}
               onChange={(e) => {
-                handleDeepSeekChange('apiKey', e.target.value);
+                handleModelScopeChange('apiKey', e.target.value);
               }}
-              placeholder="请输入 DeepSeek API Key"
+              placeholder="请输入魔搭 API Key"
               autoComplete="off"
-              disabled={!formData.deepSeek?.enabled}
+              disabled={!formData.modelScope?.enabled}
               style={{ 
-                opacity: formData.deepSeek?.enabled ? 1 : 0.5,
-                cursor: formData.deepSeek?.enabled ? 'text' : 'not-allowed'
+                opacity: formData.modelScope?.enabled ? 1 : 0.5,
+                cursor: formData.modelScope?.enabled ? 'text' : 'not-allowed'
               }}
             />
-            <DeepSeekNote>
+          </FormGroup>
+
+          <FormGroup>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <Label style={{ marginBottom: 0 }}>选择模型</Label>
+              <LoadModelsButton
+                type="button"
+                onClick={handleLoadModels}
+                disabled={!formData.modelScope?.enabled || !formData.modelScope?.apiKey || isLoadingModels}
+              >
+                <MaterialIcon name={isLoadingModels ? "hourglass_empty" : "refresh"} size={16} />
+                {isLoadingModels ? '加载中...' : '从API加载'}
+              </LoadModelsButton>
+            </div>
+            <Select
+              value={formData.modelScope?.model || ''}
+              onChange={(e) => {
+                handleModelScopeChange('model', e.target.value);
+              }}
+              disabled={!formData.modelScope?.enabled}
+              style={{ 
+                opacity: formData.modelScope?.enabled ? 1 : 0.5,
+                cursor: formData.modelScope?.enabled ? 'pointer' : 'not-allowed'
+              }}
+            >
+              <option value="">请先加载模型列表</option>
+              {availableModels.map(model => (
+                <option key={model.id} value={model.id}>
+                  {model.name}
+                </option>
+              ))}
+            </Select>
+            {isLoadingModels && (
+              <LoadingIndicator>
+                <MaterialIcon name="hourglass_empty" size={14} /> 正在从魔搭API加载模型列表...
+              </LoadingIndicator>
+            )}
+            {modelLoadError && (
+              <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '8px' }}>
+                错误: {modelLoadError}
+              </div>
+            )}
+          </FormGroup>
+
+          <FormGroup>
+            <ModelScopeNote>
               <strong>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                   <MaterialIcon name="edit_note" size={14} /> 获取 API Key 说明：
                 </span>
               </strong><br/>
-              1. 访问 <a href="https://platform.deepseek.com" target="_blank" rel="noopener noreferrer">DeepSeek 官网</a> 注册账号<br/>
-              2. 在控制台创建 API Key<br/>
+              1. 访问 <a href="https://dashscope.console.aliyun.com" target="_blank" rel="noopener noreferrer">阿里云百炼控制台</a> 注册账号<br/>
+              2. 创建 API Key<br/>
               3. 将 API Key 填入上方输入框<br/>
-              4. 启用功能后即可使用 AI 解释数学公式
-            </DeepSeekNote>
+              4. 选择合适的模型并启用功能即可使用 AI 解释数学公式<br/>
+              <strong>提示：</strong>推荐使用 Qwen2-7B-Instruct 或更高版本以获得更好的效果
+            </ModelScopeNote>
           </FormGroup>
 
           <ButtonGroup>

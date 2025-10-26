@@ -449,25 +449,27 @@ const HistoryView: React.FC<HistoryViewProps> = ({
                 <MaterialIcon name="chevron_left" size={20} />
               </PageButton>
 
-              {/* 页码按钮 */}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                // 智能显示页码：显示首页、尾页、当前页及其邻近页
-                const showPage = 
-                  page === 1 || 
-                  page === totalPages || 
-                  Math.abs(page - currentPage) <= 1;
+              {/* 页码按钮 - 固定显示3个页码 */}
+              {(() => {
+                const pages: number[] = [];
                 
-                const showEllipsis = 
-                  (page === 2 && currentPage > 3) || 
-                  (page === totalPages - 1 && currentPage < totalPages - 2);
-
-                if (showEllipsis) {
-                  return <PageInfo key={`ellipsis-${page}`}>...</PageInfo>;
+                if (totalPages <= 3) {
+                  // 总页数不超过3页，显示所有页码
+                  for (let i = 1; i <= totalPages; i++) {
+                    pages.push(i);
+                  }
+                } else {
+                  // 总页数超过3页，只显示当前页及其前后各1页
+                  if (currentPage === 1) {
+                    pages.push(1, 2, 3);
+                  } else if (currentPage === totalPages) {
+                    pages.push(totalPages - 2, totalPages - 1, totalPages);
+                  } else {
+                    pages.push(currentPage - 1, currentPage, currentPage + 1);
+                  }
                 }
-
-                if (!showPage) return null;
-
-                return (
+                
+                return pages.map((page) => (
                   <PageButton
                     key={page}
                     $active={currentPage === page}
@@ -475,8 +477,8 @@ const HistoryView: React.FC<HistoryViewProps> = ({
                   >
                     {page}
                   </PageButton>
-                );
-              })}
+                ));
+              })()}
 
               <PageButton
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}

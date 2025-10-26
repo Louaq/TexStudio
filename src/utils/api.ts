@@ -1,5 +1,5 @@
 import CryptoJS from 'crypto-js';
-import { ApiConfig, SimpletexResponse } from '../types';
+import { ApiConfig, SimpletexResponse, ModelScopeConfig } from '../types';
 
 // SimpleTex API默认配置 - 确保不使用硬编码的API密钥
 export const DEFAULT_API_CONFIG: ApiConfig = {
@@ -101,7 +101,111 @@ export function getCurrentTimestamp(): string {
   });
 } 
 
-// DeepSeek API 调用函数
+// 获取魔搭可用模型列表
+export const getModelScopeModels = async (apiKey: string): Promise<Array<{id: string, name: string}>> => {
+  try {
+    const response = await fetch('https://api-inference.modelscope.cn/v1/models', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`获取模型列表失败: ${response.status}`);
+    }
+
+    const data: any = await response.json();
+    
+    // 返回模型列表，格式化为 {id, name}
+    if (data.data && Array.isArray(data.data)) {
+      return data.data.map((model: any) => ({
+        id: model.id,
+        name: model.name || model.id
+      }));
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('获取魔搭模型列表失败:', error);
+    throw new Error(`获取模型列表失败: ${error instanceof Error ? error.message : '未知错误'}`);
+  }
+};
+
+// 魔搭 API 调用函数
+export const explainFormulaWithModelScope = async (
+  latex: string, 
+  apiKey: string, 
+  model: string = 'Qwen/Qwen2.5-7B-Instruct'
+): Promise<string> => {
+  try {
+    // 动态导入 OpenAI SDK
+    const { default: OpenAI } = await import('openai');
+    
+    console.log('调用魔搭API，model:', model);
+    console.log('API Key长度:', apiKey.length);
+
+    const client = new OpenAI({
+      apiKey: apiKey,
+      baseURL: 'https://api-inference.modelscope.cn/v1/', // 需要带 /v1/
+      dangerouslyAllowBrowser: true
+    });
+
+    // 简化提示词，避免过长
+    const userContent = `请详细解释数学公式的含义。LaTeX公式：$${latex}$$
+
+请从以下方面解释：
+1. 基本含义和数学关系
+2. 符号说明
+3. 应用场景
+4. 相关概念
+5. 简单示例
+
+请用中文回答，使用Markdown格式，字数250-350字。`;
+
+    const response = await client.chat.completions.create({
+      model: model,
+      messages: [
+        {
+          role: 'user',
+          content: userContent
+        }
+      ],
+      max_tokens: 1000,
+      temperature: 0.7
+    });
+
+    console.log('API调用成功');
+
+    return response.choices[0]?.message?.content || '抱歉，无法获取公式解释。';
+  } catch (error) {
+    console.error('魔搭 API 调用失败:', error);
+    
+    // 打印详细的错误信息
+    if (error && typeof error === 'object' && 'response' in error) {
+      const response = (error as any).response;
+      console.error('响应状态码:', response?.status);
+      console.error('响应头:', response?.headers);
+      console.error('响应体:', response?.data);
+    }
+    
+    if (error instanceof Error) {
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        throw new Error('API 密钥无效，请检查魔搭 API 密钥设置');
+      } else if (error.message.includes('400')) {
+        throw new Error('请求格式错误，请检查API Key是否正确或模型名称是否有效');
+      } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+        throw new Error('API 调用频率超限，请稍后再试');
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        throw new Error('网络连接失败，请检查网络连接');
+      }
+    }
+    
+    throw new Error(`调用魔搭 API 失败: ${error instanceof Error ? error.message : '未知错误'}`);
+  }
+};
+
+// DeepSeek API 调用函数 (保留作为备用)
 export const explainFormulaWithDeepSeek = async (latex: string, apiKey: string): Promise<string> => {
   try {
     // 动态导入 OpenAI SDK 以避免在 Electron 渲染进程中的问题
