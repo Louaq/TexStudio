@@ -1,0 +1,159 @@
+{
+  "name": "latex-ocr-electron",
+  "version": "4.6.5",
+  "description": "TxStudio OCR",
+  "author": {
+    "name": "TexStudio",
+    "email": "admin@visual-medical.org"
+  },
+  "main": "dist/electron/electron/main.js",
+  "scripts": {
+    "start": "electron . --expose-gc --max-old-space-size=512",
+    "dev": "concurrently \"npm run dev:react\" \"wait-on http://localhost:3000 && npm run dev:electron\"",
+    "dev:react": "react-scripts start",
+    "dev:electron": "cross-env NODE_ENV=development electron . --expose-gc --max-old-space-size=512",
+    "build": "npm run build:react && npm run build:electron",
+    "build:react": "react-scripts build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "package": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
+    "dist": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=never",
+    "dist:win": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --publish=never",
+    "dist:mac": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --publish=never",
+    "dist:linux": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --linux --publish=never",
+    "dist:all": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --mac --linux --publish=never",
+    "publish": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --publish=always"
+  },
+  "dependencies": {
+    "@fontsource/material-symbols-outlined": "5.0.5",
+    "@types/archiver": "^6.0.3",
+    "@types/crypto-js": "^4.2.2",
+    "@types/katex": "^0.16.7",
+    "archiver": "^7.0.1",
+    "axios": "^1.5.0",
+    "crypto-js": "^4.2.0",
+    "docx": "^9.5.1",
+    "docx-templates": "^4.14.1",
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.6.2",
+    "extract-zip": "^2.0.1",
+    "form-data": "^4.0.0",
+    "katex": "^0.16.22",
+    "mammoth": "^1.9.1",
+    "mathjax-node": "^2.1.1",
+    "office-document-properties": "^1.1.0",
+    "officegen": "^0.6.5",
+    "openai": "^5.8.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-katex": "^3.1.0",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
+    "sharp": "^0.34.2",
+    "styled-components": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/form-data": "^2.5.0",
+    "@types/mathjax-node": "^2.1.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/react-katex": "^3.0.4",
+    "@types/styled-components": "^5.1.26",
+    "concurrently": "^8.2.0",
+    "cross-env": "^7.0.3",
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.0",
+    "react-scripts": "^5.0.1",
+    "typescript": "^4.9.5",
+    "wait-on": "^7.0.1"
+  },
+  "homepage": "./",
+  "build": {
+    "appId": "com.latex-ocr.app",
+    "productName": "TexStudio",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "build/**/*",
+      "dist/**/*",
+      "node_modules/**/*",
+      "settings.json"
+    ],
+    "extraMetadata": {
+      "main": "dist/electron/electron/main.js"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TexStudio",
+      "deleteAppDataOnUninstall": true
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "category": "public.app-category.productivity"
+    },
+    "dmg": {
+      "title": "${productName} ${version}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "category": "Office",
+      "maintainer": "TexStudio <admin@visual-medical.org>"
+    },
+    "appImage": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "deb": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Louaq",
+      "repo": "TexStudio",
+      "private": false,
+      "releaseType": "release"
+    }
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

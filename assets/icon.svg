@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <!-- 创建一个圆形背景 -->
+  <circle cx="256" cy="256" r="240" fill="#4285f4" />
+  <circle cx="256" cy="256" r="220" fill="#ffffff" />
+  
+  <!-- 添加积分符号 -->
+  <text x="130" y="330" font-family="'Times New Roman', serif" font-size="280" font-style="italic" fill="#333333">∫</text>
+  
+  <!-- 添加平方根符号 -->
+  <text x="240" y="300" font-family="'Times New Roman', serif" font-size="200" font-style="normal" fill="#d34836">√</text>
+  
+  <!-- 添加一个希腊字母 Sigma -->
+  <text x="280" y="250" font-family="'Times New Roman', serif" font-size="140" font-style="normal" fill="#4285f4">Σ</text>
+  
+  <!-- 添加一个分数线 -->
+  <line x1="180" y1="360" x2="350" y2="360" stroke="#0f9d58" stroke-width="8" />
+</svg> 

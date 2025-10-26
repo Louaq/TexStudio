@@ -1,0 +1,223 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.check.outputs.version }}
+      
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 检查版本号是否变更
+        id: check
+        run: |
+          # 获取当前版本号
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "当前版本: $CURRENT_VERSION"
+          
+          # 获取上一次提交的版本号
+          git checkout HEAD~1 package.json || true
+          PREVIOUS_VERSION=$(node -p "require('./package.json').version" || echo "0.0.0")
+          echo "上一个版本: $PREVIOUS_VERSION"
+          
+          # 切回当前分支
+          git checkout HEAD package.json
+          
+          # 比较版本号
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "版本号已更新: $PREVIOUS_VERSION -> $CURRENT_VERSION"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "版本号未更改: $CURRENT_VERSION"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+  build-and-release:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+            arch: x64
+          - os: macos-latest
+            platform: mac
+            arch: x64
+          - os: macos-latest
+            platform: mac
+            arch: arm64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: 缓存依赖
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      - name: 安装依赖
+        run: npm ci
+      
+      - name: 获取版本号
+        id: package_version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        shell: bash
+      
+      - name: 构建应用 (Windows)
+        if: matrix.platform == 'win'
+        run: npm run dist:win
+        env:
+          CI: false
+      
+      - name: 构建应用 (macOS)
+        if: matrix.platform == 'mac'
+        run: npm run dist:mac -- --${{ matrix.arch }}
+        env:
+          CI: false
+      
+      - name: 构建应用 (Linux)
+        if: matrix.platform == 'linux'
+        run: npm run dist:linux -- --${{ matrix.arch }}
+        env:
+          CI: false
+      
+      - name: 列出生成的文件
+        run: |
+          echo "=== 构建产物列表 ==="
+          ls -lh release/
+        shell: bash
+      
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-${{ matrix.arch }}-installer
+          path: release/*
+
+  create-release:
+    needs: [check-version, build-and-release]
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 下载所有构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: 整理发布文件
+        run: |
+          mkdir -p release-files
+          echo "=== 收集的所有构建产物 ==="
+          find artifacts -type f
+          
+          # 只复制符合命名规范的安装包文件（统一使用连字符）
+          echo ""
+          echo "=== 复制安装包文件 ==="
+          
+          # Windows 安装包: TexStudio-*-setup.exe
+          find artifacts -type f -name "TexStudio-*-setup.exe" -exec cp {} release-files/ \;
+          
+          # macOS 安装包: TexStudio-*.dmg (包含版本号)
+          find artifacts -type f -name "TexStudio-*.dmg" ! -name "TexStudio.dmg" -exec cp {} release-files/ \;
+          
+          # Linux AppImage: TexStudio-*.AppImage (支持 x86_64 和 arm64)
+          find artifacts -type f -name "TexStudio-*.AppImage" -exec cp {} release-files/ \;
+          
+          # Linux deb: TexStudio-*.deb (支持 amd64 和 arm64)
+          find artifacts -type f -name "TexStudio-*.deb" -exec cp {} release-files/ \;
+          
+          # 复制自动更新元数据文件 (latest.yml, latest-mac.yml, latest-linux.yml)
+          echo ""
+          echo "=== 复制更新元数据文件 ==="
+          find artifacts -type f -name "latest*.yml" -exec cp {} release-files/ \;
+          
+          echo ""
+          echo "=== 准备发布的文件 ==="
+          ls -lh release-files/
+          echo ""
+          echo "文件数量: $(ls -1 release-files/ | wc -l)"
+        shell: bash
+      
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.check-version.outputs.version }}
+          name: Release v${{ needs.check-version.outputs.version }}
+          draft: false
+          prerelease: false
+          body: |
+            ## TexStudio v${{ needs.check-version.outputs.version }}
+            
+            ### 📦 下载安装包
+            
+            **Windows:**
+            - `TexStudio-${{ needs.check-version.outputs.version }}-setup.exe` - Windows 64位 (Intel/AMD)
+            
+            **macOS:**
+            - `TexStudio-${{ needs.check-version.outputs.version }}-x64.dmg` - macOS Intel
+            - `TexStudio-${{ needs.check-version.outputs.version }}-arm64.dmg` - macOS Apple Silicon (M1/M2/M3)
+            
+            **Linux:**
+            - `TexStudio-${{ needs.check-version.outputs.version }}-x86_64.AppImage` - Linux 64位 AppImage (通用)
+            - `TexStudio-${{ needs.check-version.outputs.version }}-arm64.AppImage` - Linux ARM64 AppImage
+            - `TexStudio-${{ needs.check-version.outputs.version }}-amd64.deb` - Debian/Ubuntu 64位
+            - `TexStudio-${{ needs.check-version.outputs.version }}-arm64.deb` - Debian/Ubuntu ARM64
+          
+            ---
+            *自动构建于 ${{ github.sha }}*
+          files: release-files/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    needs: [check-version, build-and-release, create-release]
+    if: always() && needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 发布状态通知
+        run: |
+          if [ "${{ needs.create-release.result }}" == "success" ]; then
+            echo "✅ 版本 ${{ needs.check-version.outputs.version }} 已成功发布!"
+            echo "📦 已发布以下平台的安装包："
+            echo "   - Windows (x64)"
+            echo "   - macOS (x64, ARM64)"
+            echo "   - Linux (x64, ARM64)"
+          else
+            echo "❌ 版本 ${{ needs.check-version.outputs.version }} 发布失败!"
+          fi
+        shell: bash
