@@ -1,7 +1,7 @@
 {
-  "app_id": "1uH4ODy0jlqLLd9hYvSbstnk",
-  "app_secret": "xc0ti9FBS0FCXLTX3YLh3euB2rpXQsIO",
-  "modelscope_api_key": "539d6af9-fa30-466b-ab4c-76f4af2ce331",
-  "modelscope_enabled": true,
-  "modelscope_model": "Qwen/Qwen2.5-7B-Instruct"
+  "app_id": "",
+  "app_secret": "",
+  "modelscope_api_key": "",
+  "modelscope_enabled": false,
+  "modelscope_model": ""
 }
