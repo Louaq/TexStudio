@@ -26,15 +26,13 @@ jobs:
 
     - name: Clean settings.json
       run: |
-        cat > settings.json << 'EOF'
-{
-  "app_id": "",
-  "app_secret": "",
-  "modelscope_api_key": "",
-  "modelscope_enabled": false,
-  "modelscope_model": ""
-}
-EOF
+        echo '{' > settings.json
+        echo '  "app_id": "",' >> settings.json
+        echo '  "app_secret": "",' >> settings.json
+        echo '  "modelscope_api_key": "",' >> settings.json
+        echo '  "modelscope_enabled": false,' >> settings.json
+        echo '  "modelscope_model": ""' >> settings.json
+        echo '}' >> settings.json
 
     - name: Check for changes
       id: verify-changed-files
