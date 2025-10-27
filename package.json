@@ -1,6 +1,6 @@
 {
   "name": "latex-ocr-electron",
-  "version": "4.6.7",
+  "version": "4.6.8",
   "description": "TxStudio OCR",
   "author": {
     "name": "TexStudio",
@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@fontsource/material-symbols-outlined": "5.0.5",
+    "@lobehub/icons": "^2.43.1",
     "@types/archiver": "^6.0.3",
     "@types/crypto-js": "^4.2.2",
     "@types/katex": "^0.16.7",
@@ -66,7 +67,7 @@
     "electron": "^27.0.0",
     "electron-builder": "^24.6.0",
     "react-scripts": "^5.0.1",
-    "typescript": "^4.9.5",
+    "typescript": "^5.7.2",
     "wait-on": "^7.0.1"
   },
   "homepage": "./",
@@ -89,7 +90,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "artifactName": "${productName}-${version}-setup.${ext}"
@@ -107,7 +110,10 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "artifactName": "${productName}-${version}-${arch}.${ext}",
@@ -120,11 +126,17 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "deb",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "category": "Office",

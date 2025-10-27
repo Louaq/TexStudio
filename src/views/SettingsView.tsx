@@ -6,6 +6,7 @@ import { themes, getTheme, saveCustomTheme, Theme } from '../theme/themes';
 import { DataConfirmDialog, DataAlertDialog } from '../components/DataDialog';
 import { getDefaultSidebarConfig } from '../components/Sidebar';
 import { getModelScopeModels } from '../utils/api';
+import ModelSelect from '../components/ModelSelect';
 
 const SettingsContainer = styled.div`
   flex: 1;
@@ -867,6 +868,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   // 魔搭模型列表相关状态
   const [availableModels, setAvailableModels] = useState<Array<{id: string, name: string}>>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
   
   // 对话框状态
   const [dialogState, setDialogState] = useState<{
@@ -898,13 +900,52 @@ const SettingsView: React.FC<SettingsViewProps> = ({
       setSidebarItems(sidebarConfig.items);
     }
   }, [sidebarConfig]);
+  
+  // 自动加载模型列表
+  useEffect(() => {
+    const shouldAutoLoad = apiFormData.modelScope?.enabled && 
+                          apiFormData.modelScope?.apiKey && 
+                          availableModels.length === 0 &&
+                          !isLoadingModels &&
+                          !hasAttemptedLoad;
+    
+    if (shouldAutoLoad && apiFormData.modelScope?.apiKey) {
+      const loadModels = async () => {
+        setHasAttemptedLoad(true);
+        setIsLoadingModels(true);
+        
+        try {
+          const models = await getModelScopeModels(apiFormData.modelScope!.apiKey);
+          setAvailableModels(models);
+          console.log('自动加载的模型列表:', models);
+          
+          // 自动选择第一个模型
+          if (models.length > 0 && !apiFormData.modelScope?.model) {
+            setApiFormData(prev => ({
+              ...prev,
+              modelScope: {
+                ...prev.modelScope!,
+                model: models[0].id
+              }
+            }));
+          }
+        } catch (error) {
+          console.error('自动加载模型列表失败:', error);
+        } finally {
+          setIsLoadingModels(false);
+        }
+      };
+      
+      loadModels();
+    }
+  }, [apiFormData.modelScope?.enabled, apiFormData.modelScope?.apiKey]);
 
   // API设置相关函数
   const handleApiChange = (field: keyof ApiConfig, value: string) => {
     setApiFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleModelScopeChange = (field: string, value: string | boolean) => {
+  const handleModelScopeChange = async (field: string, value: string | boolean) => {
     setApiFormData(prev => ({
       ...prev,
       modelScope: {
@@ -914,13 +955,58 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         [field]: value
       }
     }));
+    
+    // 如果是enabled或apiKey改变，且启用了魔搭功能且有apiKey，则自动加载模型列表
+    if ((field === 'enabled' || field === 'apiKey') && 
+        (field === 'enabled' ? value : apiFormData.modelScope?.enabled) &&
+        (field === 'apiKey' ? value : apiFormData.modelScope?.apiKey) &&
+        availableModels.length === 0 &&
+        !isLoadingModels &&
+        !hasAttemptedLoad) {
+      const newApiKey = field === 'apiKey' ? value as string : apiFormData.modelScope?.apiKey || '';
+      const newEnabled = field === 'enabled' ? value as boolean : apiFormData.modelScope?.enabled || false;
+      
+      if (newEnabled && newApiKey) {
+        await handleLoadModelsAuto(newApiKey);
+      }
+    }
+  };
+  
+  // 自动加载模型列表
+  const handleLoadModelsAuto = async (apiKey: string) => {
+    if (!apiKey || isLoadingModels) return;
+    
+    setHasAttemptedLoad(true);
+    setIsLoadingModels(true);
+    
+    try {
+      const models = await getModelScopeModels(apiKey);
+      setAvailableModels(models);
+      console.log('自动加载的模型列表:', models);
+      
+      // 自动选择第一个模型
+      if (models.length > 0 && !apiFormData.modelScope?.model) {
+        setApiFormData(prev => ({
+          ...prev,
+          modelScope: {
+            ...prev.modelScope!,
+            model: models[0].id
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('自动加载模型列表失败:', error);
+      // 静默失败，不显示错误提示
+    } finally {
+      setIsLoadingModels(false);
+    }
   };
 
   const handleSaveApi = () => {
     onSaveApi(apiFormData);
   };
   
-  // 加载魔搭模型列表
+  // 手动加载魔搭模型列表
   const handleLoadModels = async () => {
     const apiKey = apiFormData.modelScope?.apiKey;
     if (!apiKey) {
@@ -928,12 +1014,24 @@ const SettingsView: React.FC<SettingsViewProps> = ({
       return;
     }
 
+    setHasAttemptedLoad(false);
     setIsLoadingModels(true);
     
     try {
       const models = await getModelScopeModels(apiKey);
       setAvailableModels(models);
       console.log('加载的模型列表:', models);
+      
+      // 自动选择第一个模型（如果还没有选择模型）
+      if (models.length > 0 && (!apiFormData.modelScope?.model || apiFormData.modelScope?.model === '')) {
+        setApiFormData(prev => ({
+          ...prev,
+          modelScope: {
+            ...prev.modelScope!,
+            model: models[0].id
+          }
+        }));
+      }
     } catch (error) {
       console.error('加载模型列表失败:', error);
       alert(`加载模型列表失败: ${error instanceof Error ? error.message : '未知错误'}`);
@@ -1495,29 +1593,16 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                   </LoadingIndicator>
                 )}
               </ModelSelectHeader>
-              <Select
+              <ModelSelect
                 value={apiFormData.modelScope?.model || ''}
-                onChange={(e) => handleModelScopeChange('model', e.target.value)}
+                options={availableModels}
+                onChange={(value) => handleModelScopeChange('model', value)}
                 disabled={!apiFormData.modelScope?.enabled || isLoadingModels}
-              >
-                <option value="">{availableModels.length === 0 ? '请先加载模型列表' : '请选择模型'}</option>
-                {availableModels.map(model => (
-                  <option key={model.id} value={model.id}>
-                    {model.name}
-                  </option>
-                ))}
-              </Select>
+                placeholder={availableModels.length === 0 ? '请先加载模型列表' : '请选择模型'}
+              />
             </FormGroup>
 
             <ButtonRow>
-              <LoadButton
-                type="button"
-                onClick={handleLoadModels}
-                disabled={!apiFormData.modelScope?.enabled || !apiFormData.modelScope?.apiKey || isLoadingModels}
-              >
-                <MaterialIcon name={isLoadingModels ? "hourglass_empty" : "refresh"} size={16} />
-                {isLoadingModels ? '加载中' : '从API加载'}
-              </LoadButton>
               <Button variant="primary" onClick={handleSaveApi}>
                 保存
               </Button>

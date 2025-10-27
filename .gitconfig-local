@@ -1,0 +1,4 @@
+[filter "clean-settings"]
+    clean = "sed 's/\".*\": \".*\"/\"\": \"\"/g; s/\"\": \".*\"/\"\": \"\"/g'"
+    smudge = cat
+

@@ -8,6 +8,7 @@
     ],
     "allowJs": true,
     "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
@@ -24,6 +25,7 @@
     "src"
   ],
   "exclude": [
-    "src/electron"
+    "src/electron",
+    "node_modules/@types/d3-dispatch"
   ]
 } 
