@@ -100,17 +100,17 @@
 5. **AI 公式解释**
    - 识别公式后，在右侧的"AI 公式解释"区域点击"解释公式"按钮
    - AI 会详细解释公式的含义、用途和相关概念
-   - 需要先在API设置中配置 DeepSeek API 密钥
+   - 需要先在API设置中配置 魔搭 API 密钥
 
 ### 设置配置
 
 1. **API设置**
    - 点击菜单"API设置"
    - 配置你的 [SimpleTex API](https://simpletex.cn/) 密钥（用于公式识别）
-   - 配置 DeepSeek API 密钥（用于 AI 公式解释）
-     - 访问 [DeepSeek 官网](https://platform.deepseek.com) 注册账号
+   - 配置 魔搭 API 密钥（用于 AI 公式解释）
+     - 访问 [魔搭 官网](https://www.modelscope.cn/) 注册账号
      - 在控制台创建 API Key
-     - 在设置中启用 DeepSeek 功能并填入 API Key
+     - 在设置中启用 魔搭 功能并填入 API Key
 
 2. **快捷键设置**
    - 点击菜单""快捷键设置"
