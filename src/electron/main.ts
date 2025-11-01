@@ -657,6 +657,20 @@ async function createMainWindow(): Promise<void> {
         event.preventDefault();
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.hide();
+          logger.log('窗口已最小化到系统托盘（通过close事件）');
+          
+          // 显示托盘通知（仅第一次显示）
+          if (tray && !tray.isDestroyed()) {
+            const hasShownTrayNotice = store.get('hasShownTrayNotice', false);
+            if (!hasShownTrayNotice) {
+              tray.displayBalloon({
+                title: 'TexStudio',
+                content: '程序已最小化到系统托盘\n单击托盘图标可以重新打开窗口',
+                iconType: 'info'
+              });
+              store.set('hasShownTrayNotice', true);
+            }
+          }
         }
       } else {
         // 直接退出
@@ -819,6 +833,62 @@ function createSplashWindow(): void {
 
 const screenshotWindows: BrowserWindow[] = [];
 
+// 更新托盘菜单
+function updateTrayMenu(): void {
+  if (!tray || tray.isDestroyed()) {
+    return;
+  }
+  
+  try {
+    // 获取快捷键设置
+    const shortcuts = store.get('shortcuts', { capture: 'Alt+A', upload: 'Alt+S' });
+    
+    // 创建托盘菜单
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: '显示主窗口',
+        click: () => {
+          if (mainWindow) {
+            if (mainWindow.isMinimized()) {
+              mainWindow.restore();
+            }
+            mainWindow.show();
+            mainWindow.focus();
+          }
+        }
+      },
+      {
+        type: 'separator'
+      },
+      {
+        label: '截图识别 (' + shortcuts.capture + ')',
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.hide();
+          }
+          setTimeout(() => {
+            showUnifiedScreenshotOverlay();
+          }, 200);
+        }
+      },
+      {
+        type: 'separator'
+      },
+      {
+        label: '退出',
+        click: () => {
+          forceQuitApp();
+        }
+      }
+    ]);
+    
+    tray.setContextMenu(contextMenu);
+    logger.log('系统托盘菜单已更新');
+  } catch (error) {
+    logger.error('更新系统托盘菜单失败:', error);
+  }
+}
+
 // 创建系统托盘
 function createTray(): void {
   try {
@@ -851,33 +921,30 @@ function createTray(): void {
     // 设置托盘提示
     tray.setToolTip('TexStudio OCR');
     
-    // 创建托盘菜单
-    const contextMenu = Menu.buildFromTemplate([
-      {
-        label: '显示主窗口',
-        click: () => {
-          if (mainWindow) {
-            mainWindow.show();
-            mainWindow.focus();
+    // 更新托盘菜单
+    updateTrayMenu();
+    
+    // 单击托盘图标也显示主窗口（Windows常用行为）
+    tray.on('click', () => {
+      if (mainWindow) {
+        if (mainWindow.isVisible()) {
+          mainWindow.hide();
+        } else {
+          if (mainWindow.isMinimized()) {
+            mainWindow.restore();
           }
-        }
-      },
-      {
-        type: 'separator'
-      },
-      {
-        label: '退出',
-        click: () => {
-          forceQuitApp();
+          mainWindow.show();
+          mainWindow.focus();
         }
       }
-    ]);
-    
-    tray.setContextMenu(contextMenu);
+    });
     
     // 双击托盘图标显示主窗口
     tray.on('double-click', () => {
       if (mainWindow) {
+        if (mainWindow.isMinimized()) {
+          mainWindow.restore();
+        }
         mainWindow.show();
         mainWindow.focus();
       }
@@ -1721,6 +1788,8 @@ ipcMain.handle('save-settings', async (event, settings: Partial<AppSettings>) =>
   if (settings.shortcuts) {
     globalShortcut.unregisterAll();
     registerGlobalShortcuts();
+    // 快捷键变更时更新托盘菜单
+    updateTrayMenu();
   }
 });
 // 处理手写公式识别
@@ -2006,7 +2075,30 @@ ipcMain.handle('is-window-maximized', () => {
 });
 
 ipcMain.handle('close-window', () => {
-  forceQuitApp();
+  // 获取最小化到托盘的设置
+  const minimizeToTray = store.get('minimizeToTray', true);
+  
+  if (minimizeToTray && mainWindow && !mainWindow.isDestroyed()) {
+    // 最小化到托盘而不是退出
+    mainWindow.hide();
+    logger.log('窗口已最小化到系统托盘');
+    
+    // 显示托盘通知（仅第一次显示）
+    if (tray && !tray.isDestroyed()) {
+      const hasShownTrayNotice = store.get('hasShownTrayNotice', false);
+      if (!hasShownTrayNotice) {
+        tray.displayBalloon({
+          title: 'TexStudio',
+          content: '程序已最小化到系统托盘\n单击托盘图标可以重新打开窗口',
+          iconType: 'info'
+        });
+        store.set('hasShownTrayNotice', true);
+      }
+    }
+  } else {
+    // 直接退出应用
+    forceQuitApp();
+  }
   return true;
 });
 
