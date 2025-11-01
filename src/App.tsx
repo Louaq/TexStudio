@@ -97,6 +97,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
     shortcuts: { capture: string; upload: string };
     theme?: string;
     sidebarConfig?: SidebarConfig;
+    minimizeToTray?: boolean;
   } | null>(null);
 
   type ViewType = 'home' | 'settings' | 'history' | 'about';
@@ -125,7 +126,8 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
             apiConfig: appSettings.apiConfig,
             shortcuts: appSettings.shortcuts,
             theme: selectedTheme,
-            sidebarConfig: appSettings.sidebarConfig || getDefaultSidebarConfig()
+            sidebarConfig: appSettings.sidebarConfig || getDefaultSidebarConfig(),
+            minimizeToTray: appSettings.minimizeToTray !== undefined ? appSettings.minimizeToTray : true
           });
           setAppState(prev => ({ ...prev, history: appSettings.history }));
           
@@ -1099,6 +1101,20 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
     }
   };
 
+  const handleSaveMinimizeToTray = async (minimizeToTray: boolean) => {
+    if (window.electronAPI) {
+      try {
+        await window.electronAPI.saveSettings({ minimizeToTray });
+        setSettings(prev => prev ? { ...prev, minimizeToTray } : null);
+        console.log('最小化到托盘设置已保存:', minimizeToTray);
+      } catch (error) {
+        console.error('保存最小化到托盘设置失败:', error);
+      }
+    } else {
+      setSettings(prev => prev ? { ...prev, minimizeToTray } : null);
+    }
+  };
+
   const handleCheckForUpdates = async () => {
     if (!window.electronAPI) {
       setAppState(prev => ({ 
@@ -1296,11 +1312,13 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
             shortcuts={settings?.shortcuts || { capture: '', upload: '' }}
             currentTheme={settings?.theme || 'green'}
             sidebarConfig={settings?.sidebarConfig}
+            minimizeToTray={settings?.minimizeToTray !== undefined ? settings.minimizeToTray : true}
             onSaveApi={handleSaveApiSettings}
             onSaveShortcuts={handleSaveShortcutSettings}
             onThemeChange={handleThemeChange}
             onCheckForUpdates={handleCheckForUpdates}
             onSaveSidebarConfig={handleSaveSidebarConfig}
+            onSaveMinimizeToTray={handleSaveMinimizeToTray}
           />
         )}
 

@@ -832,11 +832,13 @@ interface SettingsViewProps {
   shortcuts: { capture: string; upload: string };
   currentTheme?: string;
   sidebarConfig?: SidebarConfig;
+  minimizeToTray?: boolean;
   onSaveApi: (config: ApiConfig) => void;
   onSaveShortcuts: (shortcuts: { capture: string; upload: string }) => void;
   onThemeChange?: (themeId: string) => void;
   onCheckForUpdates?: () => void;
   onSaveSidebarConfig?: (config: SidebarConfig) => void;
+  onSaveMinimizeToTray?: (minimizeToTray: boolean) => void;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({
@@ -844,11 +846,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   shortcuts,
   currentTheme = 'green',
   sidebarConfig,
+  minimizeToTray = true,
   onSaveApi,
   onSaveShortcuts,
   onThemeChange,
   onCheckForUpdates,
-  onSaveSidebarConfig
+  onSaveSidebarConfig,
+  onSaveMinimizeToTray
 }) => {
   const [apiFormData, setApiFormData] = useState<ApiConfig>(apiConfig);
   const [shortcutFormData, setShortcutFormData] = useState(shortcuts);
@@ -858,6 +862,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>(
     sidebarConfig?.items || getDefaultSidebarConfig().items
   );
+  const [minimizeToTrayState, setMinimizeToTrayState] = useState<boolean>(minimizeToTray);
   
   // 数据设置相关状态
   const [simpleBackup, setSimpleBackup] = useState(false);
@@ -1676,6 +1681,44 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 保存
               </Button>
             </ButtonGroup>
+        </Section>
+
+        {/* 窗口设置 */}
+        <Section>
+          <SectionTitle>
+            <MaterialIcon name="window" size={22} />
+            窗口设置
+          </SectionTitle>
+
+          <DataRow>
+            <DataLabel>
+              <DataTitle>最小化到系统托盘</DataTitle>
+              <DataDescription>
+                点击关闭按钮时最小化到系统托盘，而不是直接退出程序。可从托盘图标恢复窗口。
+              </DataDescription>
+            </DataLabel>
+            <DataActions>
+              <Toggle>
+                <input
+                  type="checkbox"
+                  checked={minimizeToTrayState}
+                  onChange={(e) => {
+                    const newValue = e.target.checked;
+                    setMinimizeToTrayState(newValue);
+                    if (onSaveMinimizeToTray) {
+                      onSaveMinimizeToTray(newValue);
+                      showAlert(
+                        '设置已保存',
+                        newValue ? '关闭窗口时将最小化到托盘' : '关闭窗口时将直接退出程序',
+                        'success'
+                      );
+                    }
+                  }}
+                />
+                <span></span>
+              </Toggle>
+            </DataActions>
+          </DataRow>
         </Section>
 
         {/* 主题设置 */}

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, clipboard, globalShortcut, screen, nativeImage, desktopCapturer, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, clipboard, globalShortcut, screen, nativeImage, desktopCapturer, Menu, Tray } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import axios from 'axios';
@@ -324,6 +324,7 @@ interface AppSettings {
   };
   history: HistoryItem[];
   theme?: string; // 主题ID
+  minimizeToTray?: boolean; // 关闭时最小化到托盘
 }
 
 interface ApiConfig {
@@ -562,12 +563,14 @@ const store = new Store<AppSettings>({
       upload: 'Alt+S' 
     },
     history: [],
-    theme: 'green' // 默认使用清新绿色主题
+    theme: 'green', // 默认使用清新绿色主题
+    minimizeToTray: true // 默认关闭时最小化到托盘
   }
 });
 
 let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
 
 // 创建主窗口
 async function createMainWindow(): Promise<void> {
@@ -645,9 +648,21 @@ async function createMainWindow(): Promise<void> {
       return;
     }
 
+    // 获取最小化到托盘的设置
+    const minimizeToTray = store.get('minimizeToTray', true);
+
     if (!isDev && process.platform === 'win32') {
-      event.preventDefault();
-      forceQuitApp();
+      if (minimizeToTray) {
+        // 最小化到托盘
+        event.preventDefault();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.hide();
+        }
+      } else {
+        // 直接退出
+        event.preventDefault();
+        forceQuitApp();
+      }
     }
   });
 
@@ -803,6 +818,76 @@ function createSplashWindow(): void {
 }
 
 const screenshotWindows: BrowserWindow[] = [];
+
+// 创建系统托盘
+function createTray(): void {
+  try {
+    // 查找托盘图标
+    let trayIconPath = '';
+    const possiblePaths = [
+      path.join(__dirname, '../../../build/logo192.png'),
+      path.join(__dirname, '../../../build/icons/icon-128.png'),
+      path.join(__dirname, '../../../build/icons/icon.png'),
+      path.join(process.resourcesPath, 'logo192.png'),
+      path.join(process.resourcesPath, 'icon.png')
+    ];
+
+    for (const iconPath of possiblePaths) {
+      if (fs.existsSync(iconPath)) {
+        trayIconPath = iconPath;
+        break;
+      }
+    }
+
+    if (!trayIconPath) {
+      logger.log('未找到托盘图标，跳过创建托盘');
+      return;
+    }
+
+    // 创建托盘图标
+    const trayIcon = nativeImage.createFromPath(trayIconPath);
+    tray = new Tray(trayIcon.resize({ width: 16, height: 16 }));
+    
+    // 设置托盘提示
+    tray.setToolTip('TexStudio OCR');
+    
+    // 创建托盘菜单
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: '显示主窗口',
+        click: () => {
+          if (mainWindow) {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+        }
+      },
+      {
+        type: 'separator'
+      },
+      {
+        label: '退出',
+        click: () => {
+          forceQuitApp();
+        }
+      }
+    ]);
+    
+    tray.setContextMenu(contextMenu);
+    
+    // 双击托盘图标显示主窗口
+    tray.on('double-click', () => {
+      if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+    
+    logger.log('系统托盘创建成功');
+  } catch (error) {
+    logger.error('创建系统托盘失败:', error);
+  }
+}
 
 function createSimpleScreenshotWindow(): void {
   try {
@@ -1168,6 +1253,7 @@ if (!gotTheLock) {
     }
     killZombieProcesses();
     await createMainWindow();
+    createTray(); // 创建系统托盘
     registerGlobalShortcuts();
     cleanupAllTempFiles();
     startPeriodicCleanup();
@@ -2148,6 +2234,12 @@ function forceQuitApp(): void {
   if (cleanupIntervalId) {
     clearInterval(cleanupIntervalId);
     cleanupIntervalId = null;
+  }
+
+  // 销毁托盘
+  if (tray && !tray.isDestroyed()) {
+    tray.destroy();
+    tray = null;
   }
 
   BrowserWindow.getAllWindows().forEach(window => {

@@ -55,8 +55,9 @@ export interface AppSettings {
   apiConfig: ApiConfig;
   shortcuts: ShortcutConfig;
   history: HistoryItem[];
-  theme?: string; // 主题ID
-  sidebarConfig?: SidebarConfig; // 侧边栏配置
+  theme?: string; 
+  sidebarConfig?: SidebarConfig; 
+  minimizeToTray?: boolean; 
 }
 export interface ShortcutConfig {
   capture: string;
