@@ -19,6 +19,9 @@ export interface Theme {
     // 文本颜色
     text: string;
     textSecondary: string;
+    textMuted: string;
+    /** 次要强调色（如品牌第二段、版本号点缀，图1 珊瑚粉） */
+    accentSecondary: string;
     
     // 边框颜色
     border: string;
@@ -56,44 +59,46 @@ export interface Theme {
 export const themes: Theme[] = [
   {
     id: 'default',
-    name: '默认蓝色',
+    name: 'Fluent 浅色',
     colors: {
       primary: '#4a90e2',
       primaryLight: '#5ba0f2',
       primaryDark: '#357abd',
-      
-      background: '#f8f9fa',
-      backgroundPattern: 'rgba(240, 240, 245, 0.3)',
-      
+
+      background: '#f3f6f9',
+      backgroundPattern: 'rgba(232, 238, 245, 0.5)',
+
       surface: '#ffffff',
-      surfaceLight: 'rgba(255, 255, 255, 0.7)',
-      
-      text: '#2c3e50',
-      textSecondary: '#7f8c8d',
-      
-      border: '#dce1e8',
-      borderLight: '#e1e8ed',
-      
+      surfaceLight: 'rgba(255, 255, 255, 0.92)',
+
+      text: '#323130',
+      textSecondary: '#605e5c',
+      textMuted: '#a19f9d',
+      accentSecondary: '#e76d8d',
+
+      border: '#edebe9',
+      borderLight: '#edebe9',
+
       buttonGradientStart: '#4a90e2',
       buttonGradientEnd: '#357abd',
       buttonHoverStart: '#5ba0f2',
       buttonHoverEnd: '#458bcd',
-      
-      inputBackground: 'white',
-      inputBorder: '#e1e8ed',
+
+      inputBackground: '#fafafa',
+      inputBorder: '#edebe9',
       inputFocus: '#4a90e2',
-      
-      success: '#27ae60',
-      error: '#e74c3c',
-      warning: '#f39c12',
-      info: '#3498db',
-      
-      menuBackground: 'linear-gradient(180deg, #fafbfd 0%, #f2f5f9 100%)',
-      menuBorder: '#dce1e8',
-      menuHover: '#4375b9',
-      
-      dialogBackground: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-      dialogOverlay: 'rgba(0, 0, 0, 0.5)',
+
+      success: '#107c10',
+      error: '#d13438',
+      warning: '#ca5010',
+      info: '#4a90e2',
+
+      menuBackground: '#e8eef5',
+      menuBorder: '#dce3ed',
+      menuHover: '#4a90e2',
+
+      dialogBackground: '#f3f6f9',
+      dialogOverlay: 'rgba(0, 0, 0, 0.45)',
     }
   },
   {
@@ -112,10 +117,12 @@ export const themes: Theme[] = [
       
       text: '#2c3e50',
       textSecondary: '#7f8c8d',
-      
+      textMuted: '#a19f9d',
+      accentSecondary: '#ce7eb8',
+
       border: '#d5c9e0',
       borderLight: '#e0d6eb',
-      
+
       buttonGradientStart: '#9b59b6',
       buttonGradientEnd: '#8e44ad',
       buttonHoverStart: '#ab69c6',
@@ -130,11 +137,11 @@ export const themes: Theme[] = [
       warning: '#f39c12',
       info: '#9b59b6',
       
-      menuBackground: 'linear-gradient(180deg, #fbfafc 0%, #f3f1f5 100%)',
+      menuBackground: '#f3f1f6',
       menuBorder: '#d5c9e0',
       menuHover: '#8e44ad',
       
-      dialogBackground: 'linear-gradient(135deg, #f5f3f7 0%, #ebe6f0 100%)',
+      dialogBackground: '#f5f3f7',
       dialogOverlay: 'rgba(0, 0, 0, 0.5)',
     }
   },
@@ -142,42 +149,44 @@ export const themes: Theme[] = [
     id: 'green',
     name: '清新绿色',
     colors: {
-      primary: '#27ae60',
-      primaryLight: '#37be70',
-      primaryDark: '#229954',
+      primary: '#22c55e',
+      primaryLight: '#34d474',
+      primaryDark: '#16a34a',
       
-      background: '#f3f8f5',
-      backgroundPattern: 'rgba(230, 245, 235, 0.3)',
+      background: '#f5f7f5',
+      backgroundPattern: 'rgba(220, 240, 228, 0.3)',
       
       surface: '#ffffff',
-      surfaceLight: 'rgba(255, 255, 255, 0.7)',
+      surfaceLight: 'rgba(255, 255, 255, 0.8)',
       
-      text: '#2c3e50',
-      textSecondary: '#7f8c8d',
+      text: '#1a2e1e',
+      textSecondary: '#6b7c72',
+      textMuted: '#9ca3af',
+      accentSecondary: '#15803d',
+
+      border: '#d1e7d9',
+      borderLight: '#e4f0e8',
+
+      buttonGradientStart: '#22c55e',
+      buttonGradientEnd: '#16a34a',
+      buttonHoverStart: '#34d474',
+      buttonHoverEnd: '#22c55e',
       
-      border: '#c9e0d3',
-      borderLight: '#d6ebd9',
+      inputBackground: '#ffffff',
+      inputBorder: '#d1e7d9',
+      inputFocus: '#22c55e',
       
-      buttonGradientStart: '#27ae60',
-      buttonGradientEnd: '#229954',
-      buttonHoverStart: '#37be70',
-      buttonHoverEnd: '#32b964',
+      success: '#22c55e',
+      error: '#ef4444',
+      warning: '#f59e0b',
+      info: '#3b82f6',
       
-      inputBackground: 'white',
-      inputBorder: '#d6ebd9',
-      inputFocus: '#27ae60',
+      menuBackground: '#f2f6f3',
+      menuBorder: '#d1e7d9',
+      menuHover: '#16a34a',
       
-      success: '#27ae60',
-      error: '#e74c3c',
-      warning: '#f39c12',
-      info: '#3498db',
-      
-      menuBackground: 'linear-gradient(180deg, #fafcfb 0%, #f1f5f3 100%)',
-      menuBorder: '#c9e0d3',
-      menuHover: '#229954',
-      
-      dialogBackground: 'linear-gradient(135deg, #f3f8f5 0%, #e6f0e9 100%)',
-      dialogOverlay: 'rgba(0, 0, 0, 0.5)',
+      dialogBackground: '#f5f7f5',
+      dialogOverlay: 'rgba(0, 0, 0, 0.45)',
     }
   },
   {
@@ -196,10 +205,12 @@ export const themes: Theme[] = [
       
       text: '#2c3e50',
       textSecondary: '#7f8c8d',
-      
+      textMuted: '#a19f9d',
+      accentSecondary: '#d35400',
+
       border: '#e6d4c0',
       borderLight: '#ebe0d1',
-      
+
       buttonGradientStart: '#e67e22',
       buttonGradientEnd: '#d35400',
       buttonHoverStart: '#f68e32',
@@ -214,11 +225,11 @@ export const themes: Theme[] = [
       warning: '#f39c12',
       info: '#3498db',
       
-      menuBackground: 'linear-gradient(180deg, #fcfaf8 0%, #f5f1ed 100%)',
+      menuBackground: '#f5f1ec',
       menuBorder: '#e6d4c0',
       menuHover: '#d35400',
       
-      dialogBackground: 'linear-gradient(135deg, #faf7f3 0%, #f0e8de 100%)',
+      dialogBackground: '#faf7f3',
       dialogOverlay: 'rgba(0, 0, 0, 0.5)',
     }
   },
@@ -238,10 +249,12 @@ export const themes: Theme[] = [
       
       text: '#2c3e50',
       textSecondary: '#7f8c8d',
-      
+      textMuted: '#a19f9d',
+      accentSecondary: '#c0392b',
+
       border: '#e6c9c9',
       borderLight: '#ebd6d6',
-      
+
       buttonGradientStart: '#e74c3c',
       buttonGradientEnd: '#c0392b',
       buttonHoverStart: '#f75c4c',
@@ -256,11 +269,11 @@ export const themes: Theme[] = [
       warning: '#f39c12',
       info: '#3498db',
       
-      menuBackground: 'linear-gradient(180deg, #fcfafa 0%, #f5f1f1 100%)',
+      menuBackground: '#f5f1f1',
       menuBorder: '#e6c9c9',
       menuHover: '#c0392b',
       
-      dialogBackground: 'linear-gradient(135deg, #faf3f3 0%, #f0e6e6 100%)',
+      dialogBackground: '#faf3f3',
       dialogOverlay: 'rgba(0, 0, 0, 0.5)',
     }
   },
@@ -280,10 +293,12 @@ export const themes: Theme[] = [
       
       text: '#2c3e50',
       textSecondary: '#7f8c8d',
-      
+      textMuted: '#a19f9d',
+      accentSecondary: '#0d9488',
+
       border: '#c9e0dc',
       borderLight: '#d6ebd8',
-      
+
       buttonGradientStart: '#16a085',
       buttonGradientEnd: '#138d75',
       buttonHoverStart: '#26b095',
@@ -298,11 +313,11 @@ export const themes: Theme[] = [
       warning: '#f39c12',
       info: '#3498db',
       
-      menuBackground: 'linear-gradient(180deg, #fafcfc 0%, #f1f5f4 100%)',
+      menuBackground: '#f1f6f5',
       menuBorder: '#c9e0dc',
       menuHover: '#138d75',
       
-      dialogBackground: 'linear-gradient(135deg, #f3f8f7 0%, #e6f0ed 100%)',
+      dialogBackground: '#f3f8f7',
       dialogOverlay: 'rgba(0, 0, 0, 0.5)',
     }
   },
@@ -322,10 +337,12 @@ export const themes: Theme[] = [
       
       text: '#2c3e50',
       textSecondary: '#7f8c8d',
-      
+      textMuted: '#a19f9d',
+      accentSecondary: '#2980b9',
+
       border: '#c9d9e6',
       borderLight: '#d6e3ed',
-      
+
       buttonGradientStart: '#3498db',
       buttonGradientEnd: '#2980b9',
       buttonHoverStart: '#44a8eb',
@@ -340,11 +357,11 @@ export const themes: Theme[] = [
       warning: '#f39c12',
       info: '#3498db',
       
-      menuBackground: 'linear-gradient(180deg, #fafbfc 0%, #f1f4f7 100%)',
+      menuBackground: '#f1f4f8',
       menuBorder: '#c9d9e6',
       menuHover: '#2980b9',
       
-      dialogBackground: 'linear-gradient(135deg, #f3f6f9 0%, #e6ecf0 100%)',
+      dialogBackground: '#f3f6f9',
       dialogOverlay: 'rgba(0, 0, 0, 0.5)',
     }
   },
@@ -364,10 +381,12 @@ export const themes: Theme[] = [
       
       text: '#2c3e50',
       textSecondary: '#7f8c8d',
-      
+      textMuted: '#a19f9d',
+      accentSecondary: '#c2185b',
+
       border: '#e6c9d9',
       borderLight: '#ebd6e3',
-      
+
       buttonGradientStart: '#e91e63',
       buttonGradientEnd: '#c2185b',
       buttonHoverStart: '#f92e73',
@@ -382,11 +401,11 @@ export const themes: Theme[] = [
       warning: '#f39c12',
       info: '#3498db',
       
-      menuBackground: 'linear-gradient(180deg, #fcfafb 0%, #f5f1f4 100%)',
+      menuBackground: '#f5f1f4',
       menuBorder: '#e6c9d9',
       menuHover: '#c2185b',
       
-      dialogBackground: 'linear-gradient(135deg, #faf3f6 0%, #f0e6ec 100%)',
+      dialogBackground: '#faf3f6',
       dialogOverlay: 'rgba(0, 0, 0, 0.5)',
     }
   }
@@ -416,19 +435,22 @@ export const saveCustomTheme = (theme: Theme): void => {
 
 // 获取主题（包括自定义主题）
 export const getTheme = (themeId: string): Theme => {
+  const fallback = themes.find(t => t.id === 'green') || themes[0];
   if (themeId === 'custom') {
     const customTheme = getCustomTheme();
-    if (customTheme) return customTheme;
-    // 如果没有自定义主题，返回清新绿色主题的副本作为自定义主题模板
-    const greenTheme = themes.find(t => t.id === 'green') || themes[0];
+    if (customTheme) {
+      return {
+        ...customTheme,
+        colors: { ...fallback.colors, ...customTheme.colors }
+      };
+    }
     return {
       id: 'custom',
       name: '自定义主题',
-      colors: { ...greenTheme.colors }
+      colors: { ...fallback.colors }
     };
   }
-  const greenTheme = themes.find(t => t.id === 'green');
-  return themes.find(t => t.id === themeId) || greenTheme || themes[0];
+  return themes.find(t => t.id === themeId) || fallback;
 };
 
 // 应用主题到CSS变量 - 立即生效

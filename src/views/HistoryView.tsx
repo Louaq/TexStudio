@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import MaterialIcon from '../components/MaterialIcon';
 import { HistoryItem, CopyMode } from '../types';
@@ -12,8 +13,26 @@ const HistoryContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--color-background);
+  background: var(--color-surface);
   overflow: hidden;
+`;
+
+const PageHeader = styled.div`
+  padding: 0 24px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-borderLight);
+  flex-shrink: 0;
+  background: var(--color-surface);
+`;
+
+const PageTitle = styled.h1`
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.1px;
 `;
 
 const Content = styled.div`
@@ -48,7 +67,7 @@ const ScrollableContent = styled.div`
 
 const FixedPagination = styled.div`
   flex-shrink: 0;
-  background: var(--color-background);
+  background: var(--color-surface);
   padding: 20px 24px;
 `;
 
@@ -60,9 +79,43 @@ const HintBar = styled.div`
   margin-bottom: 20px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
   color: var(--color-primary);
   font-size: 13px;
+`;
+
+const HintBarLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+`;
+
+const ClearAllButton = styled.button`
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border));
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
 `;
 
 const EmptyState = styled.div`
@@ -240,28 +293,41 @@ const PaginationContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 `;
 
 const PageButton = styled.button<{ $active?: boolean }>`
-  padding: 8px 16px;
-  border: 2px solid ${props => props.$active ? 'var(--color-primary)' : 'var(--color-border)'};
-  border-radius: 6px;
-  background: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-surface)'};
-  color: ${props => props.$active ? 'white' : 'var(--color-text)'};
-  font-size: 14px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid ${props => props.$active
+    ? 'color-mix(in srgb, var(--color-primary) 40%, var(--color-border))'
+    : 'transparent'};
+  border-radius: 8px;
+  background: ${props => props.$active
+    ? 'color-mix(in srgb, var(--color-primary) 14%, transparent)'
+    : 'transparent'};
+  color: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-textSecondary)'};
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover:not(:disabled) {
-    background: ${props => props.$active ? 'var(--color-primary)' : 'rgba(0, 0, 0, 0.05)'};
-    border-color: var(--color-primary);
+    background: ${props => props.$active
+      ? 'color-mix(in srgb, var(--color-primary) 18%, transparent)'
+      : 'color-mix(in srgb, var(--color-text) 5%, transparent)'};
+    color: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-text)'};
+    border-color: ${props => props.$active
+      ? 'color-mix(in srgb, var(--color-primary) 45%, var(--color-border))'
+      : 'transparent'};
   }
 
   &:disabled {
-    opacity: 0.4;
+    opacity: 0.32;
     cursor: not-allowed;
   }
 
@@ -272,7 +338,7 @@ const PageButton = styled.button<{ $active?: boolean }>`
 
 const PageInfo = styled.span`
   color: var(--color-textSecondary);
-  font-size: 14px;
+  font-size: 13px;
   padding: 0 12px;
 `;
 
@@ -317,6 +383,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({
 
   const handleConfirmClear = () => {
     onClear();
+    setCurrentPage(1);
     setShowClearDialog(false);
   };
 
@@ -372,12 +439,8 @@ const HistoryView: React.FC<HistoryViewProps> = ({
   };
 
   return (
+    <>
     <HistoryContainer>
-      <CopyOptionsDialog
-        isOpen={showCopyDialog}
-        onClose={() => setShowCopyDialog(false)}
-        onCopy={handleCopy}
-      />
       <Content>
         <ScrollableContent>
           {history.length === 0 ? (
@@ -393,8 +456,14 @@ const HistoryView: React.FC<HistoryViewProps> = ({
           ) : (
             <>
               <HintBar>
-                <MaterialIcon name="info" size={18} />
-                <span>💡 点击公式可编辑，点击复制按钮选择格式 | 共 {history.length} 条记录</span>
+                <HintBarLeft>
+                  <MaterialIcon name="info" size={18} />
+                  <span>💡 点击公式可编辑，点击复制按钮选择格式 | 共 {history.length} 条记录</span>
+                </HintBarLeft>
+                <ClearAllButton type="button" onClick={handleClear} title="清空全部历史记录">
+                  <MaterialIcon name="delete_sweep" size={18} />
+                  清空全部
+                </ClearAllButton>
               </HintBar>
               <HistoryList>
                 {currentItems.map((item, index) => (
@@ -496,28 +565,36 @@ const HistoryView: React.FC<HistoryViewProps> = ({
         )}
       </Content>
 
-      {/* 删除单条记录确认对话框 */}
-      <ConfirmDialog
-        open={showDeleteDialog}
-        title="删除历史记录"
-        message="确定要删除这条历史记录吗？"
-        confirmText="删除"
-        cancelText="取消"
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setShowDeleteDialog(false)}
-      />
-
-      {/* 清空所有记录确认对话框 */}
-      <ConfirmDialog
-        open={showClearDialog}
-        title="清空历史记录"
-        message="确定要清空所有历史记录吗？此操作不可撤销。"
-        confirmText="清空"
-        cancelText="取消"
-        onConfirm={handleConfirmClear}
-        onCancel={() => setShowClearDialog(false)}
-      />
     </HistoryContainer>
+    {ReactDOM.createPortal(
+      <>
+        <CopyOptionsDialog
+          isOpen={showCopyDialog}
+          onClose={() => setShowCopyDialog(false)}
+          onCopy={handleCopy}
+        />
+        <ConfirmDialog
+          open={showDeleteDialog}
+          title="删除历史记录"
+          message="确定要删除这条历史记录吗？"
+          confirmText="删除"
+          cancelText="取消"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteDialog(false)}
+        />
+        <ConfirmDialog
+          open={showClearDialog}
+          title="清空历史记录"
+          message="确定要清空所有历史记录吗？此操作不可撤销。"
+          confirmText="清空"
+          cancelText="取消"
+          onConfirm={handleConfirmClear}
+          onCancel={() => setShowClearDialog(false)}
+        />
+      </>,
+      document.body
+    )}
+    </>
   );
 };
 

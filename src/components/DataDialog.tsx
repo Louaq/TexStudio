@@ -12,17 +12,7 @@ const Overlay = styled.div<{ $isOpen: boolean }>`
   display: ${props => props.$isOpen ? 'flex' : 'none'};
   align-items: center;
   justify-content: center;
-  z-index: 10000;
-  animation: fadeIn 0.2s ease;
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
+  z-index: 20000;
 `;
 
 const Dialog = styled.div`

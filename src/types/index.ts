@@ -4,27 +4,11 @@ export interface HistoryItem {
   latex: string;
 }
 
-// AI模型提供商配置
-export interface ModelScopeConfig {
-  apiKey: string;
-  enabled: boolean;
-  model: string; // 选中的模型名称
-}
-
-// 扩展 API 配置，支持魔搭
+// API 配置
 export interface ApiConfig {
   appId: string;
   appSecret: string;
   endpoint?: string;
-  modelScope?: ModelScopeConfig;
-}
-
-// 公式解释结果
-export interface FormulaExplanation {
-  content: string;
-  timestamp: string;
-  isLoading: boolean;
-  error?: string;
 }
 
 export interface SimpletexResponse {

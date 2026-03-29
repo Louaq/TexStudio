@@ -34,22 +34,21 @@ const GlobalStyle = createGlobalStyle`
 
   /* 滚动条样式 */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #cbd5e0;
-    border-radius: 4px;
+    background: rgba(0,0,0,0.15);
+    border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0;
+    background: rgba(0,0,0,0.25);
   }
 
   /* 选择文本样式 */

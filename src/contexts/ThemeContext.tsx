@@ -24,7 +24,7 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ 
   children, 
-  initialThemeId = 'green' 
+  initialThemeId = 'green'
 }) => {
   const [currentTheme, setCurrentTheme] = useState<Theme>(() => getTheme(initialThemeId));
 

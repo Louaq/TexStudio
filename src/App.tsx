@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import { useDropzone } from 'react-dropzone';
 import { AppState, HistoryItem, ApiConfig, CopyMode, SidebarConfig } from './types';
@@ -12,8 +13,8 @@ import AboutView from './views/AboutView';
 import UpdateDialog from './components/UpdateDialog';
 import CopyOptionsDialog from './components/CopyOptionsDialog';
 import ExportOptionsDialog from './components/ExportOptionsDialog';
-import NotificationBar from './components/NotificationBar';
 import * as path from 'path';
+import packageJson from '../package.json';
 
 const AppContainer = styled.div`
   display: flex;
@@ -37,15 +38,7 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--color-background);
-  background-image: 
-    repeating-linear-gradient(
-      45deg, 
-      var(--color-backgroundPattern), 
-      var(--color-backgroundPattern) 15px, 
-      transparent 15px, 
-      transparent 30px
-    );
+  background: var(--color-surface);
 `;
 
 // 删除所有旧的样式定义，新的视图组件中已包含
@@ -59,11 +52,7 @@ interface UpdateInfoState {
   version: string;
 }
 
-interface AppProps {
-  onThemeChange?: (themeId: string) => void;
-}
-
-function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
+function App() {
   const [appState, setAppState] = useState<AppState>({
     currentImage: null,
     latexCode: '',
@@ -106,14 +95,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
   
-  // 添加AI解释重置控制
-  const [explanationResetKey, setExplanationResetKey] = useState(0);
-  
-  // 重置AI解释的函数
-  const resetAIExplanation = () => {
-    setExplanationResetKey(prev => prev + 1);
-  };
-
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -131,11 +112,11 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           });
           setAppState(prev => ({ ...prev, history: appSettings.history }));
           
-          // 应用主题（首次安装时使用默认的 green 主题）
+          // 应用主题（首次安装时使用清新绿色）
           const { applyTheme, getTheme } = await import('./theme/themes');
           const theme = getTheme(selectedTheme);
           applyTheme(theme);
-          
+
           // 如果是首次安装（没有保存的主题），保存默认主题
           if (!appSettings.theme && window.electronAPI) {
             await window.electronAPI.saveSettings({ theme: 'green' });
@@ -147,11 +128,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
               appId: '',
               appSecret: '',
               endpoint: 'https://server.simpletex.cn/api/latex_ocr',
-              modelScope: {
-                apiKey: '',
-                enabled: false,
-                model: 'Qwen/Qwen2.5-7B-Instruct'
-              }
             },
             shortcuts: {
               capture: 'Alt+C',
@@ -170,18 +146,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
               } else {
                 console.warn('settings.json中未找到有效的API配置');
               }
-              
-              // 加载魔搭配置
-              if (settings.modelscope_api_key !== undefined || settings.modelscope_enabled !== undefined) {
-                defaultSettings.apiConfig.modelScope = {
-                  apiKey: settings.modelscope_api_key || '',
-                  enabled: settings.modelscope_enabled || false,
-                  model: settings.modelscope_model || 'Qwen/Qwen2.5-7B-Instruct'
-                };
-                console.log('从settings.json加载魔搭配置成功');
-              } else {
-                console.log('settings.json中使用默认魔搭配置');
-              }
             } else {
               console.warn('无法加载settings.json文件');
             }
@@ -195,7 +159,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
             sidebarConfig: getDefaultSidebarConfig()
           });
           console.warn('运行在浏览器模式下，使用默认设置');
-          
+
           // 应用默认主题
           const { applyTheme, getTheme } = await import('./theme/themes');
           const theme = getTheme('green');
@@ -211,19 +175,29 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
     // 创建更新事件处理函数
     const handleCheckingForUpdate = () => {
       console.log('正在检查更新...');
-      setUpdateInfo({ showDialog: false, showIndicator: false, status: 'checking', version: '' });
+      setUpdateInfo(prev => ({
+        ...prev,
+        showIndicator: false,
+        status: 'checking',
+        version: '',
+        showDialog: prev.showDialog,
+      }));
       setDownloadProgress(0);
-      // 在顶部显示检查更新的消息
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '🔄 正在检查更新...'
+      setAppState(prev => ({
+        ...prev,
+        statusMessage: '🔄 正在检查更新...',
       }));
     };
 
     const handleUpdateAvailable = (info: any) => {
       console.log('发现新版本:', info);
-      // 直接开始下载，不显示对话框
-      setUpdateInfo(prev => ({ ...prev, showDialog: false, showIndicator: false, status: 'available', version: info.version }));
+      setUpdateInfo(prev => ({
+        ...prev,
+        showIndicator: false,
+        status: 'available',
+        version: info.version,
+        showDialog: prev.showDialog,
+      }));
       setAppState(prev => ({ 
         ...prev, 
         statusMessage: `✨ 发现新版本 ${info.version}，正在自动下载...`
@@ -236,7 +210,11 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
 
     const handleUpdateNotAvailable = (info: any) => {
       console.log('已是最新版本:', info);
-      setUpdateInfo(prev => ({ ...prev, showDialog: false, status: 'no-update' }));
+      setUpdateInfo(prev => ({
+        ...prev,
+        status: 'no-update',
+        showDialog: prev.showDialog,
+      }));
       // 在顶部显示已是最新版本的消息
       setAppState(prev => ({ 
         ...prev, 
@@ -253,12 +231,13 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
 
     const handleUpdateError = (error: string) => {
       console.error('更新错误:', error);
-      setUpdateInfo({
-        showDialog: false, // 不显示对话框
+      setUpdateInfo(prev => ({
+        ...prev,
         showIndicator: false,
         status: 'error',
-        version: ''
-      });
+        version: '',
+        showDialog: prev.showDialog,
+      }));
       setDownloadProgress(0);
       // 在顶部显示错误消息
       setAppState(prev => ({ 
@@ -278,6 +257,11 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
       console.log(`下载进度: ${progressObj.percent}%`);
       const percent = Math.round(progressObj.percent || 0);
       setDownloadProgress(percent);
+      setUpdateInfo(prev =>
+        prev.showDialog
+          ? { ...prev, status: 'downloading' }
+          : prev
+      );
       // 更新下载进度消息
       setAppState(prev => ({ 
         ...prev, 
@@ -387,9 +371,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
             }));
             
             if (settings) {
-              // 清空AI解释区域
-              resetAIExplanation();
-              
               setAppState(prev => ({ 
                 ...prev, 
                 isRecognizing: true, 
@@ -492,9 +473,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         }));
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // 清空AI解释区域
-        resetAIExplanation();
-        
         setAppState(prev => ({ 
           ...prev, 
           latexCode: '',
@@ -587,9 +565,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
             // 使用文件路径而不是 data URL
             setAppState(prev => ({ ...prev, currentImage: `file://${tempPath}` }));
             
-            // 清空AI解释区域
-            resetAIExplanation();
-            
             setAppState(prev => ({ 
               ...prev, 
               latexCode: '',
@@ -616,7 +591,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         }));
       }
     }
-  }, [settings, resetAIExplanation]);
+  }, [settings]);
 
   const { getRootProps, isDragActive } = useDropzone({
     onDrop,
@@ -677,9 +652,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         } catch (e) {
           // 失败时不阻塞，但也给出提示
         }
-        // 清空AI解释区域
-        resetAIExplanation();
-        
         setAppState(prev => ({ 
           ...prev, 
           currentImage: `file://${filePath}`,
@@ -807,8 +779,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           };
         });
         
-        // 重置AI解释区域
-        resetAIExplanation();
       } else {
         console.log('识别失败，错误信息:', result.message);
         if (result.error_code === 'NO_API_CONFIG') {
@@ -836,7 +806,7 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         statusMessage: '❌ 公式识别出错，请重试'
       }));
     }
-  }, [settings, resetAIExplanation]);
+  }, [settings]);
   const handleCopy = async (mode: CopyMode = 'normal') => {
     if (!appState.latexCode.trim()) return;
 
@@ -904,9 +874,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
   const handleUseHistory = (latex: string) => {
     try {
       console.log('使用历史记录项:', latex);
-      
-      // 清空AI解释区域
-      resetAIExplanation();
       
       // 切换回主视图
       setCurrentView('home');
@@ -1031,49 +998,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
     setSettings(prev => prev ? { ...prev, shortcuts } : null);
   };
 
-  const handleThemeChange = (themeId: string) => {
-    try {
-      // 动态导入主题模块并立即应用
-      import('./theme/themes').then(({ getTheme, applyTheme }) => {
-        const theme = getTheme(themeId);
-        
-        // 🔥 立即应用主题 - 不需要重启
-        applyTheme(theme);
-        
-        // 保存主题设置到localStorage（确保下次启动时也使用该主题）
-        localStorage.setItem('selectedTheme', themeId);
-        
-        // 更新应用状态
-        setSettings(prev => prev ? { ...prev, theme: themeId } : null);
-        
-        // 如果在Electron环境中，也保存到设置文件
-        if (window.electronAPI) {
-          window.electronAPI.saveSettings({ theme: themeId }).catch(console.error);
-        }
-        
-        // 显示成功提示
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: `✅ 主题已切换为 ${theme.name}`
-        }));
-        
-        // 2秒后清除提示
-        setTimeout(() => {
-          setAppState(prev => ({ 
-            ...prev, 
-            statusMessage: null
-          }));
-        }, 2000);
-      });
-    } catch (error) {
-      console.error('切换主题失败:', error);
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '❌ 主题切换失败'
-      }));
-    }
-  };
-
   const handleSaveSidebarConfig = async (sidebarConfig: SidebarConfig) => {
     if (window.electronAPI) {
       try {
@@ -1117,33 +1041,43 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
 
   const handleCheckForUpdates = async () => {
     if (!window.electronAPI) {
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '❌ 自动更新仅在 Electron 应用中可用'
+      setAppState(prev => ({
+        ...prev,
+        statusMessage: '❌ 自动更新仅在 Electron 应用中可用',
       }));
       return;
     }
-    
+
+    setUpdateInfo({
+      showDialog: true,
+      showIndicator: false,
+      status: 'checking',
+      version: '',
+    });
+    setDownloadProgress(0);
+    setAppState(prev => ({
+      ...prev,
+      statusMessage: '🔄 正在检查更新...',
+    }));
+
     try {
-      setUpdateInfo({ showDialog: false, showIndicator: false, status: 'checking', version: '' });
-      setDownloadProgress(0);
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '🔄 正在检查更新...'
-      }));
       await window.electronAPI.checkForUpdates();
     } catch (error) {
       console.error('检查更新失败:', error);
       setAppState(prev => ({
         ...prev,
-        statusMessage: '❌ 检查更新失败'
+        statusMessage: '❌ 检查更新失败',
       }));
-      setUpdateInfo(prev => ({ ...prev, showDialog: false, status: 'error' }));
-      // 3秒后自动隐藏消息
+      setUpdateInfo(prev => ({
+        ...prev,
+        showDialog: true,
+        status: 'error',
+        version: '',
+      }));
       setTimeout(() => {
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: null
+        setAppState(prev => ({
+          ...prev,
+          statusMessage: null,
         }));
       }, 3000);
     }
@@ -1248,10 +1182,8 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
   };
 
   return (
+    <>
     <AppContainer>
-      {/* 自定义标题栏 */}
-      <TitleBar title="TexStudio OCR" />
-      
       <MainContent>
         {/* 左侧导航栏 */}
         <Sidebar
@@ -1272,16 +1204,12 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           copyDisabled={!appState.latexCode.trim() || appState.isRecognizing}
           exportDisabled={!appState.latexCode.trim() || appState.isRecognizing}
           sidebarConfig={settings?.sidebarConfig}
-      />
+        />
 
       {/* 右侧内容区 */}
       <ContentContainer>
-        {/* 通知栏 */}
-        <NotificationBar 
-          message={appState.statusMessage}
-          onClose={() => setAppState(prev => ({ ...prev, statusMessage: null }))}
-        />
-
+        {/* 标题栏（含窗口控制按钮） */}
+        <TitleBar />
         {/* 根据当前视图显示不同内容 */}
         {currentView === 'home' && (
           <HomeView
@@ -1290,7 +1218,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
             isRecognizing={appState.isRecognizing}
             isDragActive={isDragActive}
             apiConfig={settings?.apiConfig}
-            explanationResetKey={explanationResetKey}
             onUpload={handleUpload}
             onLatexChange={(code: string) => {
               setAppState(prev => ({ 
@@ -1298,9 +1225,6 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
                 latexCode: code,
                 statusMessage: (!prev.latexCode && code) ? 'ℹ️ 正在手动编辑LaTeX代码' : prev.statusMessage
               }));
-              if (code !== appState.latexCode) {
-                resetAIExplanation();
-              }
             }}
             getRootProps={getRootProps}
           />
@@ -1310,12 +1234,10 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
           <SettingsView
             apiConfig={settings?.apiConfig || { appId: '', appSecret: '', endpoint: '' }}
             shortcuts={settings?.shortcuts || { capture: '', upload: '' }}
-            currentTheme={settings?.theme || 'green'}
             sidebarConfig={settings?.sidebarConfig}
             minimizeToTray={settings?.minimizeToTray !== undefined ? settings.minimizeToTray : true}
             onSaveApi={handleSaveApiSettings}
             onSaveShortcuts={handleSaveShortcutSettings}
-            onThemeChange={handleThemeChange}
             onCheckForUpdates={handleCheckForUpdates}
             onSaveSidebarConfig={handleSaveSidebarConfig}
             onSaveMinimizeToTray={handleSaveMinimizeToTray}
@@ -1336,33 +1258,37 @@ function App({ onThemeChange: onThemeChangeFromIndex }: AppProps = {}) {
         )}
       </ContentContainer>
 
-      {/* 保留的对话框（复制选项、导出选项、更新对话框） */}
-
-      <CopyOptionsDialog
-        isOpen={showCopyOptions}
-        onClose={() => setShowCopyOptions(false)}
-        onCopy={handleCopy}
-      />
-
-      <ExportOptionsDialog
-        isOpen={showExportOptions}
-        onClose={() => setShowExportOptions(false)}
-        onExport={handleExportFormula}
-      />
-
       </MainContent>
-
-      <UpdateDialog
-        isOpen={updateInfo.showDialog}
-        onClose={handleCloseUpdateDialog}
-        status={updateInfo.status as Exclude<UpdateStatus, 'idle'>}
-        progress={downloadProgress}
-        version={updateInfo.version}
-        onDownload={handleDownloadUpdate}
-        onRestart={handleRestartAndInstall}
-        onBackgroundDownload={() => {}}
-      />
     </AppContainer>
+
+    {/* 全局弹窗 - 通过 portal 挂载到 document.body，确保覆盖整个窗口（包括侧边栏） */}
+    {ReactDOM.createPortal(
+      <>
+        <CopyOptionsDialog
+          isOpen={showCopyOptions}
+          onClose={() => setShowCopyOptions(false)}
+          onCopy={handleCopy}
+        />
+        <ExportOptionsDialog
+          isOpen={showExportOptions}
+          onClose={() => setShowExportOptions(false)}
+          onExport={handleExportFormula}
+        />
+        <UpdateDialog
+          isOpen={updateInfo.showDialog}
+          onClose={handleCloseUpdateDialog}
+          status={updateInfo.status as Exclude<UpdateStatus, 'idle'>}
+          progress={downloadProgress}
+          version={updateInfo.version}
+          currentVersion={packageJson.version}
+          onDownload={handleDownloadUpdate}
+          onRestart={handleRestartAndInstall}
+          onBackgroundDownload={() => {}}
+        />
+      </>,
+      document.body
+    )}
+    </>
   );
 }
 

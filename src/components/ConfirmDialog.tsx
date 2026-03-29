@@ -12,8 +12,7 @@ const Overlay = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
-  backdrop-filter: blur(2px);
+  z-index: 20000;
 `;
 
 const Dialog = styled.div`

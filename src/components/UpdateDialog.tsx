@@ -1,179 +1,259 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { UpdateInfo } from '../types';
+import React from 'react';
+import styled, { keyframes } from 'styled-components';
+import MaterialIcon from './MaterialIcon';
+
+const spin = keyframes`
+  to { transform: rotate(360deg); }
+`;
+
+const fadeUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+`;
 
 const Overlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: var(--color-dialogOverlay);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
+  z-index: 20000;
+  padding: 20px;
+  box-sizing: border-box;
 `;
 
 const Dialog = styled.div`
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 16px;
-  padding: 24px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  border: 1px solid #e1e8ed;
-  animation: slideIn 0.3s ease;
+  width: 100%;
+  max-width: 380px;
+  background: var(--color-surface);
+  border-radius: 14px;
+  border: 1px solid var(--color-borderLight);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 12px 40px rgba(0, 0, 0, 0.12);
+  padding: 24px 22px 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-30px) scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
+  align-items: stretch;
+  animation: ${fadeUp} 0.22s ease-out;
 `;
 
-const IconContainer = styled.div`
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background-color: #4cd964;
+const HeaderRow = styled.div`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+`;
+
+const IconBadge = styled.div<{ $variant: 'checking' | 'success' | 'info' | 'error' | 'download' }>`
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
-  color: white;
-  font-size: 40px;
+  flex-shrink: 0;
+  color: var(--color-primary);
+
+  ${props => {
+    switch (props.$variant) {
+      case 'checking':
+        return `
+          background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        `;
+      case 'success':
+        return `
+          background: color-mix(in srgb, var(--color-success) 14%, transparent);
+          color: var(--color-success);
+        `;
+      case 'info':
+        return `
+          background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        `;
+      case 'error':
+        return `
+          background: color-mix(in srgb, var(--color-error) 12%, transparent);
+          color: var(--color-error);
+        `;
+      case 'download':
+        return `
+          background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        `;
+      default:
+        return '';
+    }
+  }}
+`;
+
+const SpinnerRing = styled.div`
+  width: 22px;
+  height: 22px;
+  border: 2px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: ${spin} 0.7s linear infinite;
 `;
 
 const Title = styled.h2`
-  margin: 0 0 8px 0;
-  color: #2c3e50;
-  font-size: 20px;
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
-  text-align: center;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+`;
+
+const CloseGhost = styled.button`
+  border: none;
+  background: transparent;
+  color: var(--color-textSecondary);
+  cursor: pointer;
+  padding: 4px;
+  margin: -4px -4px 0 0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-text) 6%, transparent);
+    color: var(--color-text);
+  }
+`;
+
+const Body = styled.div`
+  padding-left: 0;
+`;
+
+const VersionChip = styled.span`
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
 `;
 
 const Message = styled.p`
-  color: #34495e;
-  font-size: 14px;
-  line-height: 1.6;
-  margin-bottom: 20px;
-  text-align: center;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-textSecondary);
+  letter-spacing: 0.01em;
 `;
 
-const ButtonContainer = styled.div`
-  margin-top: 20px;
+const ButtonRow = styled.div`
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 4px;
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 14px;
+const Btn = styled.button<{ $primary?: boolean }>`
+  padding: 8px 16px;
+  border-radius: 9px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  background: ${props => props.variant === 'primary' 
-    ? 'linear-gradient(135deg, #4a90e2 0%, #357bd8 100%)' 
-    : 'linear-gradient(135deg, #f1f3f4 0%, #e1e8ed 100%)'
-  };
-  color: ${props => props.variant === 'primary' ? 'white' : '#34495e'};
-  border: none;
-  box-shadow: ${props => props.variant === 'primary'
-    ? '0 4px 8px rgba(74, 144, 226, 0.2)'
-    : '0 2px 4px rgba(0, 0, 0, 0.08)'
-  };
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  border: 1px solid ${props => props.$primary ? 'transparent' : 'var(--color-border)'};
+  background: ${props =>
+    props.$primary
+      ? 'var(--color-primary)'
+      : 'transparent'};
+  color: ${props => (props.$primary ? '#fff' : 'var(--color-text)')};
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: ${props => props.variant === 'primary'
-      ? '0 6px 12px rgba(74, 144, 226, 0.3)'
-      : '0 4px 8px rgba(0, 0, 0, 0.12)'
-    };
+    background: ${props =>
+      props.$primary
+        ? 'color-mix(in srgb, var(--color-primary) 88%, #000)'
+        : 'color-mix(in srgb, var(--color-text) 5%, transparent)'};
+    border-color: ${props => (props.$primary ? 'transparent' : 'var(--color-border)')};
   }
 
   &:active {
-    transform: translateY(0);
+    transform: scale(0.98);
   }
 `;
 
-// 圆环进度条组件 - 使用SVG实现
 const CircleProgressContainer = styled.div`
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   position: relative;
-  margin: 10px 0 20px 0;
+  margin: 8px auto 14px;
   display: flex;
   align-items: center;
   justify-content: center;
 `;
 
 const CircleProgressSVG = styled.svg`
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   transform: rotate(-90deg);
   position: absolute;
 `;
 
 const CircleProgressBg = styled.circle`
   fill: none;
-  stroke: #e1e8ed;
-  stroke-width: 6;
+  stroke: var(--color-borderLight);
+  stroke-width: 5;
 `;
 
 const CircleProgressBar = styled.circle<{ progress: number; circumference: number }>`
   fill: none;
-  stroke: #4a90e2;
-  stroke-width: 6;
+  stroke: var(--color-primary);
+  stroke-width: 5;
   stroke-linecap: round;
   stroke-dasharray: ${props => props.circumference};
-  stroke-dashoffset: ${props => props.circumference - (props.progress / 100) * props.circumference};
-  transition: stroke-dashoffset 0.3s ease;
+  stroke-dashoffset: ${props =>
+    props.circumference - (props.progress / 100) * props.circumference};
+  transition: stroke-dashoffset 0.25s ease;
 `;
 
 const ProgressText = styled.div`
   position: relative;
-  font-size: 24px;
-  font-weight: bold;
-  color: #2c3e50;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
   z-index: 1;
+  letter-spacing: -0.02em;
 `;
 
-// 新的进度条组件
 const CircleProgress: React.FC<{ progress: number }> = ({ progress }) => {
-  const radius = 54; // SVG圆的半径 (120/2 - 6/2 = 54)
+  const radius = 44;
   const circumference = 2 * Math.PI * radius;
-  
-  // 确保进度值在0-100之间
-  const clampedProgress = Math.max(0, Math.min(100, progress));
-  
+  const clamped = Math.max(0, Math.min(100, progress));
+
   return (
     <CircleProgressContainer>
-      <CircleProgressSVG>
-        <CircleProgressBg
-          cx="60"
-          cy="60"
-          r={radius}
-        />
+      <CircleProgressSVG viewBox="0 0 100 100">
+        <CircleProgressBg cx="50" cy="50" r={radius} />
         <CircleProgressBar
-          cx="60"
-          cy="60"
+          cx="50"
+          cy="50"
           r={radius}
-          progress={clampedProgress}
+          progress={clamped}
           circumference={circumference}
         />
       </CircleProgressSVG>
-      <ProgressText>{clampedProgress.toFixed(0)}%</ProgressText>
+      <ProgressText>{clamped.toFixed(0)}%</ProgressText>
     </CircleProgressContainer>
   );
 };
@@ -183,6 +263,7 @@ interface UpdateDialogProps {
   status: 'checking' | 'no-update' | 'available' | 'downloading' | 'downloaded' | 'error';
   progress?: number;
   version?: string;
+  currentVersion?: string;
   onClose: () => void;
   onDownload?: () => void;
   onRestart?: () => void;
@@ -194,78 +275,166 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
   status,
   progress = 0,
   version = '',
+  currentVersion = '',
   onClose,
   onDownload,
   onRestart,
-  onBackgroundDownload
+  onBackgroundDownload,
 }) => {
-  // 如果不显示，直接返回null
   if (!isOpen) return null;
-  
-  // 渲染对话框内容
-  const renderDialogContent = () => {
+
+  const renderContent = () => {
     switch (status) {
       case 'checking':
         return (
           <>
-            <IconContainer style={{ backgroundColor: '#f0ad4e' }}>🔄</IconContainer>
-            <Title>版本检查中</Title>
-            <Message>正在检查更新，请稍候...</Message>
+            <HeaderRow>
+              <IconBadge $variant="checking">
+                <SpinnerRing />
+              </IconBadge>
+              <Title>检查更新</Title>
+              <CloseGhost type="button" onClick={onClose} title="关闭" aria-label="关闭">
+                <MaterialIcon name="close" size={20} />
+              </CloseGhost>
+            </HeaderRow>
+            <Body>
+              {currentVersion ? (
+                <VersionChip>当前版本 v{currentVersion}</VersionChip>
+              ) : null}
+              <Message>正在连接更新服务器，查询是否有新版本…</Message>
+            </Body>
           </>
         );
-        
+
       case 'no-update':
         return (
           <>
-            <IconContainer>✓</IconContainer>
-            <Title>版本检测成功</Title>
-            <Message>已是最新版本，无需更新！</Message>
+            <HeaderRow>
+              <IconBadge $variant="success">
+                <MaterialIcon name="check_circle" size={24} />
+              </IconBadge>
+              <Title>已是最新版本</Title>
+              <CloseGhost type="button" onClick={onClose} title="关闭" aria-label="关闭">
+                <MaterialIcon name="close" size={20} />
+              </CloseGhost>
+            </HeaderRow>
+            <Body>
+              {currentVersion ? (
+                <VersionChip>当前版本 v{currentVersion}</VersionChip>
+              ) : null}
+              <Message>当前安装版本已是最新，无需更新。</Message>
+            </Body>
+            <ButtonRow>
+              <Btn $primary type="button" onClick={onClose}>
+                好的
+              </Btn>
+            </ButtonRow>
           </>
         );
-        
+
       case 'available':
         return (
           <>
-            <IconContainer style={{ backgroundColor: '#4a90e2' }}>🚀</IconContainer>
-            <Title>发现新版本</Title>
-            <Message>发现新版本 {version}，是否立即下载更新？</Message>
-            <ButtonContainer>
-              <Button onClick={onClose}>稍后再说</Button>
-              <Button variant="primary" onClick={onDownload}>立即下载</Button>
-            </ButtonContainer>
+            <HeaderRow>
+              <IconBadge $variant="info">
+                <MaterialIcon name="update" size={24} />
+              </IconBadge>
+              <Title>发现新版本</Title>
+              <CloseGhost type="button" onClick={onClose} title="关闭" aria-label="关闭">
+                <MaterialIcon name="close" size={20} />
+              </CloseGhost>
+            </HeaderRow>
+            <Body>
+              {version ? <VersionChip>新版本 v{version}</VersionChip> : null}
+              <Message>
+                检测到可用更新。是否立即下载？下载完成后可随时重启完成安装。
+              </Message>
+            </Body>
+            <ButtonRow>
+              <Btn type="button" onClick={onClose}>
+                稍后
+              </Btn>
+              <Btn $primary type="button" onClick={onDownload}>
+                立即下载
+              </Btn>
+            </ButtonRow>
           </>
         );
-        
+
       case 'downloading':
         return (
           <>
-            <Title>下载更新中</Title>
+            <HeaderRow>
+              <IconBadge $variant="download">
+                <MaterialIcon name="download" size={22} />
+              </IconBadge>
+              <Title>正在下载</Title>
+              <CloseGhost type="button" onClick={onClose} title="关闭" aria-label="关闭">
+                <MaterialIcon name="close" size={20} />
+              </CloseGhost>
+            </HeaderRow>
             <CircleProgress progress={progress} />
-            <Message>正在下载新版本，请稍候...</Message>
-            <ButtonContainer>
-              <Button onClick={onBackgroundDownload}>后台下载</Button>
-            </ButtonContainer>
+            <Body>
+              <Message>更新包下载中，请保持网络畅通。也可选择后台下载并关闭此窗口。</Message>
+            </Body>
+            <ButtonRow>
+              <Btn type="button" onClick={onBackgroundDownload}>
+                后台下载
+              </Btn>
+            </ButtonRow>
           </>
         );
-        
+
       case 'downloaded':
         return (
           <>
-            <IconContainer style={{ backgroundColor: '#4cd964' }}>🎉</IconContainer>
-            <Title>下载完成</Title>
-            <Message>新版本 {version} 已准备就绪，重启以完成安装。</Message>
-            <ButtonContainer>
-              <Button variant="primary" onClick={onRestart}>立即重启</Button>
-            </ButtonContainer>
+            <HeaderRow>
+              <IconBadge $variant="success">
+                <MaterialIcon name="check_circle" size={24} />
+              </IconBadge>
+              <Title>下载完成</Title>
+              <CloseGhost type="button" onClick={onClose} title="关闭" aria-label="关闭">
+                <MaterialIcon name="close" size={20} />
+              </CloseGhost>
+            </HeaderRow>
+            <Body>
+              {version ? <VersionChip>v{version}</VersionChip> : null}
+              <Message>新版本已就绪。重启应用后即可完成安装。</Message>
+            </Body>
+            <ButtonRow>
+              <Btn type="button" onClick={onClose}>
+                稍后重启
+              </Btn>
+              <Btn $primary type="button" onClick={onRestart}>
+                立即重启
+              </Btn>
+            </ButtonRow>
           </>
         );
 
       case 'error':
         return (
           <>
-            <IconContainer style={{ backgroundColor: '#d9534f' }}>❌</IconContainer>
-            <Title>更新失败</Title>
-            <Message>检查更新时遇到错误，请检查网络连接或稍后再试。</Message>
+            <HeaderRow>
+              <IconBadge $variant="error">
+                <MaterialIcon name="error_outline" size={24} />
+              </IconBadge>
+              <Title>检查失败</Title>
+              <CloseGhost type="button" onClick={onClose} title="关闭" aria-label="关闭">
+                <MaterialIcon name="close" size={20} />
+              </CloseGhost>
+            </HeaderRow>
+            <Body>
+              {currentVersion ? (
+                <VersionChip>当前版本 v{currentVersion}</VersionChip>
+              ) : null}
+              <Message>无法完成更新检查。请检查网络后重试，或稍后再试。</Message>
+            </Body>
+            <ButtonRow>
+              <Btn $primary type="button" onClick={onClose}>
+                关闭
+              </Btn>
+            </ButtonRow>
           </>
         );
 
@@ -275,16 +444,16 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
   };
 
   return (
-    <Overlay onClick={(e) => {
-      if (e.target === e.currentTarget) {
-        onClose();
-      }
-    }}>
-      <Dialog onClick={(e) => e.stopPropagation()}>
-        {renderDialogContent()}
+    <Overlay
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <Dialog onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+        {renderContent()}
       </Dialog>
     </Overlay>
   );
 };
 
-export default UpdateDialog; 
+export default UpdateDialog;

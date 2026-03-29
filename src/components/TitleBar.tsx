@@ -5,102 +5,60 @@ import MaterialIcon from './MaterialIcon';
 const TitleBarContainer = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 48px;
-  background: var(--color-background);
+  height: 38px;
+  background: var(--color-surface);
   user-select: none;
   -webkit-app-region: drag;
-  padding: 0 0 0 16px;
   position: relative;
   z-index: 10000;
-  
-  /* 底部边框从侧边栏右侧开始 */
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 48px;
-    right: 0;
-    height: 1px;
-    background: var(--color-border);
-  }
-`;
-
-const TitleSection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  overflow: hidden;
-`;
-
-const AppIcon = styled.div`
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-bottom: 1px solid var(--color-borderLight);
   flex-shrink: 0;
-  
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-  }
 `;
 
-const AppTitle = styled.div`
-  font-size: 13px;
-  color: var(--color-text);
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+const DragRegion = styled.div`
+  flex: 1;
+  height: 100%;
+  -webkit-app-region: drag;
 `;
 
 const WindowControls = styled.div`
   display: flex;
   height: 100%;
   -webkit-app-region: no-drag;
+  flex-shrink: 0;
 `;
 
-const ControlButton = styled.button<{ $isClose?: boolean; $isMinimize?: boolean }>`
-  width: 48px;
-  height: 48px;
+const ControlButton = styled.button<{ $isClose?: boolean }>`
+  width: 42px;
+  height: 38px;
   border: none;
   background: transparent;
-  color: var(--color-text);
+  color: var(--color-textSecondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.12s ease, color 0.12s ease;
   padding: 0;
 
   &:hover {
-    background: ${props => props.$isClose 
-      ? '#e81123' 
-      : 'color-mix(in srgb, var(--color-text) 10%, transparent)'};
+    background: ${props => props.$isClose
+      ? '#e81123'
+      : 'color-mix(in srgb, var(--color-text) 8%, transparent)'};
     color: ${props => props.$isClose ? 'white' : 'var(--color-text)'};
   }
 
   &:active {
-    background: ${props => props.$isClose 
-      ? '#c90012' 
-      : 'color-mix(in srgb, var(--color-text) 15%, transparent)'};
+    background: ${props => props.$isClose
+      ? '#c90012'
+      : 'color-mix(in srgb, var(--color-text) 14%, transparent)'};
   }
 `;
 
-interface TitleBarProps {
-  title?: string;
-}
-
-const TitleBar: React.FC<TitleBarProps> = ({ title = 'TexStudio OCR' }) => {
+const TitleBar: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
-    // 检查窗口是否最大化
     const checkMaximized = async () => {
       if (window.electronAPI && window.electronAPI.isWindowMaximized) {
         const maximized = await window.electronAPI.isWindowMaximized();
@@ -110,7 +68,6 @@ const TitleBar: React.FC<TitleBarProps> = ({ title = 'TexStudio OCR' }) => {
 
     checkMaximized();
 
-    // 监听窗口最大化/还原事件
     if (window.electronAPI && window.electronAPI.onWindowStateChange) {
       const removeListener = window.electronAPI.onWindowStateChange((maximized: boolean) => {
         setIsMaximized(maximized);
@@ -142,28 +99,23 @@ const TitleBar: React.FC<TitleBarProps> = ({ title = 'TexStudio OCR' }) => {
 
   return (
     <TitleBarContainer>
-      <TitleSection>
-        <AppIcon>
-          <img src="icons/icon-32.png" alt="TexStudio" />
-        </AppIcon>
-        <AppTitle>{title}</AppTitle>
-      </TitleSection>
-      
+      <DragRegion />
+
       <WindowControls>
-        <ControlButton $isMinimize onClick={handleMinimize} title="最小化">
-          <MaterialIcon name="minimize" size={12} />
+        <ControlButton onClick={handleMinimize} title="最小化">
+          <MaterialIcon name="minimize" size={11} />
         </ControlButton>
-        
-        <ControlButton onClick={handleMaximize} title={isMaximized ? "还原" : "最大化"}>
+
+        <ControlButton onClick={handleMaximize} title={isMaximized ? '还原' : '最大化'}>
           {isMaximized ? (
-            <MaterialIcon name="filter_none" size={12} />
+            <MaterialIcon name="filter_none" size={11} />
           ) : (
-            <MaterialIcon name="crop_square" size={12} />
+            <MaterialIcon name="crop_square" size={11} />
           )}
         </ControlButton>
-        
+
         <ControlButton $isClose onClick={handleClose} title="关闭">
-          <MaterialIcon name="close" size={14} />
+          <MaterialIcon name="close" size={13} />
         </ControlButton>
       </WindowControls>
     </TitleBarContainer>
@@ -171,4 +123,3 @@ const TitleBar: React.FC<TitleBarProps> = ({ title = 'TexStudio OCR' }) => {
 };
 
 export default TitleBar;
-

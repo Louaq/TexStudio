@@ -272,15 +272,10 @@ function checkForUpdates(retryCount: number = 0) {
 }
 
 // 定义API配置读取函数
-function loadApiConfigFromSettings(): { appId: string; appSecret: string; modelScope?: { apiKey: string; enabled: boolean; model: string } } {
+function loadApiConfigFromSettings(): { appId: string; appSecret: string } {
   const config = {
     appId: '',
     appSecret: '',
-    modelScope: {
-      apiKey: '',
-      enabled: false,
-      model: 'Qwen/Qwen2.5-7B-Instruct'
-    }
   };
 
   try {
@@ -294,18 +289,6 @@ function loadApiConfigFromSettings(): { appId: string; appSecret: string; modelS
         logger.log('成功从settings.json加载API配置');
       } else {
         logger.log('settings.json中未找到有效的API配置');
-      }
-      
-      // 加载魔搭配置
-      if (settings.modelscope_api_key !== undefined || settings.modelscope_enabled !== undefined) {
-        config.modelScope = {
-          apiKey: settings.modelscope_api_key || '',
-          enabled: settings.modelscope_enabled || false,
-          model: settings.modelscope_model || 'Qwen/Qwen2.5-7B-Instruct'
-        };
-        logger.log('成功从settings.json加载魔搭配置');
-      } else {
-        logger.log('settings.json中使用默认魔搭配置');
       }
     } else {
       logger.log('未找到settings.json文件，将使用空的API配置');
@@ -331,11 +314,6 @@ interface ApiConfig {
   appId: string;
   appSecret: string;
   endpoint: string;
-  modelScope?: {
-    apiKey: string;
-    enabled: boolean;
-    model: string;
-  };
 }
 
 interface HistoryItem {
@@ -359,11 +337,6 @@ let DEFAULT_API_CONFIG: ApiConfig = {
   appId: '',
   appSecret: '',
   endpoint: 'https://server.simpletex.cn/api/latex_ocr',
-  modelScope: {
-    apiKey: '',
-    enabled: false,
-    model: 'Qwen/Qwen2.5-7B-Instruct'
-  }
 };
 
 const TEMP_FILE_PREFIX = 'simpletex-';
@@ -563,7 +536,7 @@ const store = new Store<AppSettings>({
       upload: 'Alt+S' 
     },
     history: [],
-    theme: 'green', // 默认使用清新绿色主题
+    theme: 'green', // 默认清新绿色
     minimizeToTray: true // 默认关闭时最小化到托盘
   }
 });
@@ -576,9 +549,9 @@ let tray: Tray | null = null;
 async function createMainWindow(): Promise<void> {
   mainWindow = new BrowserWindow({
     width: 1051,
-    height: 780,
+    height: 688,
     minWidth: 1051,
-    minHeight: 780,
+    minHeight: 620,
     frame: false, // 移除默认标题栏，使用自定义标题栏
     webPreferences: {
       nodeIntegration: false,
@@ -1302,15 +1275,6 @@ if (!gotTheLock) {
         DEFAULT_API_CONFIG.appSecret = '';
       }
 
-      // 应用魔搭配置
-      if (apiConfig.modelScope) {
-        DEFAULT_API_CONFIG.modelScope = {
-          apiKey: apiConfig.modelScope.apiKey,
-          enabled: apiConfig.modelScope.enabled,
-          model: apiConfig.modelScope.model || 'Qwen/Qwen2.5-7B-Instruct'
-        };
-      }
-
       // 只有在store中没有有效配置时才更新store
       store.set('apiConfig', DEFAULT_API_CONFIG);
     } else {
@@ -1767,17 +1731,6 @@ ipcMain.handle('save-settings', async (event, settings: Partial<AppSettings>) =>
         app_secret: settings.apiConfig.appSecret
       };
 
-      // 保存魔搭配置
-      if (settings.apiConfig.modelScope) {
-        fileSettings.modelscope_api_key = settings.apiConfig.modelScope.apiKey;
-        fileSettings.modelscope_enabled = settings.apiConfig.modelScope.enabled;
-        fileSettings.modelscope_model = settings.apiConfig.modelScope.model;
-      } else {
-        fileSettings.modelscope_api_key = '';
-        fileSettings.modelscope_enabled = false;
-        fileSettings.modelscope_model = 'Qwen/Qwen2.5-7B-Instruct';
-      }
-
       fs.writeFileSync(settingsPath, JSON.stringify(fileSettings, null, 2), 'utf8');
       logger.log('API配置已同步保存到settings.json');
     } catch (error) {
@@ -2193,17 +2146,6 @@ ipcMain.handle('save-api-to-settings-file', async (event, apiConfig: ApiConfig) 
       app_secret: apiConfig.appSecret
     };
     
-    // 保存魔搭配置
-    if (apiConfig.modelScope) {
-      settings.modelscope_api_key = apiConfig.modelScope.apiKey;
-      settings.modelscope_enabled = apiConfig.modelScope.enabled;
-      settings.modelscope_model = apiConfig.modelScope.model || 'Qwen/Qwen2.5-7B-Instruct';
-    } else {
-      settings.modelscope_api_key = '';
-      settings.modelscope_enabled = false;
-      settings.modelscope_model = 'Qwen/Qwen2.5-7B-Instruct';
-    }
-    
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
     return true;
   } catch (error) {
@@ -2217,22 +2159,12 @@ ipcMain.handle('clear-api-config', async (event) => {
     // 清除内存中的配置
     DEFAULT_API_CONFIG.appId = '';
     DEFAULT_API_CONFIG.appSecret = '';
-    if (DEFAULT_API_CONFIG.modelScope) {
-      DEFAULT_API_CONFIG.modelScope.apiKey = '';
-      DEFAULT_API_CONFIG.modelScope.enabled = false;
-      DEFAULT_API_CONFIG.modelScope.model = 'Qwen/Qwen2.5-7B-Instruct';
-    }
 
     // 清除electron-store中的配置
     const clearedConfig = {
       appId: '',
       appSecret: '',
       endpoint: DEFAULT_API_CONFIG.endpoint,
-      modelScope: {
-        apiKey: '',
-        enabled: false,
-        model: 'Qwen/Qwen2.5-7B-Instruct'
-      }
     };
     store.set('apiConfig', clearedConfig);
 

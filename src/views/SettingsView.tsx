@@ -2,92 +2,148 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { ApiConfig, SidebarConfig, SidebarItem } from '../types';
 import MaterialIcon from '../components/MaterialIcon';
-import { themes, getTheme, saveCustomTheme, Theme } from '../theme/themes';
 import { DataConfirmDialog, DataAlertDialog } from '../components/DataDialog';
 import { getDefaultSidebarConfig } from '../components/Sidebar';
-import { getModelScopeModels } from '../utils/api';
-import ModelSelect from '../components/ModelSelect';
 
 const SettingsContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--color-dialogBackground);
+  background: var(--color-surface);
   overflow: hidden;
 `;
-
 
 const Content = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 48px 32px 32px;
+  padding: 20px 24px 28px;
+  box-sizing: border-box;
+  background: var(--color-surface);
 
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: transparent;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e0;
-    border-radius: 4px;
+    background: color-mix(in srgb, var(--color-text) 16%, transparent);
+    border-radius: 6px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0;
+    background: color-mix(in srgb, var(--color-text) 26%, transparent);
   }
 `;
 
-const Section = styled.div`
+const SettingsPanel = styled.div`
   background: var(--color-surface);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--color-borderLight);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 `;
 
-const SectionTitle = styled.h2`
-  margin: 0 0 16px 0;
+const SettingsRow = styled.div`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-borderLight);
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+`;
+
+const RowLabelCol = styled.div`
+  flex: 0 0 34%;
+  max-width: 240px;
+  min-width: 112px;
+  padding-top: 9px;
+`;
+
+const RowControlCol = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const RowLabelText = styled.span`
+  font-size: 14px;
+  font-weight: 500;
   color: var(--color-text);
-  font-size: 17px;
-  font-weight: 600;
+  line-height: 1.4;
+`;
+
+const RowLabelWithIcon = styled(RowLabelText)`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const RowControlShortcut = styled(RowControlCol)`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 2px;
+`;
+
+const ShortcutsBlock = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+  width: 100%;
+`;
+
+const ShortcutLine = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  flex: 0 1 auto;
 `;
 
-const FormGroup = styled.div`
-  margin-bottom: 20px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const Label = styled.label`
-  display: block;
-  color: var(--color-text);
-  font-weight: 600;
+const ShortcutLineLabel = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
-  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--color-text);
+`;
+
+const UnifiedSettingsFooter = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 18px;
+  border-top: 1px solid var(--color-borderLight);
+  background: color-mix(in srgb, var(--color-text) 1.5%, var(--color-surface));
 `;
 
 const Input = styled.input`
   width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--color-inputBorder);
-  border-radius: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
   background: var(--color-inputBackground);
   font-size: 13px;
   color: var(--color-text);
-  transition: all 0.3s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
-    border-color: var(--color-inputFocus);
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent);
   }
 
   &::placeholder {
@@ -97,7 +153,7 @@ const Input = styled.input`
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    background: var(--color-surface);
+    background: color-mix(in srgb, var(--color-text) 4%, var(--color-surface));
   }
 `;
 
@@ -120,40 +176,6 @@ const CheckboxLabel = styled.label`
   font-weight: 600;
   cursor: pointer;
   user-select: none;
-`;
-
-const InfoNote = styled.div`
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 10px;
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--color-text);
-  line-height: 1.5;
-
-  strong {
-    color: var(--color-primary);
-    display: block;
-    margin-bottom: 8px;
-  }
-
-  a {
-    color: var(--color-primary);
-    text-decoration: none;
-    font-weight: 600;
-    
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-top: 24px;
-  justify-content: flex-end;
 `;
 
 const Select = styled.select`
@@ -221,74 +243,49 @@ const LoadButton = styled.button`
   }
 `;
 
-const ModelSelectHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  min-height: 24px;
-`;
-
-const ButtonRow = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 24px;
-  height: 28px;
-`;
-
-const LoadingIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #7f8c8d;
-  font-size: 12px;
-`;
-
 const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>`
-  padding: 5px 0;
-  border: none;
-  border-radius: 4px;
+  padding: 6px 16px;
+  border-radius: 6px;
   font-weight: 500;
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  width: 70px;
-  height: 28px;
-  display: flex;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  min-height: 32px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 
   ${props => {
     if (props.variant === 'primary') {
       return `
-        background: var(--color-buttonGradientStart);
-        color: white;
+        border: 1px solid color-mix(in srgb, var(--color-primary) 85%, black);
+        background: var(--color-primary);
+        color: var(--color-surface);
 
         &:hover {
-          background: var(--color-buttonHoverStart);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+          background: color-mix(in srgb, var(--color-primary) 88%, black);
         }
       `;
     } else if (props.variant === 'tertiary') {
       return `
+        border: 1px solid color-mix(in srgb, var(--color-warning) 70%, var(--color-text));
         background: var(--color-warning);
-        color: white;
+        color: var(--color-surface);
 
         &:hover {
-          background: var(--color-warning);
-          opacity: 0.9;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+          filter: brightness(0.95);
         }
       `;
     } else {
       return `
-        background: var(--color-border);
+        border: 1px solid var(--color-border);
+        background: var(--color-surface);
         color: var(--color-text);
 
         &:hover {
-          background: var(--color-borderLight);
+          background: color-mix(in srgb, var(--color-text) 4%, var(--color-surface));
+          border-color: var(--color-borderLight);
         }
       `;
     }
@@ -299,128 +296,29 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
   }
 `;
 
-const ThemeGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-`;
-
-const ThemeCard = styled.button<{ $isActive: boolean }>`
-  padding: 20px 16px;
-  border: 1px solid ${props => props.$isActive ? 'var(--color-primary)' : 'var(--color-border)'};
-  border-radius: 12px;
-  background: var(--color-surface);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  position: relative;
-
-  &:hover {
-    border-color: ${props => props.$isActive ? 'var(--color-primary)' : 'var(--color-borderLight)'};
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-  }
-
-  ${props => props.$isActive && `
-    background: rgba(0, 0, 0, 0.03);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-  `}
-`;
-
-const ThemeColorPreview = styled.div<{ $color: string }>`
-  width: 80px;
-  height: 50px;
-  border-radius: 10px;
-  background: ${props => props.$color};
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  position: relative;
-  overflow: hidden;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, transparent 30%, rgba(0, 0, 0, 0.05) 100%);
-  }
-`;
-
-const ThemeName = styled.div`
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text);
-  text-align: center;
-`;
-
-const ActiveBadge = styled.div`
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.4);
-`;
-
-const ShortcutGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-`;
-
-const ShortcutCard = styled.div`
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-`;
-
-const ShortcutLabel = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--color-text);
-  font-size: 13px;
-  font-weight: 600;
-`;
-
 const ShortcutButton = styled.button<{ $isListening?: boolean; $isSet?: boolean }>`
-  padding: 10px 16px;
-  border: 1px solid ${props => 
-    props.$isListening ? 'var(--color-primary)' : 
-    props.$isSet ? 'var(--color-primary)' : 'var(--color-border)'
-  };
+  padding: 8px 14px;
+  border: 1px solid ${props =>
+    props.$isListening || props.$isSet
+      ? 'var(--color-primary)'
+      : 'var(--color-borderLight)'};
   border-radius: 6px;
-  background: ${props => 
-    props.$isListening 
-      ? 'color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))' 
-      : props.$isSet 
-        ? 'color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))' 
-        : 'var(--color-surface)'
-  };
+  background: ${props =>
+    props.$isListening || props.$isSet
+      ? 'color-mix(in srgb, var(--color-primary) 6%, var(--color-surface))'
+      : 'var(--color-inputBackground)'};
   font-size: 12px;
-  color: ${props => 
-    props.$isListening ? 'var(--color-primary)' : 
-    props.$isSet ? 'var(--color-primary)' : 'var(--color-text)'
-  };
-  transition: all 0.2s ease;
+  color: ${props =>
+    props.$isListening || props.$isSet
+      ? 'var(--color-primary)'
+      : 'var(--color-text)'};
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
   font-family: "Cascadia Code", "Consolas", monospace;
   cursor: pointer;
-  min-height: 40px;
-  width: 100%;
+  min-height: 36px;
+  min-width: 168px;
+  max-width: 100%;
+  width: auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -452,9 +350,9 @@ const ShortcutButton = styled.button<{ $isListening?: boolean; $isSet?: boolean 
 `;
 
 const UpdateContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 `;
 
 const UpdateCard = styled.div`
@@ -509,100 +407,16 @@ const UpdateButton = styled.button`
   }
 `;
 
-const CustomThemeEditor = styled.div`
-  margin-top: 24px;
-  padding: 24px;
-  border: 1px solid var(--color-primary);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--color-primary) 3%, var(--color-surface));
-`;
-
-const CustomThemeTitle = styled.h3`
-  margin: 0 0 20px 0;
-  color: var(--color-text);
-  font-size: 16px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const ColorGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
-`;
-
-const ColorItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const ColorLabel = styled.label`
-  display: block;
-  color: var(--color-text);
-  font-weight: 600;
-  font-size: 12px;
-`;
-
-const ColorInputWrapper = styled.div`
-  display: flex;
-  gap: 8px;
-  align-items: center;
-`;
-
-const ColorInput = styled.input`
-  width: 50px;
-  height: 36px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  cursor: pointer;
-  padding: 2px;
-  
-  &::-webkit-color-swatch-wrapper {
-    padding: 0;
-  }
-  
-  &::-webkit-color-swatch {
-    border: none;
-    border-radius: 4px;
-  }
-`;
-
-const ColorTextInput = styled.input`
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-surface);
-  font-size: 12px;
-  color: var(--color-text);
-  font-family: "Cascadia Code", "Consolas", monospace;
-  transition: all 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 10%, transparent);
-  }
-`;
-
 const DataRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--color-border);
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-borderLight);
 
   &:last-child {
     border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  &:first-child {
-    padding-top: 0;
   }
 `;
 
@@ -696,8 +510,9 @@ const SmallButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger
 const Toggle = styled.label`
   position: relative;
   display: inline-block;
-  width: 48px;
-  height: 26px;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
   cursor: pointer;
 
   input {
@@ -712,20 +527,21 @@ const Toggle = styled.label`
     left: 0;
     right: 0;
     bottom: 0;
-    background: var(--color-border);
-    border-radius: 26px;
-    transition: all 0.3s ease;
+    background: color-mix(in srgb, var(--color-text) 14%, var(--color-surface));
+    border-radius: 24px;
+    transition: background 0.2s ease;
 
     &:before {
       content: '';
       position: absolute;
-      height: 20px;
-      width: 20px;
+      height: 18px;
+      width: 18px;
       left: 3px;
       bottom: 3px;
       background: var(--color-surface);
       border-radius: 50%;
-      transition: all 0.3s ease;
+      transition: transform 0.2s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
     }
   }
 
@@ -734,24 +550,20 @@ const Toggle = styled.label`
   }
 
   input:checked + span:before {
-    transform: translateX(22px);
+    transform: translateX(20px);
   }
 `;
 
-const SidebarItemCard = styled.div`
+const SidebarSettingsRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
-  background: #fafbfc;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  transition: all 0.2s ease;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-borderLight);
 
-  &:hover {
-    background: #f1f3f5;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  &:last-child {
+    border-bottom: none;
   }
 `;
 
@@ -763,14 +575,15 @@ const SidebarItemInfo = styled.div`
 `;
 
 const SidebarItemIcon = styled.div`
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-primary);
-  color: white;
-  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  color: var(--color-primary);
+  border-radius: 6px;
+  border: 1px solid var(--color-borderLight);
 `;
 
 const SidebarItemText = styled.div`
@@ -800,42 +613,34 @@ const SidebarItemControls = styled.div`
 const OrderButton = styled.button`
   width: 32px;
   height: 32px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-borderLight);
   border-radius: 6px;
-  background: var(--color-surface);
+  background: var(--color-inputBackground);
   color: var(--color-text);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 
   &:hover:not(:disabled) {
-    background: var(--color-primary);
-    color: var(--color-surface);
-    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-text) 6%, var(--color-surface));
+    border-color: var(--color-border);
   }
 
   &:disabled {
-    opacity: 0.3;
+    opacity: 0.35;
     cursor: not-allowed;
   }
-`;
-
-const SidebarList = styled.div`
-  display: flex;
-  flex-direction: column;
 `;
 
 interface SettingsViewProps {
   apiConfig: ApiConfig;
   shortcuts: { capture: string; upload: string };
-  currentTheme?: string;
   sidebarConfig?: SidebarConfig;
   minimizeToTray?: boolean;
   onSaveApi: (config: ApiConfig) => void;
   onSaveShortcuts: (shortcuts: { capture: string; upload: string }) => void;
-  onThemeChange?: (themeId: string) => void;
   onCheckForUpdates?: () => void;
   onSaveSidebarConfig?: (config: SidebarConfig) => void;
   onSaveMinimizeToTray?: (minimizeToTray: boolean) => void;
@@ -844,12 +649,10 @@ interface SettingsViewProps {
 const SettingsView: React.FC<SettingsViewProps> = ({
   apiConfig,
   shortcuts,
-  currentTheme = 'green',
   sidebarConfig,
   minimizeToTray = true,
   onSaveApi,
   onSaveShortcuts,
-  onThemeChange,
   onCheckForUpdates,
   onSaveSidebarConfig,
   onSaveMinimizeToTray
@@ -858,7 +661,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   const [shortcutFormData, setShortcutFormData] = useState(shortcuts);
   const [listeningFor, setListeningFor] = useState<'capture' | 'upload' | null>(null);
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
-  const [customTheme, setCustomTheme] = useState<Theme>(getTheme('custom'));
   const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>(
     sidebarConfig?.items || getDefaultSidebarConfig().items
   );
@@ -869,11 +671,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   const [dataPath, setDataPath] = useState('');
   const [logPath, setLogPath] = useState('');
   const [cacheSize, setCacheSize] = useState('0MB');
-  
-  // 魔搭模型列表相关状态
-  const [availableModels, setAvailableModels] = useState<Array<{id: string, name: string}>>([]);
-  const [isLoadingModels, setIsLoadingModels] = useState(false);
-  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
   
   // 对话框状态
   const [dialogState, setDialogState] = useState<{
@@ -892,13 +689,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     message: ''
   });
 
-  // 当切换到自定义主题时加载
-  useEffect(() => {
-    if (currentTheme === 'custom') {
-      setCustomTheme(getTheme('custom'));
-    }
-  }, [currentTheme]);
-
   // 当外部配置变化时更新内部状态
   useEffect(() => {
     if (sidebarConfig?.items) {
@@ -906,153 +696,35 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     }
   }, [sidebarConfig]);
   
-  // 自动加载模型列表
-  useEffect(() => {
-    const shouldAutoLoad = apiFormData.modelScope?.enabled && 
-                          apiFormData.modelScope?.apiKey && 
-                          availableModels.length === 0 &&
-                          !isLoadingModels &&
-                          !hasAttemptedLoad;
-    
-    if (shouldAutoLoad && apiFormData.modelScope?.apiKey) {
-      const loadModels = async () => {
-        setHasAttemptedLoad(true);
-        setIsLoadingModels(true);
-        
-        try {
-          const models = await getModelScopeModels(apiFormData.modelScope!.apiKey);
-          setAvailableModels(models);
-          console.log('自动加载的模型列表:', models);
-          
-          // 自动选择第一个模型
-          if (models.length > 0 && !apiFormData.modelScope?.model) {
-            setApiFormData(prev => ({
-              ...prev,
-              modelScope: {
-                ...prev.modelScope!,
-                model: models[0].id
-              }
-            }));
-          }
-        } catch (error) {
-          console.error('自动加载模型列表失败:', error);
-        } finally {
-          setIsLoadingModels(false);
-        }
-      };
-      
-      loadModels();
-    }
-  }, [apiFormData.modelScope?.enabled, apiFormData.modelScope?.apiKey]);
-
   // API设置相关函数
   const handleApiChange = (field: keyof ApiConfig, value: string) => {
     setApiFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleModelScopeChange = async (field: string, value: string | boolean) => {
-    setApiFormData(prev => ({
-      ...prev,
-      modelScope: {
-        apiKey: prev.modelScope?.apiKey || '',
-        enabled: prev.modelScope?.enabled || false,
-        model: prev.modelScope?.model || 'Qwen/Qwen2.5-7B-Instruct',
-        [field]: value
-      }
-    }));
-    
-    // 如果是enabled或apiKey改变，且启用了魔搭功能且有apiKey，则自动加载模型列表
-    if ((field === 'enabled' || field === 'apiKey') && 
-        (field === 'enabled' ? value : apiFormData.modelScope?.enabled) &&
-        (field === 'apiKey' ? value : apiFormData.modelScope?.apiKey) &&
-        availableModels.length === 0 &&
-        !isLoadingModels &&
-        !hasAttemptedLoad) {
-      const newApiKey = field === 'apiKey' ? value as string : apiFormData.modelScope?.apiKey || '';
-      const newEnabled = field === 'enabled' ? value as boolean : apiFormData.modelScope?.enabled || false;
-      
-      if (newEnabled && newApiKey) {
-        await handleLoadModelsAuto(newApiKey);
-      }
-    }
-  };
-  
-  // 自动加载模型列表
-  const handleLoadModelsAuto = async (apiKey: string) => {
-    if (!apiKey || isLoadingModels) return;
-    
-    setHasAttemptedLoad(true);
-    setIsLoadingModels(true);
-    
-    try {
-      const models = await getModelScopeModels(apiKey);
-      setAvailableModels(models);
-      console.log('自动加载的模型列表:', models);
-      
-      // 自动选择第一个模型
-      if (models.length > 0 && !apiFormData.modelScope?.model) {
-        setApiFormData(prev => ({
-          ...prev,
-          modelScope: {
-            ...prev.modelScope!,
-            model: models[0].id
-          }
-        }));
-      }
-    } catch (error) {
-      console.error('自动加载模型列表失败:', error);
-      // 静默失败，不显示错误提示
-    } finally {
-      setIsLoadingModels(false);
-    }
-  };
-
-  const handleSaveApi = () => {
+  const handleSaveAll = () => {
     onSaveApi(apiFormData);
-  };
-  
-  // 手动加载魔搭模型列表
-  const handleLoadModels = async () => {
-    const apiKey = apiFormData.modelScope?.apiKey;
-    if (!apiKey) {
-      alert('请先输入API Key');
-      return;
+
+    const shortcutOk =
+      !!shortcutFormData.capture?.trim() && !!shortcutFormData.upload?.trim();
+    if (shortcutOk) {
+      onSaveShortcuts(shortcutFormData);
     }
 
-    setHasAttemptedLoad(false);
-    setIsLoadingModels(true);
-    
-    try {
-      const models = await getModelScopeModels(apiKey);
-      setAvailableModels(models);
-      console.log('加载的模型列表:', models);
-      
-      // 自动选择第一个模型（如果还没有选择模型）
-      if (models.length > 0 && (!apiFormData.modelScope?.model || apiFormData.modelScope?.model === '')) {
-        setApiFormData(prev => ({
-          ...prev,
-          modelScope: {
-            ...prev.modelScope!,
-            model: models[0].id
-          }
-        }));
-      }
-    } catch (error) {
-      console.error('加载模型列表失败:', error);
-      alert(`加载模型列表失败: ${error instanceof Error ? error.message : '未知错误'}`);
-    } finally {
-      setIsLoadingModels(false);
+    if (onSaveSidebarConfig) {
+      onSaveSidebarConfig({ items: sidebarItems });
     }
-  };
 
-  // 使用默认浏览器打开链接
-  const handleOpenLink = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
-    e.preventDefault();
-    if (window.electronAPI?.openExternal) {
-      window.electronAPI.openExternal(url);
-    } else {
-      window.open(url, '_blank');
+    if (onSaveMinimizeToTray) {
+      onSaveMinimizeToTray(minimizeToTrayState);
     }
+
+    void showAlert(
+      shortcutOk ? '保存成功' : '已保存',
+      shortcutOk
+        ? '设置已保存'
+        : '其余项已保存。请为截图与上传设置完整快捷键后再次点击保存。',
+      shortcutOk ? 'success' : 'warning'
+    );
   };
 
   // 快捷键设置相关函数
@@ -1135,18 +807,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     setPressedKeys(new Set());
   };
 
-  const handleResetShortcuts = () => {
-    const defaultShortcuts = { capture: 'Alt+A', upload: 'Alt+S' };
-    setShortcutFormData(defaultShortcuts);
-    onSaveShortcuts(defaultShortcuts);
-  };
-
-  const handleSaveShortcuts = () => {
-    if (shortcutFormData.capture && shortcutFormData.upload) {
-      onSaveShortcuts(shortcutFormData);
-    }
-  };
-
   const getShortcutDisplay = (field: 'capture' | 'upload') => {
     if (listeningFor === field) {
       if (pressedKeys.size > 0) {
@@ -1155,38 +815,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
       return '按住快捷键...';
     }
     return shortcutFormData[field] || '点击设置快捷键';
-  };
-
-  // 自定义主题相关函数
-  const handleCustomColorChange = (colorKey: string, value: string) => {
-    setCustomTheme(prev => ({
-      ...prev,
-      colors: {
-        ...prev.colors,
-        [colorKey]: value
-      }
-    }));
-  };
-
-  const handleSaveCustomTheme = () => {
-    saveCustomTheme(customTheme);
-    if (onThemeChange) {
-      onThemeChange('custom');
-    }
-  };
-
-  const handleResetCustomTheme = () => {
-    const greenTheme = themes.find(t => t.id === 'green') || themes[0];
-    const defaultTheme = {
-      id: 'custom',
-      name: '自定义主题',
-      colors: { ...greenTheme.colors }
-    };
-    setCustomTheme(defaultTheme);
-    saveCustomTheme(defaultTheme);
-    if (onThemeChange) {
-      onThemeChange('custom');
-    }
   };
 
   // 对话框辅助函数
@@ -1462,431 +1090,86 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     });
   };
 
-  const handleSaveSidebar = () => {
-    if (onSaveSidebarConfig) {
-      onSaveSidebarConfig({ items: sidebarItems });
-      showAlert('保存成功', '侧边栏配置已保存', 'success');
-    }
-  };
-
-  const handleResetSidebar = () => {
-    const defaultConfig = getDefaultSidebarConfig();
-    setSidebarItems(defaultConfig.items);
-    if (onSaveSidebarConfig) {
-      onSaveSidebarConfig(defaultConfig);
-    }
-    showAlert('重置成功', '侧边栏配置已恢复默认', 'success');
-  };
-
-  // 颜色标签的中文名称
-  const colorLabels: Record<string, string> = {
-    primary: '主色调',
-    primaryLight: '主色调（亮）',
-    primaryDark: '主色调（暗）',
-    background: '背景色',
-    backgroundPattern: '背景图案',
-    surface: '表面颜色',
-    surfaceLight: '表面颜色（亮）',
-    text: '文字颜色',
-    textSecondary: '次要文字',
-    border: '边框颜色',
-    borderLight: '边框颜色（亮）',
-    buttonGradientStart: '按钮渐变（起）',
-    buttonGradientEnd: '按钮渐变（终）',
-    buttonHoverStart: '按钮悬停（起）',
-    buttonHoverEnd: '按钮悬停（终）',
-    inputBackground: '输入框背景',
-    inputBorder: '输入框边框',
-    inputFocus: '输入框焦点',
-    success: '成功色',
-    error: '错误色',
-    warning: '警告色',
-    info: '信息色',
-    menuBackground: '菜单背景',
-    menuBorder: '菜单边框',
-    menuHover: '菜单悬停',
-    dialogBackground: '对话框背景',
-    dialogOverlay: '对话框遮罩'
-  };
-
   return (
     <SettingsContainer>
-
-
       <Content>
-        {/* API 设置 */}
-        <Section>
-            <SectionTitle>
-              <MaterialIcon name="vpn_key" size={22} />
-              API配置
-            </SectionTitle>
-            
-            <FormGroup>
-              <Label>APP ID</Label>
-              <Input
-                type="text"
-                value={apiFormData.appId || ''}
-                onChange={(e) => handleApiChange('appId', e.target.value)}
-                placeholder="请输入APP ID"
-                autoComplete="off"
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>APP Secret</Label>
-              <Input
-                type="password"
-                value={apiFormData.appSecret || ''}
-                onChange={(e) => handleApiChange('appSecret', e.target.value)}
-                placeholder="请输入APP Secret"
-                autoComplete="off"
-              />
-            </FormGroup>
-
-            <hr style={{ border: 'none', borderTop: '1px solid #e1e8ed', margin: '24px 0' }} />
-
-            <SectionTitle style={{ fontSize: '18px' }}>
-              <MaterialIcon name="psychology" size={20} />
-              魔搭 AI 配置
-            </SectionTitle>
-
-            <FormGroup>
-              <CheckboxWrapper>
-                <Checkbox
-                  id="modelscope-enabled"
-                  type="checkbox"
-                  checked={apiFormData.modelScope?.enabled || false}
-                  onChange={(e) => handleModelScopeChange('enabled', e.target.checked)}
+        <SettingsPanel>
+            <SettingsRow>
+              <RowLabelCol>
+                <RowLabelText>APP ID</RowLabelText>
+              </RowLabelCol>
+              <RowControlCol>
+                <Input
+                  type="text"
+                  value={apiFormData.appId || ''}
+                  onChange={(e) => handleApiChange('appId', e.target.value)}
+                  placeholder="请输入APP ID"
+                  autoComplete="off"
                 />
-                <CheckboxLabel htmlFor="modelscope-enabled">
-                  启用魔搭 AI 公式解释功能
-                </CheckboxLabel>
-              </CheckboxWrapper>
-            </FormGroup>
+              </RowControlCol>
+            </SettingsRow>
 
-            <FormGroup>
-              <Label>魔搭 API Key</Label>
-              <Input
-                type="password"
-                value={apiFormData.modelScope?.apiKey || ''}
-                onChange={(e) => handleModelScopeChange('apiKey', e.target.value)}
-                placeholder="请输入魔搭 API Key"
-                autoComplete="off"
-                disabled={!apiFormData.modelScope?.enabled}
-              />
-              <InfoNote>
-                <strong>
-                  <MaterialIcon name="edit_note" size={16} /> 获取 API Key 说明：
-                </strong>
-                1. 访问 <a 
-                  href="https://modelscope.cn/my/myaccesstoken" 
-                  onClick={(e) => handleOpenLink(e, 'https://modelscope.cn/my/myaccesstoken')}
-                  style={{ cursor: 'pointer'}}
-                >魔搭控制台</a> 注册账号<br/>
-                2. 创建 API Key<br/>
-                3. 将 API Key 填入上方输入框<br/>
-                4. 启用功能后即可使用 AI 解释数学公式
-              </InfoNote>
-            </FormGroup>
-
-            <FormGroup>
-              <ModelSelectHeader>
-                <Label style={{ marginBottom: 0, fontSize: '14px' }}>选择模型</Label>
-                {isLoadingModels && (
-                  <LoadingIndicator>
-                    <MaterialIcon name="hourglass_empty" size={14} /> 加载中...
-                  </LoadingIndicator>
-                )}
-              </ModelSelectHeader>
-              <ModelSelect
-                value={apiFormData.modelScope?.model || ''}
-                options={availableModels}
-                onChange={(value) => handleModelScopeChange('model', value)}
-                disabled={!apiFormData.modelScope?.enabled || isLoadingModels}
-                placeholder={availableModels.length === 0 ? '请先加载模型列表' : '请选择模型'}
-              />
-            </FormGroup>
-
-            <ButtonRow>
-              <Button variant="primary" onClick={handleSaveApi}>
-                保存
-              </Button>
-            </ButtonRow>
-        </Section>
-
-        {/* 快捷键设置 */}
-        <Section>
-            <SectionTitle>
-              <MaterialIcon name="keyboard" size={22} />
-              快捷键设置
-            </SectionTitle>
-            
-            <InfoNote style={{ marginBottom: '24px' }}>
-              点击下方按钮，然后按住您想要设置的快捷键组合（不要设置为Alt+其他键）。
-            </InfoNote>
-
-            <ShortcutGrid>
-              <ShortcutCard>
-                <ShortcutLabel>
-                  <MaterialIcon name="screenshot" size={20} />
-                  <span>截图快捷键</span>
-                </ShortcutLabel>
-                <ShortcutButton
-                  $isListening={listeningFor === 'capture'}
-                  $isSet={!!shortcutFormData.capture}
-                  onClick={() => listeningFor === 'capture' ? stopListening() : startListening('capture')}
-                >
-                  <div>
-                    <div style={{ fontWeight: 500, fontSize: listeningFor === 'capture' ? '11px' : '13px' }}>
-                      {getShortcutDisplay('capture')}
-                    </div>
-                    {listeningFor === 'capture' && (
-                      <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '2px' }}>
-                        松开按键即可保存
-                      </div>
-                    )}
-                  </div>
-                </ShortcutButton>
-              </ShortcutCard>
-
-              <ShortcutCard>
-                <ShortcutLabel>
-                  <MaterialIcon name="upload_file" size={20} />
-                  <span>上传图片快捷键</span>
-                </ShortcutLabel>
-                <ShortcutButton
-                  $isListening={listeningFor === 'upload'}
-                  $isSet={!!shortcutFormData.upload}
-                  onClick={() => listeningFor === 'upload' ? stopListening() : startListening('upload')}
-                >
-                  <div>
-                    <div style={{ fontWeight: 500, fontSize: listeningFor === 'upload' ? '11px' : '13px' }}>
-                      {getShortcutDisplay('upload')}
-                    </div>
-                    {listeningFor === 'upload' && (
-                      <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '2px' }}>
-                        松开按键即可保存
-                      </div>
-                    )}
-                  </div>
-                </ShortcutButton>
-              </ShortcutCard>
-            </ShortcutGrid>
-
-            <ButtonGroup>
-              <Button variant="secondary" onClick={handleResetShortcuts}>
-                重置
-              </Button>
-              <Button variant="primary" onClick={handleSaveShortcuts}>
-                保存
-              </Button>
-            </ButtonGroup>
-        </Section>
-
-        {/* 窗口设置 */}
-        <Section>
-          <SectionTitle>
-            <MaterialIcon name="window" size={22} />
-            窗口设置
-          </SectionTitle>
-
-          <DataRow>
-            <DataLabel>
-              <DataTitle>最小化到系统托盘</DataTitle>
-              <DataDescription>
-                点击关闭按钮时最小化到系统托盘，而不是直接退出程序。可从托盘图标恢复窗口。
-              </DataDescription>
-            </DataLabel>
-            <DataActions>
-              <Toggle>
-                <input
-                  type="checkbox"
-                  checked={minimizeToTrayState}
-                  onChange={(e) => {
-                    const newValue = e.target.checked;
-                    setMinimizeToTrayState(newValue);
-                    if (onSaveMinimizeToTray) {
-                      onSaveMinimizeToTray(newValue);
-                      showAlert(
-                        '设置已保存',
-                        newValue ? '关闭窗口时将最小化到托盘' : '关闭窗口时将直接退出程序',
-                        'success'
-                      );
-                    }
-                  }}
+            <SettingsRow>
+              <RowLabelCol>
+                <RowLabelText>APP Secret</RowLabelText>
+              </RowLabelCol>
+              <RowControlCol>
+                <Input
+                  type="password"
+                  value={apiFormData.appSecret || ''}
+                  onChange={(e) => handleApiChange('appSecret', e.target.value)}
+                  placeholder="请输入APP Secret"
+                  autoComplete="off"
                 />
-                <span></span>
-              </Toggle>
-            </DataActions>
-          </DataRow>
-        </Section>
+              </RowControlCol>
+            </SettingsRow>
 
-        {/* 主题设置 */}
-        <Section>
-            <SectionTitle>
-              <MaterialIcon name="palette" size={22} />
-              主题颜色
-            </SectionTitle>
-            
-            <InfoNote style={{ marginBottom: '24px' }}>
-              选择您喜欢的主题颜色，应用会立即切换到新主题。您也可以选择"自定义主题"来创建专属配色。
-            </InfoNote>
-
-            <ThemeGrid>
-              {themes.map((theme) => (
-                <ThemeCard
-                  key={theme.id}
-                  $isActive={currentTheme === theme.id}
-                  onClick={() => onThemeChange && onThemeChange(theme.id)}
-                >
-                  {currentTheme === theme.id && (
-                    <ActiveBadge>
-                      <MaterialIcon name="check" size={16} style={{ color: 'white' }} />
-                    </ActiveBadge>
-                  )}
-                  <ThemeColorPreview $color={theme.colors.primary} />
-                  <ThemeName>{theme.name}</ThemeName>
-                </ThemeCard>
-              ))}
-              
-              {/* 自定义主题卡片 */}
-              <ThemeCard
-                $isActive={currentTheme === 'custom'}
-                onClick={() => onThemeChange && onThemeChange('custom')}
-              >
-                {currentTheme === 'custom' && (
-                  <ActiveBadge>
-                    <MaterialIcon name="check" size={16} style={{ color: 'white' }} />
-                  </ActiveBadge>
-                )}
-                <ThemeColorPreview $color={customTheme.colors.primary} />
-                <ThemeName>
-                  <MaterialIcon name="tune" size={16} /> 自定义主题
-                </ThemeName>
-              </ThemeCard>
-            </ThemeGrid>
-
-            {/* 自定义主题编辑器 */}
-            {currentTheme === 'custom' && (
-              <CustomThemeEditor>
-                <CustomThemeTitle>
-                  <MaterialIcon name="color_lens" size={20} />
-                  自定义主题编辑器
-                </CustomThemeTitle>
-                
-                <InfoNote style={{ marginBottom: '20px' }}>
-                  💡 提示：修改颜色后点击"应用"按钮即可实时预览效果。支持 HEX 颜色代码和渐变。
-                </InfoNote>
-
-                <ColorGrid>
-                  {Object.entries(customTheme.colors).map(([key, value]) => {
-                    // 检查是否是渐变或其他复杂值
-                    const isSimpleColor = /^#[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{3}$|^rgba?\(/.test(value);
-                    const displayValue = isSimpleColor ? value : value.split(',')[0].split('(')[1] || '#4a90e2';
-                    
-                    return (
-                      <ColorItem key={key}>
-                        <ColorLabel>{colorLabels[key] || key}</ColorLabel>
-                        <ColorInputWrapper>
-                          {isSimpleColor && (
-                            <ColorInput
-                              type="color"
-                              value={value.startsWith('#') ? value : '#4a90e2'}
-                              onChange={(e) => handleCustomColorChange(key, e.target.value)}
-                            />
-                          )}
-                          <ColorTextInput
-                            type="text"
-                            value={value}
-                            onChange={(e) => handleCustomColorChange(key, e.target.value)}
-                            placeholder="#000000"
-                          />
-                        </ColorInputWrapper>
-                      </ColorItem>
-                    );
-                  })}
-                </ColorGrid>
-
-                <ButtonGroup>
-                  <Button variant="tertiary" onClick={handleResetCustomTheme}>
-                    重置
-                  </Button>
-                  <Button variant="primary" onClick={handleSaveCustomTheme}>
-                    应用
-                  </Button>
-                </ButtonGroup>
-              </CustomThemeEditor>
-            )}
-
-        </Section>
-
-        {/* 侧边栏配置 */}
-        <Section>
-          <SectionTitle>
-            <MaterialIcon name="view_sidebar" size={22} />
-            侧边栏配置
-          </SectionTitle>
-
-          <InfoNote style={{ marginBottom: '24px' }}>
-            可以调整侧边栏选项的显示顺序和可见性。使用上下箭头调整顺序，使用开关控制显示/隐藏。
-          </InfoNote>
-
-          <SidebarList>
-            {sidebarItems.map((item, index) => (
-              <SidebarItemCard key={item.id}>
-                <SidebarItemInfo>
-                  <SidebarItemIcon>
-                    <MaterialIcon name={item.icon} size={20} />
-                  </SidebarItemIcon>
-                  <SidebarItemText>
-                    <SidebarItemName>{item.label}</SidebarItemName>
-                  </SidebarItemText>
-                </SidebarItemInfo>
-                
-                <SidebarItemControls>
-                  <OrderButton
-                    onClick={() => handleMoveUp(index)}
-                    disabled={index === 0}
-                    title="上移"
-                  >
-                    <MaterialIcon name="arrow_upward" size={18} />
-                  </OrderButton>
-                  <OrderButton
-                    onClick={() => handleMoveDown(index)}
-                    disabled={index === sidebarItems.length - 1}
-                    title="下移"
-                  >
-                    <MaterialIcon name="arrow_downward" size={18} />
-                  </OrderButton>
-                  <Toggle>
-                    <input
-                      type="checkbox"
-                      checked={item.visible}
-                      onChange={() => handleToggleVisibility(item.id)}
-                    />
-                    <span></span>
-                  </Toggle>
-                </SidebarItemControls>
-              </SidebarItemCard>
-            ))}
-          </SidebarList>
-
-          <ButtonGroup>
-            <Button variant="tertiary" onClick={handleResetSidebar}>
-              重置
-            </Button>
-            <Button variant="primary" onClick={handleSaveSidebar}>
-              保存
-            </Button>
-          </ButtonGroup>
-        </Section>
-
-        {/* 数据设置 */}
-        <Section>
-          <SectionTitle>
-            <MaterialIcon name="storage" size={22} />
-            数据设置
-          </SectionTitle>
+            <SettingsRow>
+              <RowLabelCol>
+                <RowLabelWithIcon>
+                  <MaterialIcon name="keyboard" size={18} />
+                  快捷键
+                </RowLabelWithIcon>
+              </RowLabelCol>
+              <RowControlShortcut>
+                <ShortcutsBlock>
+                  <ShortcutLine>
+                    <ShortcutLineLabel>
+                      <MaterialIcon name="screenshot" size={16} />
+                      截图
+                    </ShortcutLineLabel>
+                    <ShortcutButton
+                      $isListening={listeningFor === 'capture'}
+                      $isSet={!!shortcutFormData.capture}
+                      onClick={() => listeningFor === 'capture' ? stopListening() : startListening('capture')}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: listeningFor === 'capture' ? '11px' : '13px' }}>
+                          {getShortcutDisplay('capture')}
+                        </div>
+                      </div>
+                    </ShortcutButton>
+                  </ShortcutLine>
+                  <ShortcutLine>
+                    <ShortcutLineLabel>
+                      <MaterialIcon name="upload_file" size={16} />
+                      上传图片
+                    </ShortcutLineLabel>
+                    <ShortcutButton
+                      $isListening={listeningFor === 'upload'}
+                      $isSet={!!shortcutFormData.upload}
+                      onClick={() => listeningFor === 'upload' ? stopListening() : startListening('upload')}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: listeningFor === 'upload' ? '11px' : '13px' }}>
+                          {getShortcutDisplay('upload')}
+                        </div>
+                      </div>
+                    </ShortcutButton>
+                  </ShortcutLine>
+                </ShortcutsBlock>
+              </RowControlShortcut>
+            </SettingsRow>
 
           <DataRow>
             <DataLabel>
@@ -1922,14 +1205,22 @@ const SettingsView: React.FC<SettingsViewProps> = ({
               </Toggle>
             </DataActions>
           </DataRow>
-        </Section>
 
-        {/* 数据目录 */}
-        <Section>
-          <SectionTitle>
-            <MaterialIcon name="folder" size={22} />
-            数据目录
-          </SectionTitle>
+          <DataRow>
+            <DataLabel>
+              <DataTitle>最小化到系统托盘</DataTitle>
+            </DataLabel>
+            <DataActions>
+              <Toggle>
+                <input
+                  type="checkbox"
+                  checked={minimizeToTrayState}
+                  onChange={(e) => setMinimizeToTrayState(e.target.checked)}
+                />
+                <span></span>
+              </Toggle>
+            </DataActions>
+          </DataRow>
 
           <DataRow>
             <DataLabel>
@@ -1981,8 +1272,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({
               </SmallButton>
             </DataActions>
           </DataRow>
-          
-        </Section>
+
+          <UnifiedSettingsFooter>
+            <Button variant="primary" onClick={() => handleSaveAll()}>
+              保存
+            </Button>
+          </UnifiedSettingsFooter>
+        </SettingsPanel>
       </Content>
 
       {/* 对话框 */}
