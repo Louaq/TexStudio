@@ -26,6 +26,12 @@ const GlobalStyle = createGlobalStyle`
     --glass-edge: rgba(226, 232, 240, 0.85);
   }
 
+  html {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
   * {
     margin: 0;
     padding: 0;
@@ -45,10 +51,15 @@ const GlobalStyle = createGlobalStyle`
     background: var(--app-bg-gradient, var(--color-background, #f0f4f8));
     color: var(--color-text, #1e293b);
     overflow: hidden;
+    height: 100%;
+    width: 100%;
+    min-height: 100%;
   }
 
   #root {
-    height: 100vh;
+    height: 100%;
+    width: 100%;
+    min-height: 100%;
     display: flex;
     flex-direction: column;
   }

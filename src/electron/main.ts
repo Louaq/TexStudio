@@ -551,7 +551,12 @@ async function createMainWindow(): Promise<void> {
     width: 1051,
     height: 688,
     minWidth: 1051,
-    minHeight: 620,
+    maxWidth: 1051,
+    minHeight: 688,
+    maxHeight: 688,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
     frame: false, // 移除默认标题栏，使用自定义标题栏
     webPreferences: {
       nodeIntegration: false,
@@ -1206,8 +1211,6 @@ if (process.platform === 'win32') {
   app.commandLine.appendSwitch('disable-extensions');
   app.commandLine.appendSwitch('disable-plugins');
   app.commandLine.appendSwitch('disable-dev-shm-usage');
-  app.commandLine.appendSwitch('disable-software-rasterizer');
-  app.commandLine.appendSwitch('disable-features', 'VizDisplayCompositor');
 
   app.commandLine.appendSwitch('memory-pressure-off');
   app.commandLine.appendSwitch('disable-background-mode');
@@ -2012,13 +2015,7 @@ ipcMain.handle('minimize-window', () => {
 });
 
 ipcMain.handle('maximize-window', () => {
-  if (mainWindow) {
-    if (mainWindow.isMaximized()) {
-      mainWindow.unmaximize();
-    } else {
-      mainWindow.maximize();
-    }
-  }
+  // 主窗口固定尺寸，不支持最大化
 });
 
 ipcMain.handle('is-window-maximized', () => {

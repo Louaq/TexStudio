@@ -20,7 +20,10 @@ import { glassMain } from './theme/themes';
 const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
   background: var(--app-bg-gradient, var(--color-background));
   font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
   color: var(--color-text);
@@ -96,7 +99,26 @@ function App() {
   
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
-  
+
+  useEffect(() => {
+    const syncViewportSize = () => {
+      const h = window.innerHeight;
+      const w = window.innerWidth;
+      document.documentElement.style.height = `${h}px`;
+      document.documentElement.style.width = `${w}px`;
+      document.body.style.height = `${h}px`;
+      document.body.style.width = `${w}px`;
+      const root = document.getElementById('root');
+      if (root) {
+        root.style.height = `${h}px`;
+        root.style.width = `${w}px`;
+      }
+    };
+    syncViewportSize();
+    window.addEventListener('resize', syncViewportSize);
+    return () => window.removeEventListener('resize', syncViewportSize);
+  }, []);
+
   useEffect(() => {
     const loadSettings = async () => {
       try {
