@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import MaterialIcon from './MaterialIcon';
+import { glassTitleBar } from '../theme/themes';
 
 const TitleBarContainer = styled.div`
   display: flex;
   align-items: center;
   height: 38px;
-  background: var(--color-surface);
+  ${glassTitleBar}
   user-select: none;
   -webkit-app-region: drag;
   position: relative;
   z-index: 10000;
-  border-bottom: 1px solid var(--color-borderLight);
   flex-shrink: 0;
 `;
 
@@ -103,19 +103,19 @@ const TitleBar: React.FC = () => {
 
       <WindowControls>
         <ControlButton onClick={handleMinimize} title="最小化">
-          <MaterialIcon name="minimize" size={11} />
+          <MaterialIcon name="minimize" size={12} />
         </ControlButton>
 
         <ControlButton onClick={handleMaximize} title={isMaximized ? '还原' : '最大化'}>
           {isMaximized ? (
-            <MaterialIcon name="filter_none" size={11} />
+            <MaterialIcon name="filter_none" size={12} />
           ) : (
-            <MaterialIcon name="crop_square" size={11} />
+            <MaterialIcon name="crop_square" size={12} />
           )}
         </ControlButton>
 
         <ControlButton $isClose onClick={handleClose} title="关闭">
-          <MaterialIcon name="close" size={13} />
+          <MaterialIcon name="close" size={14} />
         </ControlButton>
       </WindowControls>
     </TitleBarContainer>

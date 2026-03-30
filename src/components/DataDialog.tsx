@@ -83,7 +83,7 @@ const IconWrapper = styled.div<{ $type?: 'info' | 'warning' | 'error' | 'success
 
 const DialogTitle = styled.h3`
   margin: 0;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--color-text);
   flex: 1;
@@ -92,7 +92,7 @@ const DialogTitle = styled.h3`
 const DialogContent = styled.div`
   padding: 24px;
   color: var(--color-text);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
   
   strong {
@@ -113,7 +113,7 @@ const DialogFooter = styled.div`
 const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 10px 24px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;

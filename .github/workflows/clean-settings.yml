@@ -28,10 +28,7 @@ jobs:
       run: |
         echo '{' > settings.json
         echo '  "app_id": "",' >> settings.json
-        echo '  "app_secret": "",' >> settings.json
-        echo '  "modelscope_api_key": "",' >> settings.json
-        echo '  "modelscope_enabled": false,' >> settings.json
-        echo '  "modelscope_model": ""' >> settings.json
+        echo '  "app_secret": ""' >> settings.json
         echo '}' >> settings.json
 
     - name: Check for changes

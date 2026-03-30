@@ -48,7 +48,7 @@ const DialogHeader = styled.div`
 const DialogTitle = styled.h3`
   margin: 0;
   color: var(--color-text);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -85,7 +85,7 @@ const DialogBody = styled.div`
 const DialogMessage = styled.p`
   margin: 0;
   color: var(--color-text);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
 `;
 
@@ -102,7 +102,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   padding: 8px 20px;
   border: none;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;

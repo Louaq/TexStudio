@@ -4,6 +4,7 @@ import ImageDisplay from '../components/ImageDisplay';
 import LatexEditor from '../components/LatexEditor';
 import FormulaPreview from '../components/FormulaPreview';
 import { ApiConfig } from '../types';
+import { glassCard, glassPageHeader, glassViewRoot } from '../theme/themes';
 
 const HomeContainer = styled.div`
   flex: 1;
@@ -11,7 +12,7 @@ const HomeContainer = styled.div`
   flex-direction: column;
   overflow: hidden;
   height: 100%;
-  background: var(--color-surface);
+  ${glassViewRoot}
 `;
 
 const PageHeader = styled.div`
@@ -19,14 +20,13 @@ const PageHeader = styled.div`
   height: 48px;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--color-borderLight);
   flex-shrink: 0;
-  background: var(--color-surface);
+  ${glassPageHeader}
 `;
 
 const PageTitle = styled.h1`
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-text);
   letter-spacing: -0.1px;
@@ -62,12 +62,10 @@ const PanelCard = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--color-surface);
   border-radius: 12px;
   padding: 12px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.03);
-  border: 1px solid var(--color-borderLight);
+  ${glassCard}
 `;
 
 interface HomeViewProps {

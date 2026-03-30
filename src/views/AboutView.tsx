@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import MaterialIcon from '../components/MaterialIcon';
 import packageJson from '../../package.json';
+import { glassCard, glassViewRoot } from '../theme/themes';
 
 const AboutContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--color-surface);
+  ${glassViewRoot}
 `;
 
 const Content = styled.div`
@@ -16,7 +17,7 @@ const Content = styled.div`
   overflow-y: auto;
   padding: 20px 24px 28px;
   box-sizing: border-box;
-  background: var(--color-surface);
+  ${glassViewRoot}
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -33,11 +34,9 @@ const Content = styled.div`
 `;
 
 const AboutPanel = styled.div`
-  background: var(--color-surface);
-  border: 1px solid var(--color-borderLight);
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  ${glassCard}
 `;
 
 const HeroSection = styled.div`
@@ -73,7 +72,7 @@ const AppInfo = styled.div`
 const AppName = styled.h1`
   margin: 0 0 6px 0;
   color: var(--color-text);
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
   letter-spacing: -0.02em;
 `;
@@ -81,7 +80,7 @@ const AppName = styled.h1`
 const AppDescription = styled.p`
   margin: 0 0 14px 0;
   color: var(--color-textSecondary);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
 `;
 
@@ -100,7 +99,7 @@ const VersionBadge = styled.span`
   color: var(--color-primary);
   border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 `;
 
@@ -110,7 +109,7 @@ const UpdateButton = styled.button`
   border-radius: 6px;
   background: var(--color-surface);
   color: var(--color-primary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
@@ -123,7 +122,7 @@ const UpdateButton = styled.button`
 const UpdateHint = styled.div`
   width: 100%;
   margin-top: 2px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-textSecondary);
   line-height: 1.45;
 `;
@@ -170,7 +169,7 @@ const LinkIcon = styled.div`
 
 const LinkText = styled.span`
   color: var(--color-text);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
 `;
 
@@ -181,7 +180,7 @@ const LinkAction = styled.span`
   border-radius: 6px;
   background: var(--color-surface);
   color: var(--color-textSecondary);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   transition: border-color 0.15s ease, color 0.15s ease;
 `;

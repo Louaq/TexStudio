@@ -39,7 +39,7 @@ const DialogContainer = styled.div`
 `;
 
 const DialogTitle = styled.h3`
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--color-text);
   margin: 0 0 20px 0;
@@ -78,14 +78,14 @@ const OptionItem = styled.button`
 `;
 
 const OptionTitle = styled.div`
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--color-text);
   margin-bottom: 4px;
 `;
 
 const OptionDescription = styled.div`
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-textSecondary);
   line-height: 1.4;
 `;
@@ -102,7 +102,7 @@ const CancelButton = styled.button`
   border-radius: 6px;
   background: var(--color-surface);
   color: var(--color-textSecondary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;

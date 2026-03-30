@@ -8,12 +8,13 @@ import CopyOptionsDialog from '../components/CopyOptionsDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
+import { glassCard, glassFooterBar, glassPageHeader, glassViewRoot } from '../theme/themes';
 
 const HistoryContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--color-surface);
+  ${glassViewRoot}
   overflow: hidden;
 `;
 
@@ -22,14 +23,13 @@ const PageHeader = styled.div`
   height: 48px;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--color-borderLight);
   flex-shrink: 0;
-  background: var(--color-surface);
+  ${glassPageHeader}
 `;
 
 const PageTitle = styled.h1`
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-text);
   letter-spacing: -0.1px;
@@ -67,13 +67,15 @@ const ScrollableContent = styled.div`
 
 const FixedPagination = styled.div`
   flex-shrink: 0;
-  background: var(--color-surface);
   padding: 20px 24px;
+  ${glassFooterBar}
 `;
 
 const HintBar = styled.div`
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid var(--color-border);
+  -webkit-backdrop-filter: blur(14px) saturate(1.12);
+  backdrop-filter: blur(14px) saturate(1.12);
+  background: color-mix(in srgb, var(--glass-bg-elevated) 75%, transparent);
+  border: 1px solid var(--glass-edge);
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 20px;
@@ -82,7 +84,8 @@ const HintBar = styled.div`
   justify-content: space-between;
   gap: 12px;
   color: var(--color-primary);
-  font-size: 13px;
+  font-size: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 `;
 
 const HintBarLeft = styled.div`
@@ -103,7 +106,7 @@ const ClearAllButton = styled.button`
   border-radius: 8px;
   background: transparent;
   color: var(--color-primary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
@@ -129,12 +132,12 @@ const EmptyState = styled.div`
 `;
 
 const EmptyIcon = styled.div`
-  font-size: 60px;
+  font-size: 64px;
   opacity: 0.3;
 `;
 
 const EmptyText = styled.p`
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
 `;
 
@@ -149,17 +152,19 @@ const HistoryList = styled.div`
 `;
 
 const HistoryCard = styled.div`
-  background: var(--color-surface);
   border-radius: 8px;
   padding: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: all 0.2s ease;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  ${glassCard}
 
   &:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    box-shadow:
+      0 4px 28px rgba(15, 23, 42, 0.08),
+      0 8px 32px rgba(37, 99, 235, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55);
   }
 `;
 
@@ -180,13 +185,13 @@ const HeaderLeft = styled.div`
 
 const HeaderTitle = styled.div`
   color: var(--color-text);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 `;
 
 const HistoryDate = styled.div`
   color: var(--color-textSecondary);
-  font-size: 11px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -197,7 +202,7 @@ const FormulaTag = styled.span`
   color: var(--color-primary);
   padding: 3px 10px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 `;
 
@@ -277,14 +282,14 @@ const FormulaDisplay = styled.div`
 
 const FormulaError = styled.div`
   color: var(--color-error);
-  font-size: 13px;
+  font-size: 14px;
   padding: 12px;
 `;
 
 const NoMoreText = styled.div`
   text-align: center;
   color: #adb5bd;
-  font-size: 13px;
+  font-size: 14px;
   padding: 32px 0;
   margin-top: 20px;
 `;
@@ -308,7 +313,7 @@ const PageButton = styled.button<{ $active?: boolean }>`
     ? 'color-mix(in srgb, var(--color-primary) 14%, transparent)'
     : 'transparent'};
   color: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-textSecondary)'};
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -338,7 +343,7 @@ const PageButton = styled.button<{ $active?: boolean }>`
 
 const PageInfo = styled.span`
   color: var(--color-textSecondary);
-  font-size: 13px;
+  font-size: 14px;
   padding: 0 12px;
 `;
 
@@ -449,7 +454,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({
                 <MaterialIcon name="history" size={80} />
               </EmptyIcon>
               <EmptyText>暂无历史记录</EmptyText>
-              <p style={{ fontSize: '14px', color: '#95a5a6' }}>
+              <p style={{ fontSize: '15px', color: '#95a5a6' }}>
                 识别或输入的公式会自动保存到这里
               </p>
             </EmptyState>

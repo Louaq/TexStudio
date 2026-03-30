@@ -1,477 +1,132 @@
+import { css } from 'styled-components';
+
 // 主题接口定义
 export interface Theme {
   id: string;
   name: string;
   colors: {
-    // 主要颜色
     primary: string;
     primaryLight: string;
     primaryDark: string;
-    
-    // 背景颜色
     background: string;
     backgroundPattern: string;
-    
-    // 表面颜色
     surface: string;
     surfaceLight: string;
-    
-    // 文本颜色
     text: string;
     textSecondary: string;
     textMuted: string;
-    /** 次要强调色（如品牌第二段、版本号点缀，图1 珊瑚粉） */
     accentSecondary: string;
-    
-    // 边框颜色
     border: string;
     borderLight: string;
-    
-    // 按钮渐变
     buttonGradientStart: string;
     buttonGradientEnd: string;
     buttonHoverStart: string;
     buttonHoverEnd: string;
-    
-    // 输入框
     inputBackground: string;
     inputBorder: string;
     inputFocus: string;
-    
-    // 状态颜色
     success: string;
     error: string;
     warning: string;
     info: string;
-    
-    // 菜单栏
     menuBackground: string;
     menuBorder: string;
     menuHover: string;
-    
-    // 对话框
     dialogBackground: string;
     dialogOverlay: string;
   };
 }
 
-// 预定义主题
-export const themes: Theme[] = [
-  {
-    id: 'default',
-    name: 'Fluent 浅色',
-    colors: {
-      primary: '#4a90e2',
-      primaryLight: '#5ba0f2',
-      primaryDark: '#357abd',
+/** 唯一主题 ID（典雅轻蓝） */
+export const THEME_ID = 'formal' as const;
 
-      background: '#f3f6f9',
-      backgroundPattern: 'rgba(232, 238, 245, 0.5)',
+const formalTheme: Theme = {
+  id: THEME_ID,
+  name: '典雅轻蓝',
+  colors: {
+    primary: '#2563eb',
+    primaryLight: '#3b82f6',
+    primaryDark: '#1d4ed8',
 
-      surface: '#ffffff',
-      surfaceLight: 'rgba(255, 255, 255, 0.92)',
+    background: '#f0f4f8',
+    backgroundPattern: 'rgba(37, 99, 235, 0.035)',
 
-      text: '#323130',
-      textSecondary: '#605e5c',
-      textMuted: '#a19f9d',
-      accentSecondary: '#e76d8d',
+    surface: '#ffffff',
+    surfaceLight: '#f8fafc',
 
-      border: '#edebe9',
-      borderLight: '#edebe9',
+    text: '#1e293b',
+    textSecondary: '#64748b',
+    textMuted: '#94a3b8',
+    accentSecondary: '#a8557c',
 
-      buttonGradientStart: '#4a90e2',
-      buttonGradientEnd: '#357abd',
-      buttonHoverStart: '#5ba0f2',
-      buttonHoverEnd: '#458bcd',
+    border: '#e2e8f0',
+    borderLight: '#eef2f7',
 
-      inputBackground: '#fafafa',
-      inputBorder: '#edebe9',
-      inputFocus: '#4a90e2',
+    buttonGradientStart: '#2563eb',
+    buttonGradientEnd: '#1d4ed8',
+    buttonHoverStart: '#3b82f6',
+    buttonHoverEnd: '#2563eb',
 
-      success: '#107c10',
-      error: '#d13438',
-      warning: '#ca5010',
-      info: '#4a90e2',
+    inputBackground: '#ffffff',
+    inputBorder: '#e2e8f0',
+    inputFocus: '#2563eb',
 
-      menuBackground: '#e8eef5',
-      menuBorder: '#dce3ed',
-      menuHover: '#4a90e2',
+    success: '#0d9488',
+    error: '#be123c',
+    warning: '#c2410c',
+    info: '#2563eb',
 
-      dialogBackground: '#f3f6f9',
-      dialogOverlay: 'rgba(0, 0, 0, 0.45)',
-    }
+    menuBackground: '#eef4ff',
+    menuBorder: '#dbeafe',
+    menuHover: '#2563eb',
+
+    dialogBackground: '#f0f4f8',
+    dialogOverlay: 'rgba(15, 23, 42, 0.42)',
   },
-  {
-    id: 'purple',
-    name: '优雅紫色',
-    colors: {
-      primary: '#9b59b6',
-      primaryLight: '#ab69c6',
-      primaryDark: '#8e44ad',
-      
-      background: '#f5f3f7',
-      backgroundPattern: 'rgba(235, 230, 240, 0.3)',
-      
-      surface: '#ffffff',
-      surfaceLight: 'rgba(255, 255, 255, 0.7)',
-      
-      text: '#2c3e50',
-      textSecondary: '#7f8c8d',
-      textMuted: '#a19f9d',
-      accentSecondary: '#ce7eb8',
-
-      border: '#d5c9e0',
-      borderLight: '#e0d6eb',
-
-      buttonGradientStart: '#9b59b6',
-      buttonGradientEnd: '#8e44ad',
-      buttonHoverStart: '#ab69c6',
-      buttonHoverEnd: '#9e54bd',
-      
-      inputBackground: 'white',
-      inputBorder: '#e0d6eb',
-      inputFocus: '#9b59b6',
-      
-      success: '#27ae60',
-      error: '#e74c3c',
-      warning: '#f39c12',
-      info: '#9b59b6',
-      
-      menuBackground: '#f3f1f6',
-      menuBorder: '#d5c9e0',
-      menuHover: '#8e44ad',
-      
-      dialogBackground: '#f5f3f7',
-      dialogOverlay: 'rgba(0, 0, 0, 0.5)',
-    }
-  },
-  {
-    id: 'green',
-    name: '清新绿色',
-    colors: {
-      primary: '#22c55e',
-      primaryLight: '#34d474',
-      primaryDark: '#16a34a',
-      
-      background: '#f5f7f5',
-      backgroundPattern: 'rgba(220, 240, 228, 0.3)',
-      
-      surface: '#ffffff',
-      surfaceLight: 'rgba(255, 255, 255, 0.8)',
-      
-      text: '#1a2e1e',
-      textSecondary: '#6b7c72',
-      textMuted: '#9ca3af',
-      accentSecondary: '#15803d',
-
-      border: '#d1e7d9',
-      borderLight: '#e4f0e8',
-
-      buttonGradientStart: '#22c55e',
-      buttonGradientEnd: '#16a34a',
-      buttonHoverStart: '#34d474',
-      buttonHoverEnd: '#22c55e',
-      
-      inputBackground: '#ffffff',
-      inputBorder: '#d1e7d9',
-      inputFocus: '#22c55e',
-      
-      success: '#22c55e',
-      error: '#ef4444',
-      warning: '#f59e0b',
-      info: '#3b82f6',
-      
-      menuBackground: '#f2f6f3',
-      menuBorder: '#d1e7d9',
-      menuHover: '#16a34a',
-      
-      dialogBackground: '#f5f7f5',
-      dialogOverlay: 'rgba(0, 0, 0, 0.45)',
-    }
-  },
-  {
-    id: 'orange',
-    name: '活力橙色',
-    colors: {
-      primary: '#e67e22',
-      primaryLight: '#f68e32',
-      primaryDark: '#d35400',
-      
-      background: '#faf7f3',
-      backgroundPattern: 'rgba(250, 240, 230, 0.3)',
-      
-      surface: '#ffffff',
-      surfaceLight: 'rgba(255, 255, 255, 0.7)',
-      
-      text: '#2c3e50',
-      textSecondary: '#7f8c8d',
-      textMuted: '#a19f9d',
-      accentSecondary: '#d35400',
-
-      border: '#e6d4c0',
-      borderLight: '#ebe0d1',
-
-      buttonGradientStart: '#e67e22',
-      buttonGradientEnd: '#d35400',
-      buttonHoverStart: '#f68e32',
-      buttonHoverEnd: '#e36e12',
-      
-      inputBackground: 'white',
-      inputBorder: '#ebe0d1',
-      inputFocus: '#e67e22',
-      
-      success: '#27ae60',
-      error: '#e74c3c',
-      warning: '#f39c12',
-      info: '#3498db',
-      
-      menuBackground: '#f5f1ec',
-      menuBorder: '#e6d4c0',
-      menuHover: '#d35400',
-      
-      dialogBackground: '#faf7f3',
-      dialogOverlay: 'rgba(0, 0, 0, 0.5)',
-    }
-  },
-  {
-    id: 'red',
-    name: '热情红色',
-    colors: {
-      primary: '#e74c3c',
-      primaryLight: '#f75c4c',
-      primaryDark: '#c0392b',
-      
-      background: '#faf3f3',
-      backgroundPattern: 'rgba(250, 230, 230, 0.3)',
-      
-      surface: '#ffffff',
-      surfaceLight: 'rgba(255, 255, 255, 0.7)',
-      
-      text: '#2c3e50',
-      textSecondary: '#7f8c8d',
-      textMuted: '#a19f9d',
-      accentSecondary: '#c0392b',
-
-      border: '#e6c9c9',
-      borderLight: '#ebd6d6',
-
-      buttonGradientStart: '#e74c3c',
-      buttonGradientEnd: '#c0392b',
-      buttonHoverStart: '#f75c4c',
-      buttonHoverEnd: '#d04a3b',
-      
-      inputBackground: 'white',
-      inputBorder: '#ebd6d6',
-      inputFocus: '#e74c3c',
-      
-      success: '#27ae60',
-      error: '#e74c3c',
-      warning: '#f39c12',
-      info: '#3498db',
-      
-      menuBackground: '#f5f1f1',
-      menuBorder: '#e6c9c9',
-      menuHover: '#c0392b',
-      
-      dialogBackground: '#faf3f3',
-      dialogOverlay: 'rgba(0, 0, 0, 0.5)',
-    }
-  },
-  {
-    id: 'teal',
-    name: '清爽青色',
-    colors: {
-      primary: '#16a085',
-      primaryLight: '#26b095',
-      primaryDark: '#138d75',
-      
-      background: '#f3f8f7',
-      backgroundPattern: 'rgba(230, 245, 242, 0.3)',
-      
-      surface: '#ffffff',
-      surfaceLight: 'rgba(255, 255, 255, 0.7)',
-      
-      text: '#2c3e50',
-      textSecondary: '#7f8c8d',
-      textMuted: '#a19f9d',
-      accentSecondary: '#0d9488',
-
-      border: '#c9e0dc',
-      borderLight: '#d6ebd8',
-
-      buttonGradientStart: '#16a085',
-      buttonGradientEnd: '#138d75',
-      buttonHoverStart: '#26b095',
-      buttonHoverEnd: '#1ea085',
-      
-      inputBackground: 'white',
-      inputBorder: '#d6ebd8',
-      inputFocus: '#16a085',
-      
-      success: '#27ae60',
-      error: '#e74c3c',
-      warning: '#f39c12',
-      info: '#3498db',
-      
-      menuBackground: '#f1f6f5',
-      menuBorder: '#c9e0dc',
-      menuHover: '#138d75',
-      
-      dialogBackground: '#f3f8f7',
-      dialogOverlay: 'rgba(0, 0, 0, 0.5)',
-    }
-  },
-  {
-    id: 'indigo',
-    name: '深邃靛蓝',
-    colors: {
-      primary: '#3498db',
-      primaryLight: '#44a8eb',
-      primaryDark: '#2980b9',
-      
-      background: '#f3f6f9',
-      backgroundPattern: 'rgba(230, 238, 245, 0.3)',
-      
-      surface: '#ffffff',
-      surfaceLight: 'rgba(255, 255, 255, 0.7)',
-      
-      text: '#2c3e50',
-      textSecondary: '#7f8c8d',
-      textMuted: '#a19f9d',
-      accentSecondary: '#2980b9',
-
-      border: '#c9d9e6',
-      borderLight: '#d6e3ed',
-
-      buttonGradientStart: '#3498db',
-      buttonGradientEnd: '#2980b9',
-      buttonHoverStart: '#44a8eb',
-      buttonHoverEnd: '#3988c9',
-      
-      inputBackground: 'white',
-      inputBorder: '#d6e3ed',
-      inputFocus: '#3498db',
-      
-      success: '#27ae60',
-      error: '#e74c3c',
-      warning: '#f39c12',
-      info: '#3498db',
-      
-      menuBackground: '#f1f4f8',
-      menuBorder: '#c9d9e6',
-      menuHover: '#2980b9',
-      
-      dialogBackground: '#f3f6f9',
-      dialogOverlay: 'rgba(0, 0, 0, 0.5)',
-    }
-  },
-  {
-    id: 'pink',
-    name: '浪漫粉色',
-    colors: {
-      primary: '#e91e63',
-      primaryLight: '#f92e73',
-      primaryDark: '#c2185b',
-      
-      background: '#faf3f6',
-      backgroundPattern: 'rgba(250, 230, 240, 0.3)',
-      
-      surface: '#ffffff',
-      surfaceLight: 'rgba(255, 255, 255, 0.7)',
-      
-      text: '#2c3e50',
-      textSecondary: '#7f8c8d',
-      textMuted: '#a19f9d',
-      accentSecondary: '#c2185b',
-
-      border: '#e6c9d9',
-      borderLight: '#ebd6e3',
-
-      buttonGradientStart: '#e91e63',
-      buttonGradientEnd: '#c2185b',
-      buttonHoverStart: '#f92e73',
-      buttonHoverEnd: '#d22e6b',
-      
-      inputBackground: 'white',
-      inputBorder: '#ebd6e3',
-      inputFocus: '#e91e63',
-      
-      success: '#27ae60',
-      error: '#e74c3c',
-      warning: '#f39c12',
-      info: '#3498db',
-      
-      menuBackground: '#f5f1f4',
-      menuBorder: '#e6c9d9',
-      menuHover: '#c2185b',
-      
-      dialogBackground: '#faf3f6',
-      dialogOverlay: 'rgba(0, 0, 0, 0.5)',
-    }
-  }
-];
-
-// 获取自定义主题
-export const getCustomTheme = (): Theme | null => {
-  try {
-    const saved = localStorage.getItem('customTheme');
-    if (saved) {
-      return JSON.parse(saved);
-    }
-  } catch (error) {
-    console.error('读取自定义主题失败:', error);
-  }
-  return null;
 };
 
-// 保存自定义主题
-export const saveCustomTheme = (theme: Theme): void => {
-  try {
-    localStorage.setItem('customTheme', JSON.stringify(theme));
-  } catch (error) {
-    console.error('保存自定义主题失败:', error);
-  }
-};
+/** 仅含「典雅轻蓝」 */
+export const themes: Theme[] = [formalTheme];
 
-// 获取主题（包括自定义主题）
-export const getTheme = (themeId: string): Theme => {
-  const fallback = themes.find(t => t.id === 'green') || themes[0];
-  if (themeId === 'custom') {
-    const customTheme = getCustomTheme();
-    if (customTheme) {
-      return {
-        ...customTheme,
-        colors: { ...fallback.colors, ...customTheme.colors }
-      };
-    }
-    return {
-      id: 'custom',
-      name: '自定义主题',
-      colors: { ...fallback.colors }
-    };
-  }
-  return themes.find(t => t.id === themeId) || fallback;
-};
+/** 任意历史 theme 字段均归一为唯一主题 */
+export function normalizeThemeId(themeId: string | undefined | null): string {
+  return THEME_ID;
+}
 
-// 应用主题到CSS变量 - 立即生效
+// 获取主题（仅典雅轻蓝）
+export const getTheme = (_themeId?: string): Theme => formalTheme;
+
+/** 磨砂玻璃：背景层（径向 + 线性渐变，供 backdrop-filter 透出层次） */
 export const applyTheme = (theme: Theme) => {
   const root = document.documentElement;
-  
-  // 立即设置CSS变量到文档根元素
+
   Object.entries(theme.colors).forEach(([key, value]) => {
     root.style.setProperty(`--color-${key}`, value);
   });
-  
-  // 同时更新body的背景色，确保立即生效
-  document.body.style.background = theme.colors.background;
-  
-  // 更新 Electron 窗口标题栏颜色（如果在 Electron 环境中）
+
+  const appBg = `radial-gradient(ellipse 95% 75% at 0% -8%, rgba(59, 130, 246, 0.14), transparent 52%),
+    radial-gradient(ellipse 80% 60% at 100% 108%, rgba(168, 85, 124, 0.09), transparent 48%),
+    linear-gradient(168deg, #e2e8f0 0%, ${theme.colors.background} 45%, #e8edf4 100%)`;
+  root.style.setProperty('--app-bg-gradient', appBg);
+
+  /* 透明度略低，磨砂才看得出模糊；blur 略大 */
+  root.style.setProperty('--glass-blur', '28px');
+  root.style.setProperty('--glass-saturate', '1.35');
+  root.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.28)');
+  root.style.setProperty('--glass-bg-strong', 'rgba(255, 255, 255, 0.45)');
+  root.style.setProperty('--glass-bg-elevated', 'rgba(255, 255, 255, 0.38)');
+  root.style.setProperty('--glass-bg-card', 'rgba(255, 255, 255, 0.32)');
+  root.style.setProperty('--glass-border-soft', 'rgba(255, 255, 255, 0.55)');
+  root.style.setProperty('--glass-edge', 'rgba(226, 232, 240, 0.85)');
+
+  document.body.style.background = appBg;
+
   if (window.electronAPI && window.electronAPI.updateWindowTheme) {
-    // 从背景色和文字色计算标题栏颜色
     const backgroundColor = theme.colors.background;
     const textColor = theme.colors.text;
-    
-    window.electronAPI.updateWindowTheme(backgroundColor, textColor)
+
+    window.electronAPI
+      .updateWindowTheme(backgroundColor, textColor)
       .then(() => {
         console.log(`✅ Electron 窗口颜色已更新: ${backgroundColor}`);
       })
@@ -479,11 +134,76 @@ export const applyTheme = (theme: Theme) => {
         console.error('更新 Electron 窗口颜色失败:', error);
       });
   }
-  
-  // 触发重绘，确保所有元素立即更新
-  root.style.display = 'none';
-  void root.offsetHeight; // 强制重排
-  root.style.display = '';
-  
+
   console.log(`✅ 主题 "${theme.name}" 已立即应用`);
 };
+
+/* var 带 px 回退：首帧未跑 applyTheme 时仍能模糊 */
+const backdrop = css`
+  -webkit-backdrop-filter: blur(var(--glass-blur, 26px)) saturate(var(--glass-saturate, 1.3));
+  backdrop-filter: blur(var(--glass-blur, 26px)) saturate(var(--glass-saturate, 1.3));
+`;
+
+/** 仅毛玻璃模糊（用于上传区等局部） */
+export const glassBackdrop = backdrop;
+
+/** 顶栏磨砂（与侧栏同系浅蓝，避免大块死白） */
+export const glassTitleBar = css`
+  ${backdrop}
+  background: rgba(238, 244, 255, 0.78);
+  border-bottom: 1px solid rgba(191, 219, 254, 0.65);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  transform: translateZ(0);
+`;
+
+/** 侧栏磨砂（不用 color-mix，兼容旧内核） */
+export const glassSidebar = css`
+  ${backdrop}
+  background: rgba(238, 244, 255, 0.42);
+  border-right: 1px solid var(--glass-edge);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.35);
+  transform: translateZ(0);
+`;
+
+/** 主内容区磨砂（translateZ 促建立体合成层，部分环境下 backdrop 才生效） */
+export const glassMain = css`
+  ${backdrop}
+  background: var(--glass-bg, rgba(255, 255, 255, 0.28));
+  border-left: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transform: translateZ(0);
+`;
+
+/** 卡片 / 面板磨砂 */
+export const glassCard = css`
+  ${backdrop}
+  background: var(--glass-bg-card, rgba(255, 255, 255, 0.32));
+  border: 1px solid var(--glass-edge);
+  box-shadow:
+    0 4px 24px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: translateZ(0);
+`;
+
+/** 各页顶栏磨砂（与主题浅蓝一致） */
+export const glassPageHeader = css`
+  ${backdrop}
+  background: rgba(238, 244, 255, 0.55);
+  border-bottom: 1px solid rgba(191, 219, 254, 0.55);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.22);
+  transform: translateZ(0);
+`;
+
+/** 底栏 / 分页条磨砂 */
+export const glassFooterBar = css`
+  ${backdrop}
+  background: rgba(255, 255, 255, 0.4);
+  border-top: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  transform: translateZ(0);
+`;
+
+/** 视图根区域透明，透出主内容磨砂层 */
+export const glassViewRoot = css`
+  background: transparent;
+`;

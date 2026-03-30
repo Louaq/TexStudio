@@ -15,12 +15,13 @@ import CopyOptionsDialog from './components/CopyOptionsDialog';
 import ExportOptionsDialog from './components/ExportOptionsDialog';
 import * as path from 'path';
 import packageJson from '../package.json';
+import { glassMain } from './theme/themes';
 
 const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: var(--color-background);
+  background: var(--app-bg-gradient, var(--color-background));
   font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
   color: var(--color-text);
   overflow: hidden;
@@ -31,6 +32,7 @@ const MainContent = styled.div`
   flex-direction: row;
   flex: 1;
   overflow: hidden;
+  background: transparent;
 `;
 
 const ContentContainer = styled.div`
@@ -38,7 +40,7 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--color-surface);
+  ${glassMain}
 `;
 
 // 删除所有旧的样式定义，新的视图组件中已包含
@@ -102,7 +104,11 @@ function App() {
         if (window.electronAPI) {
           const appSettings = await window.electronAPI.getSettings();
           console.log('从Electron加载的设置:', appSettings);
-          const selectedTheme = appSettings.theme || 'green';
+          const { getTheme, applyTheme, normalizeThemeId, THEME_ID } = await import('./theme/themes');
+          const selectedTheme = normalizeThemeId(appSettings.theme);
+          if (appSettings.theme !== THEME_ID) {
+            await window.electronAPI.saveSettings({ theme: THEME_ID });
+          }
           setSettings({
             apiConfig: appSettings.apiConfig,
             shortcuts: appSettings.shortcuts,
@@ -112,16 +118,8 @@ function App() {
           });
           setAppState(prev => ({ ...prev, history: appSettings.history }));
           
-          // 应用主题（首次安装时使用清新绿色）
-          const { applyTheme, getTheme } = await import('./theme/themes');
-          const theme = getTheme(selectedTheme);
+          const theme = getTheme();
           applyTheme(theme);
-
-          // 如果是首次安装（没有保存的主题），保存默认主题
-          if (!appSettings.theme && window.electronAPI) {
-            await window.electronAPI.saveSettings({ theme: 'green' });
-            console.log('首次启动，已保存默认主题: green');
-          }
         } else {
           const defaultSettings = {
             apiConfig: {
@@ -153,16 +151,15 @@ function App() {
             console.error('加载settings.json失败:', error);
           }
           
+          const { applyTheme, getTheme, THEME_ID: browserThemeId } = await import('./theme/themes');
           setSettings({
             ...defaultSettings,
-            theme: 'green',
+            theme: browserThemeId,
             sidebarConfig: getDefaultSidebarConfig()
           });
           console.warn('运行在浏览器模式下，使用默认设置');
 
-          // 应用默认主题
-          const { applyTheme, getTheme } = await import('./theme/themes');
-          const theme = getTheme('green');
+          const theme = getTheme();
           applyTheme(theme);
         }
       } catch (error) {

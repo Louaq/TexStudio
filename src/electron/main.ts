@@ -536,7 +536,7 @@ const store = new Store<AppSettings>({
       upload: 'Alt+S' 
     },
     history: [],
-    theme: 'green', // 默认清新绿色
+    theme: 'formal', // 默认典雅轻蓝（浅底 + 正蓝主色）
     minimizeToTray: true // 默认关闭时最小化到托盘
   }
 });
@@ -568,7 +568,7 @@ async function createMainWindow(): Promise<void> {
     title: 'TexStudio OCR',
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#f3f8f5' // 清新绿色主题的背景色
+    backgroundColor: '#f0f4f8' // 与「典雅轻蓝」主题背景一致
   });
 
   // 完全禁用菜单栏
@@ -713,8 +713,8 @@ function createSplashWindow(): void {
     * { box-sizing: border-box; }
     html, body { width: 100%; height: 100%; margin: 0; }
     body {
-      background: #ffffff;
-      color: #2c3e50;
+      background: #f0f4f8;
+      color: #1e293b;
       font-family: "Segoe UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
       align-items: center;
@@ -737,36 +737,36 @@ function createSplashWindow(): void {
     }
     .ring {
       width: 64px; height: 64px; border-radius: 50%;
-      border: 4px solid #e6eef7; border-top-color: #4a90e2;
+      border: 4px solid #e2e8f0; border-top-color: #2563eb;
       animation: spin 1s linear infinite;
       margin-bottom: 16px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .title { font-size: 18px; font-weight: 700; letter-spacing: 0.3px; }
-    .sub { font-size: 12px; color: #6b7c93; margin-top: 2px; }
+    .title { font-size: 19px; font-weight: 700; letter-spacing: 0.3px; }
+    .sub { font-size: 13px; color: #64748b; margin-top: 2px; }
     .content { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
     .logo { width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08)); }
     .shine {
       position: absolute; inset: 0;
-      background: radial-gradient(120px 60px at 20% 0%, rgba(74,144,226,0.12), transparent 60%),
-                  radial-gradient(160px 80px at 90% 80%, rgba(100,181,246,0.12), transparent 60%);
+      background: radial-gradient(120px 60px at 20% 0%, rgba(37, 99, 235, 0.08), transparent 60%),
+                  radial-gradient(160px 80px at 90% 80%, rgba(168, 85, 124, 0.06), transparent 60%);
       pointer-events: none;
       animation: float 4s ease-in-out infinite alternate;
     }
-    @keyframes float { to { transform: translateY(-6px); filter: hue-rotate(10deg); } }
+    @keyframes float { to { transform: translateY(-6px); } }
     /* 底部条状进度条（不定进度动画） */
     .progress {
       position: absolute;
       left: 0; right: 0; bottom: 0;
       height: 6px;
-      background: #eef2f7;
+      background: #e2e8f0;
       overflow: hidden;
     }
     .progress-bar {
       position: absolute;
       top: 0; left: -30%;
       height: 100%; width: 30%;
-      background: linear-gradient(90deg, #4a90e2 0%, #64b5f6 100%);
+      background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #a8557c 100%);
       animation: indeterminate 1.2s ease-in-out infinite;
     }
     @keyframes indeterminate {
@@ -982,8 +982,8 @@ function createSimpleScreenshotWindow(): void {
     }
     .selection-box {
       position: absolute;
-      border: 2px solid #007bff;
-      background: rgba(0, 123, 255, 0.1);
+      border: 2px solid #323130;
+      background: rgba(50, 49, 48, 0.12);
       pointer-events: none;
     }
     .info {
@@ -1245,8 +1245,6 @@ if (!gotTheLock) {
         const defaultSettings = {
           app_id: '',
           app_secret: '',
-          deepseek_api_key: '',
-          deepseek_enabled: false
         };
         fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2), 'utf8');
       } catch (error) {
@@ -2174,8 +2172,6 @@ ipcMain.handle('clear-api-config', async (event) => {
       const settings = {
         app_id: '',
         app_secret: '',
-        deepseek_api_key: '',
-        deepseek_enabled: false
       };
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
     }

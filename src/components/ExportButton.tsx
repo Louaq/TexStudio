@@ -8,27 +8,27 @@ const ExportContainer = styled.div`
 `;
 
 const ExportButton = styled.button<{ disabled: boolean }>`
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primaryDark) 100%);
   color: white;
   border: none;
   padding: 10px 18px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
   min-width: 120px;
   justify-content: center;
 
   &:hover {
     transform: ${props => props.disabled ? 'none' : 'translateY(-1px)'};
     box-shadow: ${props => props.disabled ? 
-      '0 2px 6px rgba(40, 167, 69, 0.25)' : 
-      '0 3px 8px rgba(40, 167, 69, 0.35)'
+      '0 2px 6px rgba(0, 0, 0, 0.12)' : 
+      '0 3px 8px rgba(0, 0, 0, 0.18)'
     };
   }
 
@@ -66,7 +66,7 @@ const DropdownItem = styled.button`
   border: none;
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -138,15 +138,15 @@ const ExportButtonComponent: React.FC<ExportButtonProps> = ({
       <DropdownMenu show={showDropdown && !disabled}>
         <DropdownItem onClick={() => handleExport('svg')}>
           <MaterialIcon name="palette" /> SVG格式
-          <span style={{ fontSize: '12px', color: 'var(--color-textSecondary)', marginLeft: 'auto' }}>矢量图</span>
+          <span style={{ fontSize: '13px', color: 'var(--color-textSecondary)', marginLeft: 'auto' }}>矢量图</span>
         </DropdownItem>
         <DropdownItem onClick={() => handleExport('png')}>
           <MaterialIcon name="image" /> PNG格式
-          <span style={{ fontSize: '12px', color: 'var(--color-textSecondary)', marginLeft: 'auto' }}>透明背景</span>
+          <span style={{ fontSize: '13px', color: 'var(--color-textSecondary)', marginLeft: 'auto' }}>透明背景</span>
         </DropdownItem>
         <DropdownItem onClick={() => handleExport('jpg')}>
           <MaterialIcon name="photo_camera" /> JPG格式
-          <span style={{ fontSize: '12px', color: 'var(--color-textSecondary)', marginLeft: 'auto' }}>白色背景</span>
+          <span style={{ fontSize: '13px', color: 'var(--color-textSecondary)', marginLeft: 'auto' }}>白色背景</span>
         </DropdownItem>
       </DropdownMenu>
     </ExportContainer>

@@ -30,11 +30,6 @@ export function getModelColor(modelId: string): string {
     return '#F23F5D';
   }
   
-  // DeepSeek - 蓝色 #4D6BFE
-  if (lowerModelId.includes('deepseek')) {
-    return '#4D6BFE';
-  }
-  
   // Moonshot - 黑色 #16191E
   if (lowerModelId.includes('moonshot')) {
     return '#16191E';
@@ -106,7 +101,6 @@ export function getModelDisplayName(modelId: string): string {
   if (lowerModelId.includes('baichuan')) return '百川智能';
   if (lowerModelId.includes('chatglm')) return 'ChatGLM';
   if (lowerModelId.includes('minimax')) return 'MiniMax';
-  if (lowerModelId.includes('deepseek')) return 'DeepSeek';
   if (lowerModelId.includes('moonshot')) return 'Moonshot';
   if (lowerModelId.includes('spark')) return 'Spark AI';
   if (lowerModelId.includes('kimi')) return 'Kimi';

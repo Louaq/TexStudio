@@ -2,13 +2,13 @@ import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import MaterialIcon from './MaterialIcon';
 import { SidebarConfig } from '../types';
+import { glassSidebar } from '../theme/themes';
 
 const SidebarContainer = styled.div`
   width: 180px;
-  background: var(--color-menuBackground);
+  ${glassSidebar}
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--color-borderLight);
   overflow-y: auto;
   overflow-x: hidden;
   flex-shrink: 0;
@@ -56,7 +56,7 @@ const BrandIcon = styled.div`
 `;
 
 const BrandName = styled.div`
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   white-space: nowrap;
   letter-spacing: -0.2px;
@@ -97,7 +97,7 @@ const NavItem = styled.div<{ $active?: boolean; disabled?: boolean }>`
   opacity: ${props => props.disabled ? 0.38 : 1};
   color: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-textSecondary)'};
   background: ${props => props.$active
-    ? 'color-mix(in srgb, var(--color-primary) 10%, transparent)'
+    ? 'color-mix(in srgb, var(--color-primary) 14%, transparent)'
     : 'transparent'
   };
   font-weight: ${props => props.$active ? '600' : '400'};
@@ -122,7 +122,7 @@ const NavItem = styled.div<{ $active?: boolean; disabled?: boolean }>`
       background: color-mix(in srgb, var(--color-text) 5%, transparent);
     `}
     ${props => !props.disabled && props.$active && `
-      background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+      background: color-mix(in srgb, var(--color-primary) 20%, transparent);
     `}
   }
 
@@ -141,22 +141,11 @@ const NavIcon = styled.div`
 `;
 
 const NavLabel = styled.span`
-  font-size: 13px;
+  font-size: 14px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: 0.1px;
-`;
-
-const BottomSection = styled.div`
-  padding: 8px 14px 14px;
-  flex-shrink: 0;
-`;
-
-const VersionText = styled.div`
-  font-size: 11px;
-  color: var(--color-textMuted);
-  letter-spacing: 0.2px;
 `;
 
 type ViewType = 'home' | 'settings' | 'history' | 'about';
@@ -213,7 +202,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       case 'home':
         return (
           <NavItem key={item.id} $active={currentView === 'home'} onClick={() => onViewChange('home')}>
-            <NavIcon><MaterialIcon name={item.icon} size={18} /></NavIcon>
+            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{item.label}</NavLabel>
           </NavItem>
         );
@@ -221,7 +210,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       case 'capture':
         return (
           <NavItem key={item.id} onClick={onCapture}>
-            <NavIcon><MaterialIcon name={item.icon} size={18} /></NavIcon>
+            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{item.label}</NavLabel>
           </NavItem>
         );
@@ -233,7 +222,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             onClick={copyDisabled ? undefined : onCopy}
             disabled={copyDisabled}
           >
-            <NavIcon><MaterialIcon name={item.icon} size={18} /></NavIcon>
+            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{copyDisabled ? '复制 LaTeX' : item.label}</NavLabel>
           </NavItem>
         );
@@ -245,7 +234,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             onClick={exportDisabled ? undefined : onExport}
             disabled={exportDisabled}
           >
-            <NavIcon><MaterialIcon name={item.icon} size={18} /></NavIcon>
+            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{exportDisabled ? '导出图片' : item.label}</NavLabel>
           </NavItem>
         );
@@ -253,7 +242,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       case 'history':
         return (
           <NavItem key={item.id} $active={currentView === 'history'} onClick={() => onViewChange('history')}>
-            <NavIcon><MaterialIcon name={item.icon} size={18} /></NavIcon>
+            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{item.label}</NavLabel>
           </NavItem>
         );
@@ -261,7 +250,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       case 'settings':
         return (
           <NavItem key={item.id} $active={currentView === 'settings'} onClick={() => onViewChange('settings')}>
-            <NavIcon><MaterialIcon name={item.icon} size={18} /></NavIcon>
+            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{item.label}</NavLabel>
           </NavItem>
         );
@@ -269,7 +258,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       case 'about':
         return (
           <NavItem key={item.id} $active={currentView === 'about'} onClick={() => onViewChange('about')}>
-            <NavIcon><MaterialIcon name={item.icon} size={18} /></NavIcon>
+            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{item.label}</NavLabel>
           </NavItem>
         );
@@ -293,9 +282,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           <BrandStudio>Studio</BrandStudio>
         </BrandName>
       </BrandSection>
-
-      <Divider />
-
       <NavSection>
         {topItems.map(item => renderNavItem(item))}
         {topItems.length > 0 && bottomItems.length > 0 && (
@@ -303,11 +289,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
         {bottomItems.map(item => renderNavItem(item))}
       </NavSection>
-
-      <BottomSection>
-        <Divider style={{ margin: '0 0 8px 0' }} />
-        <VersionText>v4.7.1</VersionText>
-      </BottomSection>
     </SidebarContainer>
   );
 };

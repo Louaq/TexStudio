@@ -3,9 +3,29 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import "@fontsource/material-symbols-outlined";
 import { createGlobalStyle } from 'styled-components';
+import { applyTheme, getTheme } from './theme/themes';
+
+/* 首屏即写入变量，避免 useEffect 晚于渲染导致 backdrop-filter 无 blur、看起来像普通白底 */
+applyTheme(getTheme());
 
 // 全局样式
 const GlobalStyle = createGlobalStyle`
+  :root {
+    --color-background: #f0f4f8;
+    --color-menuBackground: #eef4ff;
+    --color-text: #1e293b;
+    --app-bg-gradient: radial-gradient(ellipse 95% 75% at 0% -8%, rgba(59, 130, 246, 0.16), transparent 52%),
+      radial-gradient(ellipse 80% 60% at 100% 108%, rgba(168, 85, 124, 0.1), transparent 48%),
+      linear-gradient(168deg, #e2e8f0 0%, #f0f4f8 45%, #e8edf4 100%);
+    --glass-blur: 26px;
+    --glass-saturate: 1.3;
+    --glass-bg: rgba(255, 255, 255, 0.28);
+    --glass-bg-strong: rgba(255, 255, 255, 0.45);
+    --glass-bg-elevated: rgba(255, 255, 255, 0.38);
+    --glass-bg-card: rgba(255, 255, 255, 0.32);
+    --glass-edge: rgba(226, 232, 240, 0.85);
+  }
+
   * {
     margin: 0;
     padding: 0;
@@ -19,10 +39,11 @@ const GlobalStyle = createGlobalStyle`
 
   body {
     font-family: "Segoe UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: var(--color-background, #f3f8f5);
-    color: var(--color-text, #2c3e50);
+    background: var(--app-bg-gradient, var(--color-background, #f0f4f8));
+    color: var(--color-text, #1e293b);
     overflow: hidden;
   }
 
@@ -62,7 +83,7 @@ const GlobalStyle = createGlobalStyle`
   textarea:focus,
   select:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
   }
 
   /* 禁用拖拽选择 */
@@ -114,7 +135,7 @@ const GlobalStyle = createGlobalStyle`
     color: white;
     padding: 8px 12px;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 13px;
     white-space: nowrap;
     opacity: 0;
     visibility: hidden;
@@ -133,7 +154,7 @@ const GlobalStyle = createGlobalStyle`
     font-family: 'Material Symbols Outlined';
     font-weight: normal;
     font-style: normal;
-    font-size: 24px;
+    font-size: 26px;
     line-height: 1;
     letter-spacing: normal;
     text-transform: none;
@@ -149,7 +170,7 @@ const GlobalStyle = createGlobalStyle`
       'FILL' 0,
       'wght' 400,
       'GRAD' 0,
-      'opsz' 24;
+      'opsz' 26;
   }
 `;
 

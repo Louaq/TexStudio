@@ -12,7 +12,7 @@ const Container = styled.div`
 `;
 
 const Label = styled.h3`
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-textSecondary);
   margin: 0;
@@ -64,7 +64,7 @@ const PreviewArea = styled.div`
 
 const ErrorMessage = styled.div`
   color: var(--color-error);
-  font-size: 13px;
+  font-size: 14px;
   padding: 10px 14px;
   background: color-mix(in srgb, var(--color-error) 8%, transparent);
   border-radius: 7px;

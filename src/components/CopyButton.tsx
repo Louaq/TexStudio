@@ -11,14 +11,14 @@ const ButtonContainer = styled.div`
 const MainButton = styled.button<{ disabled: boolean }>`
   background: ${props => props.disabled 
     ? 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)'
-    : 'linear-gradient(135deg, #27ae60 0%, #229954 100%)'
+    : 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primaryDark) 100%)'
   };
   color: white;
   border: none;
   padding: 10px 18px;
   border-radius: 6px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 14px;
   min-width: 130px;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   display: flex;
@@ -30,7 +30,7 @@ const MainButton = styled.button<{ disabled: boolean }>`
 
   &:hover {
     ${props => !props.disabled && `
-      background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+      background: linear-gradient(135deg, var(--color-primaryLight) 0%, var(--color-primary) 100%);
       transform: translateY(-1px);
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
     `}
@@ -80,7 +80,7 @@ const DropdownItem = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 
   &:hover {
@@ -94,7 +94,7 @@ const DropdownItem = styled.div`
 `;
 
 const ModeDescription = styled.div`
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-textSecondary);
   font-weight: normal;
 `;

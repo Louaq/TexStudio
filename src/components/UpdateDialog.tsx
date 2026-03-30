@@ -104,7 +104,7 @@ const SpinnerRing = styled.div`
 
 const Title = styled.h2`
   margin: 0;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--color-text);
   letter-spacing: -0.02em;
@@ -139,7 +139,7 @@ const Body = styled.div`
 
 const VersionChip = styled.span`
   display: inline-block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 10%, transparent);
@@ -151,7 +151,7 @@ const VersionChip = styled.span`
 
 const Message = styled.p`
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.55;
   color: var(--color-textSecondary);
   letter-spacing: 0.01em;
@@ -169,7 +169,7 @@ const ButtonRow = styled.div`
 const Btn = styled.button<{ $primary?: boolean }>`
   padding: 8px 16px;
   border-radius: 9px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
@@ -229,7 +229,7 @@ const CircleProgressBar = styled.circle<{ progress: number; circumference: numbe
 
 const ProgressText = styled.div`
   position: relative;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--color-text);
   z-index: 1;

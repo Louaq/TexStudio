@@ -21,7 +21,7 @@ const Header = styled.div`
 `;
 
 const Label = styled.h3`
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-textSecondary);
   margin: 0;
@@ -53,7 +53,7 @@ const TextArea = styled.textarea<{ $readOnly: boolean }>`
   color: var(--color-text);
   background: var(--color-inputBackground);
   font-family: "Cascadia Code", "Fira Code", "Consolas", "Monaco", "Courier New", monospace;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.7;
   resize: none;
   opacity: ${props => props.$readOnly ? 0.6 : 1};
@@ -101,7 +101,7 @@ const LoadingContent = styled.div`
   align-items: center;
   gap: 10px;
   color: var(--color-primary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 `;
 

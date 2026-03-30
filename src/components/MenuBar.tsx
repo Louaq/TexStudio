@@ -7,7 +7,7 @@ const MenuContainer = styled.div`
   border-bottom: 1px solid #dce1e8;
   padding: 2px 12px;
   gap: 2px;
-  font-size: 14px;
+  font-size: 15px;
   overflow-x: auto;
   white-space: nowrap;
   justify-content: flex-start;
@@ -23,7 +23,7 @@ const MenuItem = styled.div<{ disabled?: boolean; $highlighted?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
+  font-size: 18px;
   width: 34px;
   height: 34px;
   position: relative;
@@ -47,7 +47,7 @@ const Divider = styled.div`
 
 // 使用 Material Symbols Outlined 字体图标
 const Icon = (name: string) => (
-  <span className="material-symbols-outlined" style={{ fontSize: 20, lineHeight: 1 }} aria-hidden="true">{name}</span>
+  <span className="material-symbols-outlined" style={{ fontSize: 22, lineHeight: 1 }} aria-hidden="true">{name}</span>
 );
 
 const MenuIcon = {

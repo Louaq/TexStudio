@@ -40,7 +40,7 @@ const Dialog = styled.div`
 const Title = styled.h2`
   margin: 0 0 24px 0;
   color: #2c3e50;
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 600;
   text-align: center;
   display: flex;
@@ -64,7 +64,7 @@ const FormGroup = styled.div`
 const Label = styled.label`
   color: #34495e;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
 `;
 
 const ShortcutButton = styled.button<{ 
@@ -81,7 +81,7 @@ const ShortcutButton = styled.button<{
     props.$isListening ? 'rgba(231, 76, 60, 0.1)' : 
     props.$isSet ? 'rgba(39, 174, 96, 0.1)' : 'white'
   };
-  font-size: 14px;
+  font-size: 15px;
   color: ${props => 
     props.$isListening ? '#e74c3c' : 
     props.$isSet ? '#27ae60' : '#2c3e50'
@@ -135,11 +135,11 @@ const ShortcutDisplay = styled.div`
 
 const ShortcutText = styled.span<{ $isListening?: boolean }>`
   font-weight: 600;
-  font-size: ${props => props.$isListening ? '12px' : '16px'};
+  font-size: ${props => props.$isListening ? '13px' : '17px'};
 `;
 
 const ListeningText = styled.span`
-  font-size: 10px;
+  font-size: 12px;
   opacity: 0.7;
   font-weight: normal;
 `;
@@ -156,7 +156,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
   border: none;
   border-radius: 8px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 100px;
@@ -213,7 +213,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
 
 const Description = styled.p`
   color: var(--color-textSecondary);
-  font-size: 13px;
+  font-size: 14px;
   margin: 0 0 20px 0;
   line-height: 1.5;
   text-align: center;

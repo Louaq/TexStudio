@@ -4,12 +4,13 @@ import { ApiConfig, SidebarConfig, SidebarItem } from '../types';
 import MaterialIcon from '../components/MaterialIcon';
 import { DataConfirmDialog, DataAlertDialog } from '../components/DataDialog';
 import { getDefaultSidebarConfig } from '../components/Sidebar';
+import { glassCard, glassViewRoot } from '../theme/themes';
 
 const SettingsContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--color-surface);
+  ${glassViewRoot}
   overflow: hidden;
 `;
 
@@ -18,7 +19,7 @@ const Content = styled.div`
   overflow-y: auto;
   padding: 20px 24px 28px;
   box-sizing: border-box;
-  background: var(--color-surface);
+  ${glassViewRoot}
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -39,11 +40,9 @@ const Content = styled.div`
 `;
 
 const SettingsPanel = styled.div`
-  background: var(--color-surface);
-  border: 1px solid var(--color-borderLight);
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  ${glassCard}
 `;
 
 const SettingsRow = styled.div`
@@ -72,7 +71,7 @@ const RowControlCol = styled.div`
 `;
 
 const RowLabelText = styled.span`
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--color-text);
   line-height: 1.4;
@@ -114,7 +113,7 @@ const ShortcutLineLabel = styled.span`
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--color-text);
 `;
@@ -135,7 +134,7 @@ const Input = styled.input`
   border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-inputBackground);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-text);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   box-sizing: border-box;
@@ -172,7 +171,7 @@ const Checkbox = styled.input`
 
 const CheckboxLabel = styled.label`
   color: var(--color-text);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   user-select: none;
@@ -184,7 +183,7 @@ const Select = styled.select`
   border: 1px solid var(--color-inputBorder);
   border-radius: 8px;
   background: var(--color-inputBackground);
-  font-size: 15px;
+  font-size: 16px;
   color: var(--color-text);
   transition: all 0.3s ease;
   cursor: pointer;
@@ -206,7 +205,7 @@ const Select = styled.select`
   }
   
   option {
-    font-size: 15px;
+    font-size: 16px;
     padding: 8px;
     line-height: 1.5;
   }
@@ -216,7 +215,7 @@ const LoadButton = styled.button`
   border: none;
   border-radius: 4px;
   background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: white;
   cursor: pointer;
@@ -247,7 +246,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
   padding: 6px 16px;
   border-radius: 6px;
   font-weight: 500;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   min-height: 32px;
@@ -307,7 +306,7 @@ const ShortcutButton = styled.button<{ $isListening?: boolean; $isSet?: boolean 
     props.$isListening || props.$isSet
       ? 'color-mix(in srgb, var(--color-primary) 6%, var(--color-surface))'
       : 'var(--color-inputBackground)'};
-  font-size: 12px;
+  font-size: 13px;
   color: ${props =>
     props.$isListening || props.$isSet
       ? 'var(--color-primary)'
@@ -368,14 +367,14 @@ const UpdateCard = styled.div`
 const UpdateCardTitle = styled.h3`
   margin: 0;
   color: #2c3e50;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
 `;
 
 const UpdateCardText = styled.p`
   margin: 0;
   color: #6c757d;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.6;
 `;
 
@@ -386,7 +385,7 @@ const UpdateButton = styled.button`
   background: #4a90e2;
   color: white;
   font-weight: 500;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -428,19 +427,19 @@ const DataLabel = styled.div`
 `;
 
 const DataTitle = styled.span`
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--color-text);
 `;
 
 const DataDescription = styled.span`
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-textSecondary);
   max-width: 500px;
 `;
 
 const DataPath = styled.span`
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-textSecondary);
   font-family: "Cascadia Code", "Consolas", monospace;
   word-break: break-all;
@@ -455,7 +454,7 @@ const DataActions = styled.div`
 const SmallButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 8px 16px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -593,13 +592,13 @@ const SidebarItemText = styled.div`
 `;
 
 const SidebarItemName = styled.span`
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--color-text);
 `;
 
 const SidebarItemId = styled.span`
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-textSecondary);
   font-family: "Cascadia Code", "Consolas", monospace;
 `;
@@ -1144,7 +1143,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                       onClick={() => listeningFor === 'capture' ? stopListening() : startListening('capture')}
                     >
                       <div>
-                        <div style={{ fontWeight: 500, fontSize: listeningFor === 'capture' ? '11px' : '13px' }}>
+                        <div style={{ fontWeight: 500, fontSize: listeningFor === 'capture' ? '12px' : '14px' }}>
                           {getShortcutDisplay('capture')}
                         </div>
                       </div>
@@ -1161,7 +1160,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                       onClick={() => listeningFor === 'upload' ? stopListening() : startListening('upload')}
                     >
                       <div>
-                        <div style={{ fontWeight: 500, fontSize: listeningFor === 'upload' ? '11px' : '13px' }}>
+                        <div style={{ fontWeight: 500, fontSize: listeningFor === 'upload' ? '12px' : '14px' }}>
                           {getShortcutDisplay('upload')}
                         </div>
                       </div>

@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Theme, themes, getTheme, applyTheme } from '../theme/themes';
+import { Theme, themes, getTheme, applyTheme, THEME_ID } from '../theme/themes';
 
 interface ThemeContextType {
   currentTheme: Theme;
-  setTheme: (themeId: string) => void;
+  /** 仅保留单一主题，参数可忽略 */
+  setTheme: (themeId?: string) => void;
   availableThemes: Theme[];
 }
 
@@ -24,21 +25,17 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ 
   children, 
-  initialThemeId = 'green'
+  initialThemeId = THEME_ID
 }) => {
   const [currentTheme, setCurrentTheme] = useState<Theme>(() => getTheme(initialThemeId));
 
-  const setTheme = (themeId: string) => {
-    const theme = getTheme(themeId);
+  const setTheme = (_themeId?: string) => {
+    const theme = getTheme();
     setCurrentTheme(theme);
     applyTheme(theme);
-    
-    // 保存主题选择到localStorage
-    localStorage.setItem('selectedTheme', themeId);
-    
-    // 如果在Electron环境中，也保存到设置
+    localStorage.setItem('selectedTheme', THEME_ID);
     if (window.electronAPI) {
-      window.electronAPI.saveSettings({ theme: themeId }).catch(console.error);
+      window.electronAPI.saveSettings({ theme: THEME_ID }).catch(console.error);
     }
   };
 

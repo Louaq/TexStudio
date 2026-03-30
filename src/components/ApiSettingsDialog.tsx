@@ -61,7 +61,7 @@ const Dialog = styled.div`
 const Title = styled.h2`
   margin: 0 0 18px 0;
   color: var(--color-text);
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 600;
   text-align: center;
   display: flex;
@@ -85,7 +85,7 @@ const FormGroup = styled.div`
 const Label = styled.label`
   color: var(--color-text);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
 `;
 
 const Input = styled.input`
@@ -93,7 +93,7 @@ const Input = styled.input`
   border: 2px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-inputBackground);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-text);
   transition: all 0.3s ease;
 
@@ -120,7 +120,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   border: none;
   border-radius: 8px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 100px;

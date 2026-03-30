@@ -15,7 +15,7 @@ const SelectButton = styled.button<{ disabled: boolean }>`
   border: 1px solid var(--color-inputBorder);
   border-radius: 8px;
   background: var(--color-inputBackground);
-  font-size: 15px;
+  font-size: 16px;
   color: var(--color-text);
   transition: all 0.3s ease;
   cursor: pointer;
@@ -120,12 +120,12 @@ const OptionText = styled.div`
 `;
 
 const OptionName = styled.span`
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-text);
 `;
 
 const OptionId = styled.span`
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-textSecondary);
   font-family: "Cascadia Code", "Consolas", monospace;
 `;

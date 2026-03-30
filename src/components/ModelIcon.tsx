@@ -60,16 +60,6 @@ const ModelIcon: React.FC<ModelIconProps> = ({ modelId, size = 20, className }) 
       );
     }
     
-    // DeepSeek - #4D6BFE
-    if (lowerId.includes('deepseek')) {
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={iconStyle}>
-          <rect width="24" height="24" rx="5" fill="#4D6BFE"/>
-          <path d="M12 4L18 10H14V16H10V10H6L12 4Z" fill="white" fillOpacity="0.9"/>
-        </svg>
-      );
-    }
-    
     // Moonshot / Kimi - #00c896
     if (lowerId.includes('moonshot') || lowerId.includes('kimi')) {
       return (

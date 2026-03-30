@@ -1,6 +1,7 @@
 import React from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import MaterialIcon from './MaterialIcon';
+import { glassBackdrop } from '../theme/themes';
 
 const pulse = keyframes`
   0%, 100% { opacity: 0.4; transform: scale(1); }
@@ -20,7 +21,7 @@ const Container = styled.div`
 `;
 
 const Label = styled.h3`
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-textSecondary);
   margin: 0;
@@ -33,11 +34,14 @@ const Label = styled.h3`
 
 const ImageContainer = styled.div<{ $isDragActive: boolean; $hasImage: boolean }>`
   flex: 1;
+  ${glassBackdrop}
   border: 1.5px dashed ${props => props.$isDragActive ? 'var(--color-primary)' : 'var(--color-border)'};
   border-radius: 12px;
   background: ${props => props.$isDragActive
-    ? 'color-mix(in srgb, var(--color-primary) 5%, var(--color-surface))'
-    : props.$hasImage ? 'var(--color-surface)' : 'color-mix(in srgb, var(--color-primary) 2%, var(--color-surface))'
+    ? 'color-mix(in srgb, var(--color-primary) 8%, var(--glass-bg-card))'
+    : props.$hasImage
+      ? 'color-mix(in srgb, var(--glass-bg-card) 92%, transparent)'
+      : 'color-mix(in srgb, var(--color-primary) 3%, var(--glass-bg-card))'
   };
   display: flex;
   align-items: center;
@@ -48,10 +52,11 @@ const ImageContainer = styled.div<{ $isDragActive: boolean; $hasImage: boolean }
   overflow: hidden;
   box-sizing: border-box;
   cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 
   &:hover {
     border-color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface));
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--glass-bg-card));
   }
 `;
 
@@ -82,14 +87,14 @@ const IconWrapper = styled.div<{ $isDragActive: boolean }>`
 `;
 
 const PlaceholderTitle = styled.div`
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--color-text);
   line-height: 1.3;
 `;
 
 const PlaceholderSubtitle = styled.div`
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-textSecondary);
   line-height: 1.5;
 `;
@@ -112,9 +117,11 @@ const DragOverlay = styled.div<{ $show: boolean }>`
 `;
 
 const DragLabel = styled.div`
-  background: var(--color-surface);
+  background: color-mix(in srgb, var(--glass-bg-strong) 90%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: var(--color-primary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   padding: 10px 20px;
   border-radius: 8px;
