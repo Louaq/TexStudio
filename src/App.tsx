@@ -481,7 +481,7 @@ function App() {
       if (window.electronAPI && imagePath) {
         const taskId = Date.now();
         console.log(`开始识别任务 ID: ${taskId}`);
-        
+
         setAppState(prev => ({ 
           ...prev, 
           currentImage: `file://${imagePath}`
@@ -576,10 +576,12 @@ function App() {
             const uint8Array = new Uint8Array(arrayBuffer);
             const tempPath = await window.electronAPI.saveTempFile(uint8Array, file.name);
             console.log('临时文件保存到:', tempPath);
-            
-            // 使用文件路径而不是 data URL
-            setAppState(prev => ({ ...prev, currentImage: `file://${tempPath}` }));
-            
+
+            setAppState(prev => ({ 
+              ...prev, 
+              currentImage: `file://${tempPath}`
+            }));
+
             setAppState(prev => ({ 
               ...prev, 
               latexCode: '',

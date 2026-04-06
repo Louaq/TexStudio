@@ -12,6 +12,12 @@ const officegen = require('officegen');
 const mammoth = require('mammoth');
 import * as mathjax from 'mathjax-node';
 const sharp = require('sharp');
+try {
+  sharp.cache(false);
+  sharp.concurrency(1);
+} catch {
+  // ignore
+}
 import { autoUpdater } from 'electron-updater';
 
 if (process.platform === 'win32') {
@@ -341,6 +347,94 @@ let DEFAULT_API_CONFIG: ApiConfig = {
 
 const TEMP_FILE_PREFIX = 'simpletex-';
 const SCREENSHOT_PREFIX = 'screenshot-';
+
+/** OCR 上传前限制长边（仅影响识别管线，降低 sharp 与上传 Buffer 峰值） */
+const OCR_IMAGE_MAX_EDGE = 1280;
+const OCR_JPEG_QUALITY = 85;
+/** 超过此像素数的输入直接拒绝预处理，防止极端大图撑爆内存 */
+const OCR_SHARP_LIMIT_INPUT_PIXELS = 30_000_000;
+
+const sharpOcrReadOptions = {
+  sequentialRead: true,
+  limitInputPixels: OCR_SHARP_LIMIT_INPUT_PIXELS
+} as const;
+
+/** 新识别请求会中止尚未完成的上一请求，避免并发多份大图占用 */
+let activeOcrAbortController: AbortController | null = null;
+
+function beginOcrRequest(): AbortSignal {
+  if (activeOcrAbortController) {
+    activeOcrAbortController.abort();
+  }
+  activeOcrAbortController = new AbortController();
+  return activeOcrAbortController.signal;
+}
+
+function guessContentTypeFromPath(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.png') return 'image/png';
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.gif') return 'image/gif';
+  return 'application/octet-stream';
+}
+
+/**
+ * 识别上传：sharp 输出到临时 JPEG 文件，供流式读取；避免整图 Buffer + FormData 再持有一份拷贝。
+ */
+async function prepareOcrUploadFile(imagePath: string): Promise<{
+  uploadPath: string;
+  filename: string;
+  contentType: string;
+  mustDelete: boolean;
+}> {
+  const ext = path.extname(imagePath);
+  const tmp = path.join(app.getPath('temp'), `${TEMP_FILE_PREFIX}ocr-${Date.now()}.jpg`);
+  try {
+    await sharp(imagePath, sharpOcrReadOptions)
+      .rotate()
+      .resize({
+        width: OCR_IMAGE_MAX_EDGE,
+        height: OCR_IMAGE_MAX_EDGE,
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      .jpeg({ quality: OCR_JPEG_QUALITY, mozjpeg: true })
+      .toFile(tmp);
+    addTempFile(tmp);
+    return {
+      uploadPath: tmp,
+      filename: `${path.basename(imagePath, ext)}-ocr.jpg`,
+      contentType: 'image/jpeg',
+      mustDelete: true
+    };
+  } catch (e) {
+    logger.error('OCR 图像预处理失败，使用原文件流上传:', e);
+    return {
+      uploadPath: imagePath,
+      filename: path.basename(imagePath),
+      contentType: guessContentTypeFromPath(imagePath),
+      mustDelete: false
+    };
+  }
+}
+
+/** 手写原始像素 → 临时 JPEG（与上传管线一致，避免先落巨型 PNG） */
+async function writeHandwritingPixelsToTempJpeg(pixelBuffer: Buffer): Promise<string> {
+  const tempFilePath = path.join(app.getPath('temp'), `${TEMP_FILE_PREFIX}hw-${Date.now()}.jpg`);
+  await sharp(pixelBuffer, { limitInputPixels: OCR_SHARP_LIMIT_INPUT_PIXELS })
+    .rotate()
+    .resize({
+      width: OCR_IMAGE_MAX_EDGE,
+      height: OCR_IMAGE_MAX_EDGE,
+      fit: 'inside',
+      withoutEnlargement: true
+    })
+    .jpeg({ quality: OCR_JPEG_QUALITY, mozjpeg: true })
+    .toFile(tempFilePath);
+  addTempFile(tempFilePath);
+  return tempFilePath;
+}
 
 const tempFiles = new Set<string>();
 
@@ -1719,28 +1813,33 @@ ipcMain.handle('save-settings', async (event, settings: Partial<AppSettings>) =>
     updateTrayMenu();
   }
 });
-// 处理手写公式识别
-ipcMain.handle('recognize-handwriting', async (event, dataUrl: string, apiConfig: ApiConfig): Promise<SimpletexResponse> => {
-  const MAX_RETRIES = 2;
-  let retryCount = 0;
-  let lastError: any = null;
-  let imageBuffer: Buffer | null = null;
-  let tempFilePath: string | null = null;
+/**
+ * 手写识别：支持 data URL，或已保存的绝对路径（推荐先 saveHandwritingImage 再传路径，减少 IPC 体积）。
+ */
+ipcMain.handle('recognize-handwriting', async (event, dataUrlOrPath: string, apiConfig: ApiConfig): Promise<SimpletexResponse> => {
+  let tempFromDataUrl: string | null = null;
+  let imagePath: string;
 
   try {
-    // 将 Data URL 转换为临时文件
-    const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
-    imageBuffer = Buffer.from(base64Data, 'base64');
-    
-    // 创建临时文件
-    tempFilePath = path.join(app.getPath('temp'), `${TEMP_FILE_PREFIX}handwriting-${Date.now()}.png`);
-    fs.writeFileSync(tempFilePath, imageBuffer);
-    addTempFile(tempFilePath);
-    
-    logger.log('手写公式图像已保存到临时文件:', tempFilePath);
-    
-    // 直接调用函数，而不是通过IPC
-    return await tryRecognizeFormula(tempFilePath, apiConfig);
+    if (dataUrlOrPath.startsWith('data:')) {
+      const base64Data = dataUrlOrPath.replace(/^data:image\/\w+;base64,/, '');
+      const raw = Buffer.from(base64Data, 'base64');
+      tempFromDataUrl = await writeHandwritingPixelsToTempJpeg(raw);
+      imagePath = tempFromDataUrl;
+      logger.log('手写公式图像已压缩为临时 JPEG:', imagePath);
+    } else {
+      imagePath = path.normalize(dataUrlOrPath);
+      if (!fs.existsSync(imagePath)) {
+        return {
+          status: false,
+          res: { latex: '', conf: 0 },
+          request_id: '',
+          message: '图片文件不存在'
+        };
+      }
+    }
+
+    return await tryRecognizeFormula(imagePath, apiConfig);
   } catch (error) {
     logger.error('手写公式识别失败:', error);
     return {
@@ -1750,13 +1849,11 @@ ipcMain.handle('recognize-handwriting', async (event, dataUrl: string, apiConfig
       message: error instanceof Error ? error.message : '未知错误'
     };
   } finally {
-    // 释放资源
-    imageBuffer = null;
-    if (tempFilePath && fs.existsSync(tempFilePath)) {
+    if (tempFromDataUrl && fs.existsSync(tempFromDataUrl)) {
       try {
-        removeTempFile(tempFilePath);
-      } catch (e) {
-        // 忽略删除临时文件的错误
+        removeTempFile(tempFromDataUrl);
+      } catch {
+        // ignore
       }
     }
     forceGarbageCollection();
@@ -1765,37 +1862,67 @@ ipcMain.handle('recognize-handwriting', async (event, dataUrl: string, apiConfig
 
 // 封装公式识别逻辑为可复用函数
 async function tryRecognizeFormula(imagePath: string, apiConfig: ApiConfig): Promise<SimpletexResponse> {
+  const signal = beginOcrRequest();
   const MAX_RETRIES = 2;
   let retryCount = 0;
-  let lastError: any = null;
-  let imageBuffer: Buffer | null = null;
 
-  const tryRecognize = async (): Promise<SimpletexResponse> => {
+  const resolveApiConfig = (): { ok: true; config: ApiConfig } | { ok: false; response: SimpletexResponse } => {
+    let hasValidConfig = false;
+    let cfg = apiConfig;
+
+    if (cfg && cfg.appId && cfg.appSecret && cfg.appId.trim() && cfg.appSecret.trim()) {
+      hasValidConfig = true;
+      logger.log('使用传入的API配置');
+    }
+    if (!hasValidConfig) {
+      const settingsConfig = loadApiConfigFromSettings();
+      if (settingsConfig.appId && settingsConfig.appSecret &&
+          settingsConfig.appId.trim() && settingsConfig.appSecret.trim()) {
+        logger.log('使用settings.json中的API配置');
+        cfg = {
+          ...cfg,
+          appId: settingsConfig.appId,
+          appSecret: settingsConfig.appSecret
+        };
+        hasValidConfig = true;
+      }
+    }
+    if (!hasValidConfig) {
+      logger.error('API配置为空，无法进行公式识别');
+      return {
+        ok: false,
+        response: {
+          status: false,
+          res: { latex: '', conf: 0 },
+          request_id: '',
+          message: '请先在设置中配置API密钥',
+          error_code: 'NO_API_CONFIG'
+        }
+      };
+    }
+    return { ok: true, config: cfg };
+  };
+
+  const tryOnce = async (): Promise<SimpletexResponse> => {
+    const resolved = resolveApiConfig();
+    if (!resolved.ok) {
+      return resolved.response;
+    }
+    apiConfig = resolved.config;
+
     try {
-      let hasValidConfig = false;
+      if (!fs.existsSync(imagePath)) {
+        return {
+          status: false,
+          res: { latex: '', conf: 0 },
+          request_id: '',
+          message: '图片文件不存在'
+        };
+      }
 
-      if (apiConfig && apiConfig.appId && apiConfig.appSecret) {
-        if (apiConfig.appId.trim() && apiConfig.appSecret.trim()) {
-          hasValidConfig = true;
-          logger.log('使用传入的API配置');
-        }
-      }
-      if (!hasValidConfig) {
-        const settingsConfig = loadApiConfigFromSettings();
-        if (settingsConfig.appId && settingsConfig.appSecret) {
-          if (settingsConfig.appId.trim() && settingsConfig.appSecret.trim()) {
-            logger.log('使用settings.json中的API配置');
-            apiConfig = {
-              ...apiConfig,
-              appId: settingsConfig.appId,
-              appSecret: settingsConfig.appSecret
-            };
-            hasValidConfig = true;
-          }
-        }
-      }
-      if (!hasValidConfig) {
-        logger.error('API配置为空，无法进行公式识别');
+      if (!apiConfig.appId || !apiConfig.appSecret ||
+          !apiConfig.appId.trim() || !apiConfig.appSecret.trim()) {
+        logger.error('API配置无效，无法进行公式识别');
         return {
           status: false,
           res: { latex: '', conf: 0 },
@@ -1804,42 +1931,25 @@ async function tryRecognizeFormula(imagePath: string, apiConfig: ApiConfig): Pro
           error_code: 'NO_API_CONFIG'
         };
       }
-      if (!fs.existsSync(imagePath)) {
-        // 图片文件不存在
+
+      if (signal.aborted) {
         return {
           status: false,
           res: { latex: '', conf: 0 },
           request_id: '',
-          message: '图片文件不存在'
+          message: '识别已取消'
         };
       }
+
+      const prepared = await prepareOcrUploadFile(imagePath);
+      let fileStream: fs.ReadStream | null = null;
       try {
-        imageBuffer = fs.readFileSync(imagePath);
-        if (!imageBuffer || imageBuffer.length === 0) {
-          // 图片文件为空
-          return {
-            status: false,
-            res: { latex: '', conf: 0 },
-            request_id: '',
-            message: '图片文件为空'
-          };
-        }
-        if (!apiConfig || !apiConfig.appId || !apiConfig.appSecret ||
-          !apiConfig.appId.trim() || !apiConfig.appSecret.trim()) {
-          logger.error('API配置无效，无法进行公式识别');
-          return {
-            status: false,
-            res: { latex: '', conf: 0 },
-            request_id: '',
-            message: '请先在设置中配置API密钥',
-            error_code: 'NO_API_CONFIG'
-          };
-        }
+        fileStream = fs.createReadStream(prepared.uploadPath);
         const { header, reqData } = getReqData({}, apiConfig);
         const formData = new FormData();
-        formData.append('file', imageBuffer, {
-          filename: path.basename(imagePath),
-          contentType: 'image/png'
+        formData.append('file', fileStream, {
+          filename: prepared.filename,
+          contentType: prepared.contentType
         });
 
         for (const [key, value] of Object.entries(reqData)) {
@@ -1851,31 +1961,52 @@ async function tryRecognizeFormula(imagePath: string, apiConfig: ApiConfig): Pro
             ...formData.getHeaders(),
             ...header
           },
-          timeout: 30000
+          timeout: 30000,
+          signal,
+          maxContentLength: 50 * 1024 * 1024,
+          maxBodyLength: 50 * 1024 * 1024
         });
 
         formData.getHeaders = null as any;
 
-        return response.data;
-      } finally {
-        imageBuffer = null;
         if (global.gc) {
           global.gc();
         }
+
+        return response.data;
+      } finally {
+        if (fileStream) {
+          fileStream.destroy();
+        }
+        if (prepared.mustDelete) {
+          removeTempFile(prepared.uploadPath);
+        }
       }
-    } catch (error) {
-      // 公式识别失败
-      lastError = error;
+    } catch (error: any) {
+      if (axios.isCancel(error) || signal.aborted || error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') {
+        return {
+          status: false,
+          res: { latex: '', conf: 0 },
+          request_id: '',
+          message: '识别已取消'
+        };
+      }
 
       if (axios.isAxiosError(error)) {
-        // 响应错误信息处理
-
         if (error.response?.status === 429) {
           if (retryCount < MAX_RETRIES) {
             retryCount++;
             logger.log(`遇到429错误，等待后重试 (${retryCount}/${MAX_RETRIES})...`);
             await new Promise(resolve => setTimeout(resolve, 1000));
-            return tryRecognize();
+            if (signal.aborted) {
+              return {
+                status: false,
+                res: { latex: '', conf: 0 },
+                request_id: '',
+                message: '识别已取消'
+              };
+            }
+            return tryOnce();
           }
         }
         return {
@@ -1891,19 +2022,12 @@ async function tryRecognizeFormula(imagePath: string, apiConfig: ApiConfig): Pro
         request_id: '',
         message: error instanceof Error ? error.message : '未知错误'
       };
-    } finally {
-      // 确保在任何情况下都释放资源
-      imageBuffer = null;
-      if (retryCount >= MAX_RETRIES) {
-        forceGarbageCollection();
-      }
     }
   };
 
   try {
-    return await tryRecognize();
+    return await tryOnce();
   } finally {
-    imageBuffer = null;
     forceGarbageCollection();
   }
 }
@@ -1913,23 +2037,31 @@ ipcMain.handle('recognize-formula', async (event, imagePath: string, apiConfig: 
   return await tryRecognizeFormula(imagePath, apiConfig);
 });
 
-// 保存手写公式为临时文件
+// 保存手写公式为临时文件（缩放到长边 OCR_IMAGE_MAX_EDGE 并 JPEG，降低磁盘与后续上传体积）
 ipcMain.handle('save-handwriting-image', async (event, dataUrl: string): Promise<string> => {
+  const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+  const buffer = Buffer.from(base64Data, 'base64');
+  const tempJpg = path.join(app.getPath('temp'), `${TEMP_FILE_PREFIX}handwriting-${Date.now()}.jpg`);
   try {
-    // 将 Data URL 转换为 Buffer
-    const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-    
-    // 创建临时文件
-    const tempFilePath = path.join(app.getPath('temp'), `${TEMP_FILE_PREFIX}handwriting-${Date.now()}.png`);
-    fs.writeFileSync(tempFilePath, buffer);
-    addTempFile(tempFilePath);
-    
-    logger.log('手写公式图像已保存到临时文件:', tempFilePath);
-    return tempFilePath;
+    await sharp(buffer, { limitInputPixels: OCR_SHARP_LIMIT_INPUT_PIXELS })
+      .rotate()
+      .resize({
+        width: OCR_IMAGE_MAX_EDGE,
+        height: OCR_IMAGE_MAX_EDGE,
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      .jpeg({ quality: OCR_JPEG_QUALITY, mozjpeg: true })
+      .toFile(tempJpg);
+    addTempFile(tempJpg);
+    logger.log('手写公式图像已保存（压缩 JPEG）:', tempJpg);
+    return tempJpg;
   } catch (error) {
-    logger.error('保存手写公式图像失败:', error);
-    throw error;
+    logger.error('手写图 JPEG 失败，回退为原始 PNG:', error);
+    const tempPng = path.join(app.getPath('temp'), `${TEMP_FILE_PREFIX}handwriting-${Date.now()}.png`);
+    fs.writeFileSync(tempPng, buffer);
+    addTempFile(tempPng);
+    return tempPng;
   }
 });
 

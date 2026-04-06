@@ -95,9 +95,11 @@ export interface ElectronAPI {
   clearApiConfig: () => Promise<boolean>;
   
   recognizeFormula: (imagePath: string, apiConfig: ApiConfig) => Promise<SimpletexResponse>;
-  recognizeHandwriting: (imageData: string, apiConfig: ApiConfig) => Promise<SimpletexResponse>;
+  /** data:image/...;base64,... 或已保存的本地绝对路径（推荐 saveHandwritingImage 后再传路径） */
+  recognizeHandwriting: (imageDataOrPath: string, apiConfig: ApiConfig) => Promise<SimpletexResponse>;
+  /** 返回临时 JPEG 路径（主进程已缩放压缩） */
   saveHandwritingImage: (imageData: string) => Promise<string>;
-  
+
   registerGlobalShortcuts: (shortcuts: { capture: string; upload: string }) => Promise<boolean>;
   unregisterGlobalShortcuts: () => Promise<void>;
   
