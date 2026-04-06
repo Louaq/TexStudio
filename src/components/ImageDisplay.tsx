@@ -8,11 +8,6 @@ const pulse = keyframes`
   50% { opacity: 0.7; transform: scale(1.04); }
 `;
 
-const float = keyframes`
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-4px); }
-`;
-
 const Container = styled.div`
   display: flex;
   flex-direction: column;
@@ -47,12 +42,11 @@ const ImageContainer = styled.div<{ $isDragActive: boolean; $hasImage: boolean }
   align-items: center;
   justify-content: center;
   min-height: 150px;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.12s ease, background 0.12s ease;
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
   cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 
   &:hover {
     border-color: var(--color-primary);
@@ -79,11 +73,9 @@ const IconWrapper = styled.div<{ $isDragActive: boolean }>`
   align-items: center;
   justify-content: center;
   color: var(--color-primary);
-  animation: ${props => props.$isDragActive
-    ? css`${pulse} 0.8s ease-in-out infinite`
-    : css`${float} 3s ease-in-out infinite`
-  };
-  transition: all 0.25s ease;
+  animation: ${props =>
+    props.$isDragActive ? css`${pulse} 0.8s ease-in-out infinite` : 'none'};
+  transition: background 0.12s ease, color 0.12s ease;
 `;
 
 const PlaceholderTitle = styled.div`
@@ -118,8 +110,6 @@ const DragOverlay = styled.div<{ $show: boolean }>`
 
 const DragLabel = styled.div`
   background: color-mix(in srgb, var(--glass-bg-strong) 90%, transparent);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
   color: var(--color-primary);
   font-size: 14px;
   font-weight: 600;
@@ -129,7 +119,6 @@ const DragLabel = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 `;
 
 interface ImageDisplayProps {

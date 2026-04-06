@@ -199,13 +199,9 @@ function App() {
         showIndicator: false,
         status: 'checking',
         version: '',
-        showDialog: prev.showDialog,
+        showDialog: false,
       }));
       setDownloadProgress(0);
-      setAppState(prev => ({
-        ...prev,
-        statusMessage: '🔄 正在检查更新...',
-      }));
     };
 
     const handleUpdateAvailable = (info: any) => {
@@ -255,7 +251,7 @@ function App() {
         showIndicator: false,
         status: 'error',
         version: '',
-        showDialog: prev.showDialog,
+        showDialog: prev.status === 'downloading' || prev.status === 'downloaded' ? prev.showDialog : false,
       }));
       setDownloadProgress(0);
       // 在顶部显示错误消息
@@ -1068,19 +1064,31 @@ function App() {
     }
 
     setUpdateInfo({
-      showDialog: true,
+      showDialog: false,
       showIndicator: false,
       status: 'checking',
       version: '',
     });
     setDownloadProgress(0);
-    setAppState(prev => ({
-      ...prev,
-      statusMessage: '🔄 正在检查更新...',
-    }));
 
     try {
-      await window.electronAPI.checkForUpdates();
+      const result = await window.electronAPI.checkForUpdates();
+      if (!result.success) {
+        setUpdateInfo(prev => ({
+          ...prev,
+          status: 'idle',
+          showDialog: false,
+        }));
+        setAppState(prev => ({
+          ...prev,
+          statusMessage: result.message ? `ℹ️ ${result.message}` : null,
+        }));
+        if (result.message) {
+          setTimeout(() => {
+            setAppState(prev => ({ ...prev, statusMessage: null }));
+          }, 4000);
+        }
+      }
     } catch (error) {
       console.error('检查更新失败:', error);
       setAppState(prev => ({
@@ -1089,7 +1097,7 @@ function App() {
       }));
       setUpdateInfo(prev => ({
         ...prev,
-        showDialog: true,
+        showDialog: false,
         status: 'error',
         version: '',
       }));
@@ -1258,6 +1266,7 @@ function App() {
             onSaveApi={handleSaveApiSettings}
             onSaveShortcuts={handleSaveShortcutSettings}
             onCheckForUpdates={handleCheckForUpdates}
+            isCheckingForUpdates={updateInfo.status === 'checking'}
             onSaveSidebarConfig={handleSaveSidebarConfig}
             onSaveMinimizeToTray={handleSaveMinimizeToTray}
           />
@@ -1273,7 +1282,7 @@ function App() {
         )}
 
         {currentView === 'about' && (
-          <AboutView onCheckForUpdates={handleCheckForUpdates} />
+          <AboutView />
         )}
       </ContentContainer>
 

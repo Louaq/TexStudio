@@ -536,7 +536,7 @@ const store = new Store<AppSettings>({
       upload: 'Alt+S' 
     },
     history: [],
-    theme: 'formal', // 默认典雅轻蓝（浅底 + 正蓝主色）
+    theme: 'formal', // 默认青花（瓷白底 + 钴蓝主色）
     minimizeToTray: true // 默认关闭时最小化到托盘
   }
 });
@@ -573,7 +573,7 @@ async function createMainWindow(): Promise<void> {
     title: 'TexStudio OCR',
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#f0f4f8' // 与「典雅轻蓝」主题背景一致
+    backgroundColor: '#F2F7FF' // 与「青花」主题背景一致
   });
 
   // 完全禁用菜单栏
@@ -718,8 +718,8 @@ function createSplashWindow(): void {
     * { box-sizing: border-box; }
     html, body { width: 100%; height: 100%; margin: 0; }
     body {
-      background: #f0f4f8;
-      color: #1e293b;
+      background: #F2F7FF;
+      color: #102349;
       font-family: "Segoe UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
       align-items: center;
@@ -742,41 +742,35 @@ function createSplashWindow(): void {
     }
     .ring {
       width: 64px; height: 64px; border-radius: 50%;
-      border: 4px solid #e2e8f0; border-top-color: #2563eb;
+      border: 4px solid rgba(16, 35, 73, 0.12); border-top-color: #1E3F66;
       animation: spin 1s linear infinite;
       margin-bottom: 16px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     .title { font-size: 19px; font-weight: 700; letter-spacing: 0.3px; }
-    .sub { font-size: 13px; color: #64748b; margin-top: 2px; }
+    .sub { font-size: 13px; color: rgba(16, 35, 73, 0.55); margin-top: 2px; }
     .content { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
-    .logo { width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08)); }
+    .logo { width: 56px; height: 56px; object-fit: contain; }
     .shine {
       position: absolute; inset: 0;
-      background: radial-gradient(120px 60px at 20% 0%, rgba(37, 99, 235, 0.08), transparent 60%),
-                  radial-gradient(160px 80px at 90% 80%, rgba(168, 85, 124, 0.06), transparent 60%);
+      background: radial-gradient(120px 60px at 20% 0%, rgba(30, 63, 102, 0.10), transparent 60%),
+                  radial-gradient(160px 80px at 90% 80%, rgba(185, 215, 255, 0.35), transparent 60%);
       pointer-events: none;
-      animation: float 4s ease-in-out infinite alternate;
     }
-    @keyframes float { to { transform: translateY(-6px); } }
     /* 底部条状进度条（不定进度动画） */
     .progress {
       position: absolute;
       left: 0; right: 0; bottom: 0;
       height: 6px;
-      background: #e2e8f0;
+      background: rgba(16, 35, 73, 0.08);
       overflow: hidden;
     }
     .progress-bar {
       position: absolute;
-      top: 0; left: -30%;
-      height: 100%; width: 30%;
-      background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #a8557c 100%);
-      animation: indeterminate 1.2s ease-in-out infinite;
-    }
-    @keyframes indeterminate {
-      0% { left: -30%; }
-      100% { left: 100%; }
+      top: 0; left: 0;
+      height: 100%; width: 42%;
+      background: linear-gradient(90deg, #1E3F66 0%, #275983 50%, #B9D7FF 100%);
+      opacity: 0.92;
     }
   </style>
   </head>
@@ -810,6 +804,10 @@ function createSplashWindow(): void {
 }
 
 const screenshotWindows: BrowserWindow[] = [];
+
+function isScreenshotOverlayActive(): boolean {
+  return screenshotWindows.some(w => !w.isDestroyed());
+}
 
 // 更新托盘菜单
 function updateTrayMenu(): void {
@@ -987,8 +985,8 @@ function createSimpleScreenshotWindow(): void {
     }
     .selection-box {
       position: absolute;
-      border: 2px solid #323130;
-      background: rgba(50, 49, 48, 0.12);
+      border: 2px solid #1E3F66;
+      background: rgba(30, 63, 102, 0.12);
       pointer-events: none;
     }
     .info {
@@ -1363,31 +1361,6 @@ app.on('will-quit', (event) => {
     }
   }, 100);
 });
-
-
-function registerGlobalShortcuts(): void {
-  const shortcuts = store.get('shortcuts');
-
-
-  globalShortcut.register(shortcuts.capture, () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.hide();
-    }
-    setTimeout(() => {
-      showUnifiedScreenshotOverlay();
-    }, 200);
-  });
-
-
-  globalShortcut.register(shortcuts.upload, () => {
-    if (mainWindow && !mainWindow.isFocused()) {
-      mainWindow.show();
-      mainWindow.focus();
-    }
-    mainWindow?.webContents.send('shortcut-triggered', 'upload');
-  });
-}
-
 
 
 ipcMain.handle('select-file', async () => {
@@ -1968,40 +1941,45 @@ ipcMain.handle('save-handwriting-image', async (event, dataUrl: string): Promise
 let isFileDialogOpen = false;
 let lastShortcutTime = 0;
 
-// 注册全局快捷键
-ipcMain.handle('register-global-shortcuts', (event, shortcuts: { capture: string; upload: string }) => {
+/** 截图与上传快捷键互斥：选文件或截图选区进行中时，另一项不响应 */
+function registerShortcutBindings(shortcuts: { capture: string; upload: string }): void {
   globalShortcut.unregisterAll();
 
+  globalShortcut.register(shortcuts.capture, () => {
+    if (isFileDialogOpen || isScreenshotOverlayActive()) {
+      return;
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.hide();
+    }
+    setTimeout(() => {
+      showUnifiedScreenshotOverlay();
+    }, 200);
+  });
+
+  globalShortcut.register(shortcuts.upload, () => {
+    const now = Date.now();
+    if (isFileDialogOpen || isScreenshotOverlayActive() || (now - lastShortcutTime) < 1000) {
+      return;
+    }
+    lastShortcutTime = now;
+    if (mainWindow && !mainWindow.isFocused()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+    mainWindow?.webContents.send('shortcut-triggered', 'upload');
+  });
+}
+
+function registerGlobalShortcuts(): void {
+  const shortcuts = store.get('shortcuts', { capture: 'Alt+A', upload: 'Alt+S' });
+  registerShortcutBindings(shortcuts);
+}
+
+// 注册全局快捷键
+ipcMain.handle('register-global-shortcuts', (event, shortcuts: { capture: string; upload: string }) => {
   try {
-    globalShortcut.register(shortcuts.capture, () => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.hide();
-      }
-      setTimeout(() => {
-        showUnifiedScreenshotOverlay();
-      }, 200);
-    });
-
-    globalShortcut.register(shortcuts.upload, () => {
-      // 确保文件对话框未打开 + 时间间隔检查（至少500ms）
-      const now = Date.now();
-      if (isFileDialogOpen || (now - lastShortcutTime) < 1000) {
-        return;
-      }
-      
-      // 更新最后触发时间
-      lastShortcutTime = now;
-      
-      // 聚焦主窗口
-      if (mainWindow && !mainWindow.isFocused()) {
-        mainWindow.show();
-        mainWindow.focus();
-      }
-      
-      // 发送事件给渲染进程，但不立即打开文件选择器
-      mainWindow?.webContents.send('shortcut-triggered', 'upload');
-    });
-
+    registerShortcutBindings(shortcuts);
     return true;
   } catch (error) {
     return false;

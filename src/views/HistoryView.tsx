@@ -72,8 +72,6 @@ const FixedPagination = styled.div`
 `;
 
 const HintBar = styled.div`
-  -webkit-backdrop-filter: blur(14px) saturate(1.12);
-  backdrop-filter: blur(14px) saturate(1.12);
   background: color-mix(in srgb, var(--glass-bg-elevated) 75%, transparent);
   border: 1px solid var(--glass-edge);
   border-radius: 8px;
@@ -85,7 +83,6 @@ const HintBar = styled.div`
   gap: 12px;
   color: var(--color-primary);
   font-size: 14px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 `;
 
 const HintBarLeft = styled.div`
@@ -109,15 +106,11 @@ const ClearAllButton = styled.button`
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  transition: background 0.12s ease, border-color 0.12s ease;
 
   &:hover {
     background: color-mix(in srgb, var(--color-primary) 10%, transparent);
     border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border));
-  }
-
-  &:active {
-    transform: scale(0.98);
   }
 `;
 
@@ -154,17 +147,13 @@ const HistoryList = styled.div`
 const HistoryCard = styled.div`
   border-radius: 8px;
   padding: 0;
-  transition: all 0.2s ease;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   ${glassCard}
 
   &:hover {
-    box-shadow:
-      0 4px 28px rgba(15, 23, 42, 0.08),
-      0 8px 32px rgba(37, 99, 235, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
   }
 `;
 
@@ -217,7 +206,7 @@ const IconButton = styled.button`
   background: transparent;
   color: var(--color-textSecondary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.12s ease, color 0.12s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -228,10 +217,6 @@ const IconButton = styled.button`
   &:hover {
     background: rgba(0, 0, 0, 0.05);
     color: var(--color-text);
-  }
-
-  &:active {
-    transform: scale(0.95);
   }
 `;
 
@@ -245,7 +230,7 @@ const FormulaDisplay = styled.div`
   justify-content: center;
   color: var(--color-text);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.12s ease;
   position: relative;
   overflow-x: auto;
 
@@ -316,7 +301,7 @@ const PageButton = styled.button<{ $active?: boolean }>`
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -334,10 +319,6 @@ const PageButton = styled.button<{ $active?: boolean }>`
   &:disabled {
     opacity: 0.32;
     cursor: not-allowed;
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.95);
   }
 `;
 

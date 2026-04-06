@@ -21,18 +21,15 @@ const Dialog = styled.div`
   padding: 32px;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   border: 1px solid #e1e8ed;
-  animation: slideIn 0.3s ease;
+  animation: dialogFade 0.1s ease;
 
-  @keyframes slideIn {
+  @keyframes dialogFade {
     from {
       opacity: 0;
-      transform: translateY(-30px) scale(0.95);
     }
     to {
       opacity: 1;
-      transform: translateY(0) scale(1);
     }
   }
 `;
@@ -86,7 +83,7 @@ const ShortcutButton = styled.button<{
     props.$isListening ? '#e74c3c' : 
     props.$isSet ? '#27ae60' : '#2c3e50'
   };
-  transition: all 0.3s ease;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
   font-family: "Cascadia Code", "Consolas", monospace;
   cursor: pointer;
   min-height: 52px;
@@ -108,21 +105,16 @@ const ShortcutButton = styled.button<{
   }
 
   &:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px ${props => 
-      props.$isListening ? 'rgba(231, 76, 60, 0.2)' : 
-      props.$isSet ? 'rgba(39, 174, 96, 0.2)' : 'rgba(74, 144, 226, 0.2)'
+    outline: 2px solid ${props => 
+      props.$isListening ? 'rgba(231, 76, 60, 0.45)' : 
+      props.$isSet ? 'rgba(39, 174, 96, 0.45)' : 'rgba(74, 144, 226, 0.45)'
     };
+    outline-offset: 0;
   }
 
   ${props => props.$isListening && `
-    animation: pulse 1.5s infinite;
-    
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-    }
+    outline: 2px solid rgba(231, 76, 60, 0.45);
+    outline-offset: 0;
   `}
 `;
 
@@ -158,7 +150,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
   font-weight: 600;
   font-size: 15px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: opacity 0.12s ease;
   min-width: 100px;
 
   ${props => {
@@ -170,15 +162,11 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
 
           &:hover {
             background: linear-gradient(135deg, #5ba0f2 0%, #458bcd 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
           }
 
           &:disabled {
             background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
             cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
           }
         `;
       case 'tertiary':
@@ -188,8 +176,6 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
 
           &:hover {
             background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(230, 126, 34, 0.2);
           }
         `;
       default: // secondary
@@ -199,16 +185,10 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>
 
           &:hover {
             background: linear-gradient(135deg, #a4b3b6 0%, #8e9b9d 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(127, 140, 141, 0.2);
           }
         `;
     }
   }}
-
-  &:active {
-    transform: translateY(0);
-  }
 `;
 
 const Description = styled.p`
@@ -231,11 +211,11 @@ const SuccessMessage = styled.div`
   margin-bottom: 16px;
   text-align: center;
   font-weight: 600;
-  animation: fadeIn 0.3s ease;
+  animation: msgFade 0.1s ease;
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+  @keyframes msgFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 `;
 

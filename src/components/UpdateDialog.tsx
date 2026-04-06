@@ -6,14 +6,12 @@ const spin = keyframes`
   to { transform: rotate(360deg); }
 `;
 
-const fadeUp = keyframes`
+const dialogFade = keyframes`
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
   }
 `;
 
@@ -35,14 +33,11 @@ const Dialog = styled.div`
   background: var(--color-surface);
   border-radius: 14px;
   border: 1px solid var(--color-borderLight);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 12px 40px rgba(0, 0, 0, 0.12);
   padding: 24px 22px 20px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  animation: ${fadeUp} 0.22s ease-out;
+  animation: ${dialogFade} 0.1s ease-out;
 `;
 
 const HeaderRow = styled.div`

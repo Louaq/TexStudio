@@ -21,19 +21,16 @@ const Dialog = styled.div`
   padding: 0;
   min-width: 420px;
   max-width: 520px;
-  box-shadow: 0 20px 60px color-mix(in srgb, var(--color-text) 30%, transparent);
   border: 1px solid var(--color-border);
-  animation: slideUp 0.25s ease;
+  animation: dialogFade 0.1s ease;
   overflow: hidden;
 
-  @keyframes slideUp {
+  @keyframes dialogFade {
     from {
       opacity: 0;
-      transform: translateY(20px);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
     }
   }
 `;
@@ -116,7 +113,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: opacity 0.12s ease, background 0.12s ease;
   border: none;
   display: flex;
   align-items: center;
@@ -132,7 +129,6 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
           color: white;
           &:hover {
             opacity: 0.9;
-            box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent);
           }
         `;
       case 'danger':
@@ -141,7 +137,6 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
           color: white;
           &:hover {
             opacity: 0.9;
-            box-shadow: 0 4px 12px color-mix(in srgb, var(--color-error) 30%, transparent);
           }
         `;
       default:

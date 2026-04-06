@@ -93,7 +93,6 @@ const LoadingOverlay = styled.div<{ $show: boolean }>`
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  backdrop-filter: blur(3px);
 `;
 
 const LoadingContent = styled.div`

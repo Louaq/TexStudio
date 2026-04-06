@@ -5,25 +5,23 @@ import "@fontsource/material-symbols-outlined";
 import { createGlobalStyle } from 'styled-components';
 import { applyTheme, getTheme } from './theme/themes';
 
-/* 首屏即写入变量，避免 useEffect 晚于渲染导致 backdrop-filter 无 blur、看起来像普通白底 */
+/* 首屏即写入主题变量 */
 applyTheme(getTheme());
 
 // 全局样式
 const GlobalStyle = createGlobalStyle`
   :root {
-    --color-background: #f0f4f8;
-    --color-menuBackground: #eef4ff;
-    --color-text: #1e293b;
-    --app-bg-gradient: radial-gradient(ellipse 95% 75% at 0% -8%, rgba(59, 130, 246, 0.16), transparent 52%),
-      radial-gradient(ellipse 80% 60% at 100% 108%, rgba(168, 85, 124, 0.1), transparent 48%),
-      linear-gradient(168deg, #e2e8f0 0%, #f0f4f8 45%, #e8edf4 100%);
-    --glass-blur: 26px;
-    --glass-saturate: 1.3;
-    --glass-bg: rgba(255, 255, 255, 0.28);
-    --glass-bg-strong: rgba(255, 255, 255, 0.45);
-    --glass-bg-elevated: rgba(255, 255, 255, 0.38);
-    --glass-bg-card: rgba(255, 255, 255, 0.32);
-    --glass-edge: rgba(226, 232, 240, 0.85);
+    --color-background: #F2F7FF;
+    --color-menuBackground: #E6F0FF;
+    --color-text: #102349;
+    --app-bg-gradient: radial-gradient(ellipse 95% 75% at 0% -8%, rgba(30, 63, 102, 0.14), transparent 52%),
+      radial-gradient(ellipse 80% 60% at 100% 108%, rgba(185, 215, 255, 0.35), transparent 48%),
+      linear-gradient(168deg, #D4E5FF 0%, #F2F7FF 45%, #E6F0FF 100%);
+    --glass-bg: rgba(247, 251, 255, 0.52);
+    --glass-bg-strong: rgba(255, 255, 255, 0.78);
+    --glass-bg-elevated: rgba(230, 240, 255, 0.68);
+    --glass-bg-card: rgba(247, 251, 255, 0.78);
+    --glass-edge: rgba(16, 35, 73, 0.10);
   }
 
   html {
@@ -48,8 +46,8 @@ const GlobalStyle = createGlobalStyle`
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: var(--app-bg-gradient, var(--color-background, #f0f4f8));
-    color: var(--color-text, #1e293b);
+    background: var(--app-bg-gradient, var(--color-background, #F2F7FF));
+    color: var(--color-text, #102349);
     overflow: hidden;
     height: 100%;
     width: 100%;
@@ -93,8 +91,8 @@ const GlobalStyle = createGlobalStyle`
   input:focus,
   textarea:focus,
   select:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
+    outline: 2px solid color-mix(in srgb, var(--color-primary, #1E3F66) 55%, transparent);
+    outline-offset: 0;
   }
 
   /* 禁用拖拽选择 */
@@ -115,19 +113,17 @@ const GlobalStyle = createGlobalStyle`
     user-select: text;
   }
 
-  /* 动画 */
+  /* 首屏淡入：仅透明度，避免位移触发布局 */
   .fade-in {
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.1s ease-out;
   }
 
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(10px);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
     }
   }
 
@@ -150,7 +146,7 @@ const GlobalStyle = createGlobalStyle`
     white-space: nowrap;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.3s ease;
+    transition: opacity 0.12s ease, visibility 0.12s ease;
     z-index: 1000;
   }
 

@@ -18,21 +18,18 @@ const Overlay = styled.div`
 const Dialog = styled.div`
   background: var(--color-surface);
   border-radius: 12px;
-  box-shadow: 0 20px 60px color-mix(in srgb, var(--color-text) 30%, transparent);
   width: 90%;
   max-width: 420px;
   overflow: hidden;
-  animation: slideIn 0.2s ease-out;
+  animation: dialogFade 0.1s ease-out;
   border: 1px solid var(--color-border);
 
-  @keyframes slideIn {
+  @keyframes dialogFade {
     from {
       opacity: 0;
-      transform: scale(0.95) translateY(-20px);
     }
     to {
       opacity: 1;
-      transform: scale(1) translateY(0);
     }
   }
 `;
@@ -66,15 +63,11 @@ const CloseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: background 0.12s ease, color 0.12s ease;
 
   &:hover {
     background: color-mix(in srgb, var(--color-text) 5%, transparent);
     color: var(--color-text);
-  }
-
-  &:active {
-    transform: scale(0.95);
   }
 `;
 
@@ -105,7 +98,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: opacity 0.12s ease;
   min-width: 80px;
 
   ${props => props.$variant === 'primary' ? `
@@ -114,8 +107,6 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
     
     &:hover {
       opacity: 0.9;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px color-mix(in srgb, var(--color-error) 30%, transparent);
     }
   ` : `
     background: var(--color-surface);
@@ -127,10 +118,6 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
       border-color: var(--color-primary);
     }
   `}
-
-  &:active {
-    transform: translateY(0);
-  }
 `;
 
 interface ConfirmDialogProps {

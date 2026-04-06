@@ -26,13 +26,11 @@ const MainButton = styled.button<{ disabled: boolean }>`
   justify-content: center;
   gap: 6px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 
   &:hover {
     ${props => !props.disabled && `
       background: linear-gradient(135deg, var(--color-primaryLight) 0%, var(--color-primary) 100%);
       transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
     `}
   }
 
@@ -53,7 +51,6 @@ const DropdownMenu = styled.div<{ show: boolean }>`
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   z-index: 1000;
   overflow: hidden;
   display: ${props => props.show ? 'block' : 'none'};

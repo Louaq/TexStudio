@@ -20,16 +20,11 @@ const ExportButton = styled.button<{ disabled: boolean }>`
   display: flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
   min-width: 120px;
   justify-content: center;
 
   &:hover {
     transform: ${props => props.disabled ? 'none' : 'translateY(-1px)'};
-    box-shadow: ${props => props.disabled ? 
-      '0 2px 6px rgba(0, 0, 0, 0.12)' : 
-      '0 3px 8px rgba(0, 0, 0, 0.18)'
-    };
   }
 
   &:active {
@@ -38,7 +33,6 @@ const ExportButton = styled.button<{ disabled: boolean }>`
 
   ${props => props.disabled && `
     background: linear-gradient(135deg, #6c757d 0%, #868e96 100%);
-    box-shadow: 0 2px 6px rgba(108, 117, 125, 0.25);
   `}
 `;
 
@@ -50,7 +44,6 @@ const DropdownMenu = styled.div<{ show: boolean }>`
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   z-index: 1000;
   margin-bottom: 5px;
   overflow: hidden;

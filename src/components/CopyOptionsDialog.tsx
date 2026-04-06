@@ -22,18 +22,15 @@ const DialogContainer = styled.div`
   padding: 24px;
   min-width: 320px;
   max-width: 400px;
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--color-text) 12%, transparent);
   border: 1px solid var(--color-border);
-  animation: slideUp 0.3s ease;
+  animation: dialogFade 0.1s ease;
 
-  @keyframes slideUp {
+  @keyframes dialogFade {
     from {
       opacity: 0;
-      transform: translateY(20px);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
     }
   }
 `;
@@ -64,7 +61,7 @@ const OptionItem = styled.button`
   border-radius: 8px;
   background: var(--color-surface);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.12s ease, background 0.12s ease;
   text-align: left;
   
   &:hover {
@@ -105,7 +102,7 @@ const CancelButton = styled.button`
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
 
   &:hover {
     background: color-mix(in srgb, var(--color-text) 3%, var(--color-surface));

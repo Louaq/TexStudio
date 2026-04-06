@@ -24,18 +24,15 @@ const Dialog = styled.div`
   max-width: 500px;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   border: 1px solid var(--color-border);
-  animation: slideIn 0.3s ease;
+  animation: dialogFade 0.1s ease;
 
-  @keyframes slideIn {
+  @keyframes dialogFade {
     from {
       opacity: 0;
-      transform: translateY(-30px) scale(0.95);
     }
     to {
       opacity: 1;
-      transform: translateY(0) scale(1);
     }
   }
   
@@ -95,12 +92,11 @@ const Input = styled.input`
   background: var(--color-inputBackground);
   font-size: 15px;
   color: var(--color-text);
-  transition: all 0.3s ease;
+  transition: border-color 0.12s ease;
 
   &:focus {
     outline: none;
     border-color: var(--color-inputFocus);
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
   }
 
   &::placeholder {
@@ -122,7 +118,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   font-weight: 600;
   font-size: 15px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: opacity 0.12s ease;
   min-width: 100px;
 
   ${props => {
@@ -133,8 +129,6 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
 
         &:hover {
           background: linear-gradient(135deg, #5ba0f2 0%, #458bcd 100%);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
         }
       `;
     } else if (props.variant === 'danger') {
@@ -144,8 +138,6 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
 
         &:hover {
           background: linear-gradient(135deg, #f75c4c 0%, #d04a3b 100%);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
         }
       `;
     } else {
@@ -155,16 +147,10 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
 
         &:hover {
           background: linear-gradient(135deg, #a4b3b6 0%, #8e9b9d 100%);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 8px rgba(127, 140, 141, 0.2);
         }
       `;
     }
   }}
-
-  &:active {
-    transform: translateY(0);
-  }
 `;
 
 interface ApiSettingsDialogProps {

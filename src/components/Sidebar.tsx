@@ -9,23 +9,10 @@ const SidebarContainer = styled.div`
   ${glassSidebar}
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   flex-shrink: 0;
   position: relative;
-
-  &::-webkit-scrollbar {
-    width: 2px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.08);
-    border-radius: 2px;
-  }
+  min-height: 0;
 `;
 
 
@@ -73,10 +60,26 @@ const BrandStudio = styled.span`
 
 const NavSection = styled.div`
   flex: 1;
+  min-height: 0;
   padding: 4px 8px;
   display: flex;
   flex-direction: column;
   gap: 1px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  &::-webkit-scrollbar {
+    width: 2px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 2px;
+  }
 `;
 
 const Divider = styled.div`
@@ -93,7 +96,7 @@ const NavItem = styled.div<{ $active?: boolean; disabled?: boolean }>`
   padding: 8px 10px;
   border-radius: 8px;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.1s ease, background 0.1s ease;
   opacity: ${props => props.disabled ? 0.38 : 1};
   color: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-textSecondary)'};
   background: ${props => props.$active
@@ -113,7 +116,7 @@ const NavItem = styled.div<{ $active?: boolean; disabled?: boolean }>`
     height: ${props => props.$active ? '18px' : '0px'};
     background: var(--color-primary);
     border-radius: 0 2px 2px 0;
-    transition: height 0.18s ease;
+    transition: height 0.1s ease;
   }
 
   &:hover {
@@ -126,9 +129,6 @@ const NavItem = styled.div<{ $active?: boolean; disabled?: boolean }>`
     `}
   }
 
-  &:active {
-    ${props => !props.disabled && 'transform: scale(0.97);'}
-  }
 `;
 
 const NavIcon = styled.div`
@@ -146,6 +146,20 @@ const NavLabel = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: 0.1px;
+`;
+
+const SidebarCopyright = styled.div`
+  flex-shrink: 0;
+  padding: 10px 10px 12px;
+  text-align: center;
+`;
+
+const SidebarCopyrightText = styled.p`
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--color-textSecondary);
+  word-break: break-word;
 `;
 
 type ViewType = 'home' | 'settings' | 'history' | 'about';
@@ -289,6 +303,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
         {bottomItems.map(item => renderNavItem(item))}
       </NavSection>
+      <SidebarCopyright>
+        <SidebarCopyrightText>Powered by Louaq</SidebarCopyrightText>
+      </SidebarCopyright>
     </SidebarContainer>
   );
 };

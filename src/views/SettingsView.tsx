@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import React, { useState, useEffect, useRef } from 'react';
+import styled, { keyframes } from 'styled-components';
 import { ApiConfig, SidebarConfig, SidebarItem } from '../types';
 import MaterialIcon from '../components/MaterialIcon';
 import { DataConfirmDialog, DataAlertDialog } from '../components/DataDialog';
@@ -118,16 +118,6 @@ const ShortcutLineLabel = styled.span`
   color: var(--color-text);
 `;
 
-const UnifiedSettingsFooter = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 16px 18px;
-  border-top: 1px solid var(--color-borderLight);
-  background: color-mix(in srgb, var(--color-text) 1.5%, var(--color-surface));
-`;
-
 const Input = styled.input`
   width: 100%;
   padding: 8px 12px;
@@ -136,13 +126,12 @@ const Input = styled.input`
   background: var(--color-inputBackground);
   font-size: 14px;
   color: var(--color-text);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease;
   box-sizing: border-box;
 
   &:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent);
   }
 
   &::placeholder {
@@ -154,27 +143,6 @@ const Input = styled.input`
     cursor: not-allowed;
     background: color-mix(in srgb, var(--color-text) 4%, var(--color-surface));
   }
-`;
-
-const CheckboxWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-`;
-
-const Checkbox = styled.input`
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-`;
-
-const CheckboxLabel = styled.label`
-  color: var(--color-text);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  user-select: none;
 `;
 
 const Select = styled.select`
@@ -196,7 +164,6 @@ const Select = styled.select`
   &:focus {
     outline: none;
     border-color: var(--color-inputFocus);
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
   }
 
   &:disabled {
@@ -229,66 +196,12 @@ const LoadButton = styled.button`
 
   &:hover:not(:disabled) {
     background: linear-gradient(135deg, #a4b3b6 0%, #8e9b9d 100%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'tertiary' }>`
-  padding: 6px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  min-height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-
-  ${props => {
-    if (props.variant === 'primary') {
-      return `
-        border: 1px solid color-mix(in srgb, var(--color-primary) 85%, black);
-        background: var(--color-primary);
-        color: var(--color-surface);
-
-        &:hover {
-          background: color-mix(in srgb, var(--color-primary) 88%, black);
-        }
-      `;
-    } else if (props.variant === 'tertiary') {
-      return `
-        border: 1px solid color-mix(in srgb, var(--color-warning) 70%, var(--color-text));
-        background: var(--color-warning);
-        color: var(--color-surface);
-
-        &:hover {
-          filter: brightness(0.95);
-        }
-      `;
-    } else {
-      return `
-        border: 1px solid var(--color-border);
-        background: var(--color-surface);
-        color: var(--color-text);
-
-        &:hover {
-          background: color-mix(in srgb, var(--color-text) 4%, var(--color-surface));
-          border-color: var(--color-borderLight);
-        }
-      `;
-    }
-  }}
 
   &:active {
     transform: translateY(0);
@@ -338,13 +251,8 @@ const ShortcutButton = styled.button<{ $isListening?: boolean; $isSet?: boolean 
   }
 
   ${props => props.$isListening && `
-    animation: pulse 1.5s infinite;
-    
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 40%, transparent); }
-      70% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-primary) 0%, transparent); }
-      100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent); }
-    }
+    outline: 2px solid color-mix(in srgb, var(--color-primary) 45%, transparent);
+    outline-offset: 0;
   `}
 `;
 
@@ -398,12 +306,84 @@ const UpdateButton = styled.button`
 
   &:hover {
     background: #5ba0f2;
-    box-shadow: 0 3px 10px rgba(74, 144, 226, 0.25);
   }
 
   &:active {
     transform: translateY(0);
   }
+`;
+
+/** 检查更新块：与「清除缓存」等 DataRow 一致的中性底与底部分隔线 */
+const UpdateCheckSection = styled.div`
+  border-bottom: 1px solid var(--color-borderLight);
+  background: transparent;
+`;
+
+const UpdateCheckRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+`;
+
+const UpdateCheckLabel = styled.span`
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text);
+  line-height: 1.4;
+`;
+
+const updateBtnSpin = keyframes`
+  to {
+    transform: rotate(360deg);
+  }
+`;
+
+const UpdateCheckSpinnerRing = styled.span`
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid color-mix(in srgb, var(--color-text) 12%, transparent);
+  border-top-color: color-mix(in srgb, var(--color-text) 45%, transparent);
+  border-radius: 50%;
+  animation: ${updateBtnSpin} 0.75s linear infinite;
+  flex-shrink: 0;
+`;
+
+/** 与 SmallButton 默认样式一致（白底、浅灰边、深色字） */
+const UpdateCheckActionButton = styled.button<{ $isLoading?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: ${props => (props.$isLoading ? 'wait' : 'pointer')};
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-text) 5%, var(--color-surface));
+  }
+
+  &:disabled {
+    opacity: ${props => (props.$isLoading ? 1 : 0.55)};
+    cursor: ${props => (props.$isLoading ? 'wait' : 'not-allowed')};
+  }
+`;
+
+const UpdateCheckHint = styled.div`
+  padding: 0 18px 12px;
+  font-size: 13px;
+  color: var(--color-textSecondary);
+  line-height: 1.45;
 `;
 
 const DataRow = styled.div`
@@ -540,7 +520,6 @@ const Toggle = styled.label`
       background: var(--color-surface);
       border-radius: 50%;
       transition: transform 0.2s ease;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
     }
   }
 
@@ -641,6 +620,8 @@ interface SettingsViewProps {
   onSaveApi: (config: ApiConfig) => void;
   onSaveShortcuts: (shortcuts: { capture: string; upload: string }) => void;
   onCheckForUpdates?: () => void;
+  /** 主进程正在检查更新时显示按钮内圆形进度，不依赖弹窗 */
+  isCheckingForUpdates?: boolean;
   onSaveSidebarConfig?: (config: SidebarConfig) => void;
   onSaveMinimizeToTray?: (minimizeToTray: boolean) => void;
 }
@@ -653,6 +634,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   onSaveApi,
   onSaveShortcuts,
   onCheckForUpdates,
+  isCheckingForUpdates = false,
   onSaveSidebarConfig,
   onSaveMinimizeToTray
 }) => {
@@ -664,9 +646,11 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     sidebarConfig?.items || getDefaultSidebarConfig().items
   );
   const [minimizeToTrayState, setMinimizeToTrayState] = useState<boolean>(minimizeToTray);
-  
+  const [updateEnvHint, setUpdateEnvHint] = useState<string | null>(null);
+  const apiFormRef = useRef(apiFormData);
+  apiFormRef.current = apiFormData;
+
   // 数据设置相关状态
-  const [simpleBackup, setSimpleBackup] = useState(false);
   const [dataPath, setDataPath] = useState('');
   const [logPath, setLogPath] = useState('');
   const [cacheSize, setCacheSize] = useState('0MB');
@@ -694,36 +678,27 @@ const SettingsView: React.FC<SettingsViewProps> = ({
       setSidebarItems(sidebarConfig.items);
     }
   }, [sidebarConfig]);
-  
+
+  useEffect(() => {
+    setApiFormData(apiConfig);
+  }, [apiConfig.appId, apiConfig.appSecret, apiConfig.endpoint]);
+
+  useEffect(() => {
+    setShortcutFormData(shortcuts);
+  }, [shortcuts.capture, shortcuts.upload]);
+
+  useEffect(() => {
+    setMinimizeToTrayState(minimizeToTray);
+  }, [minimizeToTray]);
+
   // API设置相关函数
   const handleApiChange = (field: keyof ApiConfig, value: string) => {
     setApiFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveAll = () => {
-    onSaveApi(apiFormData);
-
-    const shortcutOk =
-      !!shortcutFormData.capture?.trim() && !!shortcutFormData.upload?.trim();
-    if (shortcutOk) {
-      onSaveShortcuts(shortcutFormData);
-    }
-
-    if (onSaveSidebarConfig) {
-      onSaveSidebarConfig({ items: sidebarItems });
-    }
-
-    if (onSaveMinimizeToTray) {
-      onSaveMinimizeToTray(minimizeToTrayState);
-    }
-
-    void showAlert(
-      shortcutOk ? '保存成功' : '已保存',
-      shortcutOk
-        ? '设置已保存'
-        : '其余项已保存。请为截图与上传设置完整快捷键后再次点击保存。',
-      shortcutOk ? 'success' : 'warning'
-    );
+  /** 输入框失焦时写入配置（避免每键触发主进程与状态栏刷屏） */
+  const handleApiBlur = () => {
+    onSaveApi(apiFormRef.current);
   };
 
   // 快捷键设置相关函数
@@ -775,9 +750,17 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
     if (!e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey && pressedKeys.size > 0) {
       const shortcut = formatShortcut(pressedKeys);
-      
-      if (shortcut && shortcut !== '' && pressedKeys.size > 1) {
-        setShortcutFormData(prev => ({ ...prev, [listeningFor]: shortcut }));
+
+      if (shortcut && shortcut !== '' && pressedKeys.size > 1 && listeningFor) {
+        const field = listeningFor;
+        setShortcutFormData(prev => {
+          const next = { ...prev, [field]: shortcut };
+          const ok = !!(next.capture?.trim() && next.upload?.trim());
+          if (ok) {
+            queueMicrotask(() => onSaveShortcuts(next));
+          }
+          return next;
+        });
         setListeningFor(null);
         setPressedKeys(new Set());
       }
@@ -892,7 +875,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   const handleBackupData = async () => {
     if (!window.electronAPI) return;
     try {
-      const result = await window.electronAPI.backupData(simpleBackup);
+      const result = await window.electronAPI.backupData(false);
       if (result.success) {
         await showAlert(
           '备份成功',
@@ -1062,11 +1045,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
   // 侧边栏配置相关函数
   const handleToggleVisibility = (id: string) => {
-    setSidebarItems(prev => 
-      prev.map(item => 
+    setSidebarItems(prev => {
+      const newItems = prev.map(item =>
         item.id === id ? { ...item, visible: !item.visible } : item
-      )
-    );
+      );
+      onSaveSidebarConfig?.({ items: newItems });
+      return newItems;
+    });
   };
 
   const handleMoveUp = (index: number) => {
@@ -1074,8 +1059,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     setSidebarItems(prev => {
       const newItems = [...prev];
       [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
-      // 重新计算 order
-      return newItems.map((item, idx) => ({ ...item, order: idx }));
+      const ordered = newItems.map((item, idx) => ({ ...item, order: idx }));
+      onSaveSidebarConfig?.({ items: ordered });
+      return ordered;
     });
   };
 
@@ -1084,8 +1070,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     setSidebarItems(prev => {
       const newItems = [...prev];
       [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
-      // 重新计算 order
-      return newItems.map((item, idx) => ({ ...item, order: idx }));
+      const ordered = newItems.map((item, idx) => ({ ...item, order: idx }));
+      onSaveSidebarConfig?.({ items: ordered });
+      return ordered;
     });
   };
 
@@ -1102,6 +1089,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                   type="text"
                   value={apiFormData.appId || ''}
                   onChange={(e) => handleApiChange('appId', e.target.value)}
+                  onBlur={handleApiBlur}
                   placeholder="请输入APP ID"
                   autoComplete="off"
                 />
@@ -1117,6 +1105,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                   type="password"
                   value={apiFormData.appSecret || ''}
                   onChange={(e) => handleApiChange('appSecret', e.target.value)}
+                  onBlur={handleApiBlur}
                   placeholder="请输入APP Secret"
                   autoComplete="off"
                 />
@@ -1188,25 +1177,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
           <DataRow>
             <DataLabel>
-              <DataTitle>精简备份</DataTitle>
-              <DataDescription>
-                备份时跳过备份图片等数据文件，减少空间占用，加快备份速度
-              </DataDescription>
-            </DataLabel>
-            <DataActions>
-              <Toggle>
-                <input
-                  type="checkbox"
-                  checked={simpleBackup}
-                  onChange={(e) => setSimpleBackup(e.target.checked)}
-                />
-                <span></span>
-              </Toggle>
-            </DataActions>
-          </DataRow>
-
-          <DataRow>
-            <DataLabel>
               <DataTitle>最小化到系统托盘</DataTitle>
             </DataLabel>
             <DataActions>
@@ -1214,7 +1184,11 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 <input
                   type="checkbox"
                   checked={minimizeToTrayState}
-                  onChange={(e) => setMinimizeToTrayState(e.target.checked)}
+                  onChange={(e) => {
+                    const v = e.target.checked;
+                    setMinimizeToTrayState(v);
+                    onSaveMinimizeToTray?.(v);
+                  }}
                 />
                 <span></span>
               </Toggle>
@@ -1272,11 +1246,33 @@ const SettingsView: React.FC<SettingsViewProps> = ({
             </DataActions>
           </DataRow>
 
-          <UnifiedSettingsFooter>
-            <Button variant="primary" onClick={() => handleSaveAll()}>
-              保存
-            </Button>
-          </UnifiedSettingsFooter>
+            <UpdateCheckSection>
+              <UpdateCheckRow>
+                <UpdateCheckLabel>检查更新</UpdateCheckLabel>
+                <UpdateCheckActionButton
+                  type="button"
+                  $isLoading={isCheckingForUpdates}
+                  disabled={isCheckingForUpdates}
+                  onClick={() => {
+                    if (!window.electronAPI) {
+                      setUpdateEnvHint('自动更新仅在桌面应用中可用。');
+                      return;
+                    }
+                    if (isCheckingForUpdates) return;
+                    setUpdateEnvHint(null);
+                    onCheckForUpdates?.();
+                  }}
+                >
+                  {isCheckingForUpdates ? (
+                    <UpdateCheckSpinnerRing aria-hidden />
+                  ) : (
+                    <MaterialIcon name="update" size={16} />
+                  )}
+                  检查更新
+                </UpdateCheckActionButton>
+              </UpdateCheckRow>
+              {updateEnvHint ? <UpdateCheckHint>{updateEnvHint}</UpdateCheckHint> : null}
+            </UpdateCheckSection>
         </SettingsPanel>
       </Content>
 

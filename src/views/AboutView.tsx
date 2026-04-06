@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import MaterialIcon from '../components/MaterialIcon';
 import packageJson from '../../package.json';
@@ -84,13 +84,6 @@ const AppDescription = styled.p`
   line-height: 1.5;
 `;
 
-const VersionRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-`;
-
 const VersionBadge = styled.span`
   display: inline-flex;
   align-items: center;
@@ -103,28 +96,11 @@ const VersionBadge = styled.span`
   font-weight: 600;
 `;
 
-const UpdateButton = styled.button`
-  padding: 6px 14px;
-  border: 1px solid var(--color-primary);
-  border-radius: 6px;
-  background: var(--color-surface);
-  color: var(--color-primary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-
-  &:hover {
-    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
-  }
-`;
-
-const UpdateHint = styled.div`
-  width: 100%;
-  margin-top: 2px;
-  font-size: 13px;
-  color: var(--color-textSecondary);
-  line-height: 1.45;
+const VersionRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
 `;
 
 const LinkRow = styled.button`
@@ -192,12 +168,7 @@ const LinkRowStyled = styled(LinkRow)`
   }
 `;
 
-interface AboutViewProps {
-  onCheckForUpdates?: () => void;
-}
-
-const AboutView: React.FC<AboutViewProps> = ({ onCheckForUpdates }) => {
-  const [envHint, setEnvHint] = useState<string | null>(null);
+const AboutView: React.FC = () => {
   const logoSrc = `${process.env.PUBLIC_URL}/logo512.png`;
 
   const handleLink = (url: string) => {
@@ -223,22 +194,6 @@ const AboutView: React.FC<AboutViewProps> = ({ onCheckForUpdates }) => {
               <AppDescription>一款优雅的数学公式识别与编辑工具</AppDescription>
               <VersionRow>
                 <VersionBadge>v{packageJson.version}</VersionBadge>
-                <UpdateButton
-                  type="button"
-                  onClick={() => {
-                    if (!window.electronAPI) {
-                      setEnvHint(
-                        `当前版本 v${packageJson.version}。自动更新仅在桌面应用中可用。`
-                      );
-                      return;
-                    }
-                    setEnvHint(null);
-                    onCheckForUpdates?.();
-                  }}
-                >
-                  检查更新
-                </UpdateButton>
-                {envHint ? <UpdateHint>{envHint}</UpdateHint> : null}
               </VersionRow>
             </AppInfo>
           </HeroSection>
