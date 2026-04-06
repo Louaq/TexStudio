@@ -144,6 +144,11 @@ const VersionChip = styled.span`
   letter-spacing: 0.02em;
 `;
 
+const VersionChipMuted = styled(VersionChip)`
+  color: var(--color-textSecondary);
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+`;
+
 const Message = styled.p`
   margin: 0;
   font-size: 14px;
@@ -340,6 +345,9 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
               </CloseGhost>
             </HeaderRow>
             <Body>
+              {currentVersion ? (
+                <VersionChipMuted>当前版本 v{currentVersion}</VersionChipMuted>
+              ) : null}
               {version ? <VersionChip>新版本 v{version}</VersionChip> : null}
               <Message>
                 检测到可用更新。是否立即下载？下载完成后可随时重启完成安装。

@@ -199,7 +199,7 @@ function App() {
         showIndicator: false,
         status: 'checking',
         version: '',
-        showDialog: false,
+        showDialog: true,
       }));
       setDownloadProgress(0);
     };
@@ -211,16 +211,9 @@ function App() {
         showIndicator: false,
         status: 'available',
         version: info.version,
-        showDialog: prev.showDialog,
+        showDialog: true,
       }));
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: `✨ 发现新版本 ${info.version}，正在自动下载...`
-      }));
-      // 自动开始下载
-      if (window.electronAPI) {
-        window.electronAPI.downloadUpdate();
-      }
+      setAppState(prev => ({ ...prev, statusMessage: null }));
     };
 
     const handleUpdateNotAvailable = (info: any) => {
@@ -228,20 +221,9 @@ function App() {
       setUpdateInfo(prev => ({
         ...prev,
         status: 'no-update',
-        showDialog: prev.showDialog,
+        showDialog: true,
       }));
-      // 在顶部显示已是最新版本的消息
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: '✅ 已是最新版本'
-      }));
-      // 3秒后自动隐藏消息
-      setTimeout(() => {
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: null
-        }));
-      }, 3000);
+      setAppState(prev => ({ ...prev, statusMessage: null }));
     };
 
     const handleUpdateError = (error: string) => {
@@ -251,19 +233,17 @@ function App() {
         showIndicator: false,
         status: 'error',
         version: '',
-        showDialog: prev.status === 'downloading' || prev.status === 'downloaded' ? prev.showDialog : false,
+        showDialog: true,
       }));
       setDownloadProgress(0);
-      // 在顶部显示错误消息
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: `❌ 检查更新失败: ${error}`
+      setAppState(prev => ({
+        ...prev,
+        statusMessage: `❌ 检查更新失败: ${error}`,
       }));
-      // 5秒后自动隐藏消息
       setTimeout(() => {
-        setAppState(prev => ({ 
-          ...prev, 
-          statusMessage: null
+        setAppState(prev => ({
+          ...prev,
+          statusMessage: null,
         }));
       }, 5000);
     };
@@ -277,10 +257,9 @@ function App() {
           ? { ...prev, status: 'downloading' }
           : prev
       );
-      // 更新下载进度消息
-      setAppState(prev => ({ 
-        ...prev, 
-        statusMessage: `📥 正在下载更新... ${percent}%`
+      setAppState(prev => ({
+        ...prev,
+        statusMessage: `📥 正在下载更新... ${percent}%`,
       }));
     };
 
@@ -1066,7 +1045,7 @@ function App() {
     }
 
     setUpdateInfo({
-      showDialog: false,
+      showDialog: true,
       showIndicator: false,
       status: 'checking',
       version: '',
@@ -1099,7 +1078,7 @@ function App() {
       }));
       setUpdateInfo(prev => ({
         ...prev,
-        showDialog: false,
+        showDialog: true,
         status: 'error',
         version: '',
       }));
@@ -1112,7 +1091,7 @@ function App() {
     }
   };
 
-  const handleDownloadUpdate = () => {
+    const handleDownloadUpdate = () => {
     if (!window.electronAPI) return;
     
     try {
@@ -1121,6 +1100,7 @@ function App() {
       // 更新UI状态为“下载中”
       setUpdateInfo(prev => ({
         ...prev,
+        showDialog: true,
         status: 'downloading'
       }));
     } catch (error) {
