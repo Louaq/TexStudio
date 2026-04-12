@@ -6,6 +6,7 @@ import FormData from 'form-data';
 import Store from 'electron-store';
 import { ScreenshotArea } from '../types';
 import { getCurrentTimestamp } from '../utils/api';
+import { THEME_ACCENT_HEX, THEME_ACCENT_SELECTION_FILL } from '../utils/themeAccent';
 import * as crypto from 'crypto';
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
 const officegen = require('officegen');
@@ -1079,8 +1080,8 @@ function createSimpleScreenshotWindow(): void {
     }
     .selection-box {
       position: absolute;
-      border: 2px solid #1E3F66;
-      background: rgba(30, 63, 102, 0.12);
+      border: 2px solid ${THEME_ACCENT_HEX};
+      background: ${THEME_ACCENT_SELECTION_FILL};
       pointer-events: none;
     }
     .info {
