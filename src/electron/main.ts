@@ -1078,8 +1078,15 @@ function createSimpleScreenshotWindow(): void {
       width: 100vw;
       height: 100vh;
     }
-    .selection-box {
+    .selection-root {
       position: absolute;
+      z-index: 1001;
+      box-sizing: border-box;
+      pointer-events: auto;
+    }
+    .selection-face {
+      position: absolute;
+      inset: 0;
       border: 2px solid ${THEME_ACCENT_HEX};
       background: ${THEME_ACCENT_SELECTION_FILL};
       pointer-events: none;
@@ -1095,6 +1102,7 @@ function createSimpleScreenshotWindow(): void {
       border-radius: 5px;
       font-family: Arial, sans-serif;
       z-index: 9999;
+      pointer-events: none;
     }
     .coordinates {
       position: fixed;
@@ -1113,135 +1121,353 @@ function createSimpleScreenshotWindow(): void {
       margin: 0;
       line-height: 1;
     }
+    .selection-confirm-wrap {
+      position: absolute;
+      left: auto;
+      right: 0;
+      top: 100%;
+      bottom: auto;
+      margin-top: 6px;
+      transform: none;
+      z-index: 10002;
+      pointer-events: auto;
+    }
+    .confirm-btn {
+      appearance: none;
+      -webkit-appearance: none;
+      border: 1px solid rgba(0, 0, 0, 0.18);
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: #ffffff;
+      color: #141414;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+    .confirm-btn svg {
+      display: block;
+      width: 14px;
+      height: 14px;
+    }
+    .confirm-btn:hover {
+      background: #f3f3f3;
+    }
+    .confirm-btn:active {
+      background: #e8e8e8;
+    }
   </style>
 </head>
 <body>
-  <div class="info">拖拽选择截图区域 | ESC取消 | 显示器 ${index + 1}</div>
+  <div class="info" id="hint">ESC 取消 | 显示器 ${index + 1}</div>
   <script>
-    // 此窗口对应的显示器信息
-    const displayBounds = {
+    var displayBounds = {
       x: ${display.bounds.x},
       y: ${display.bounds.y},
       width: ${display.bounds.width},
       height: ${display.bounds.height}
     };
-    
-    let isSelecting = false;
-    let startX, startY;
-    let selectionBox = null;
-    let coordinatesBox = null;
-    
-    // 创建坐标信息显示元素
+    var SCREEN_N = ${index + 1};
+    var MIN_SIZE = 11;
+    var EDGE = 6;
+    var mode = 'none';
+    var drawStartX = 0, drawStartY = 0;
+    var selectionRoot = null;
+    var coordinatesBox = null;
+    var resizeDir = '';
+    var moveOffsetX = 0, moveOffsetY = 0;
+    var dragStartX = 0, dragStartY = 0;
+    var rectAtDragStart = null;
+
+    function updateHint(text) {
+      var el = document.getElementById('hint');
+      if (el) el.textContent = text;
+    }
+    function hintDraw() {
+      updateHint('ESC 取消 | 显示器 ' + SCREEN_N);
+    }
+    function hintAdjust() {
+      updateHint('ESC 取消 | 显示器 ' + SCREEN_N);
+    }
+
+    var CONFIRM_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>';
+
+    function attachConfirmButton() {
+      if (!selectionRoot || selectionRoot.querySelector('.selection-confirm-wrap')) return;
+      var wrap = document.createElement('div');
+      wrap.className = 'selection-confirm-wrap';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'confirm-btn';
+      btn.setAttribute('aria-label', '开始识别公式');
+      btn.title = '开始识别公式';
+      btn.innerHTML = CONFIRM_SVG;
+      btn.addEventListener('mousedown', function(ev) {
+        ev.stopPropagation();
+      });
+      btn.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        confirmScreenshot();
+      });
+      wrap.appendChild(btn);
+      selectionRoot.appendChild(wrap);
+    }
+
     function createCoordinatesBox() {
       coordinatesBox = document.createElement('div');
       coordinatesBox.className = 'coordinates';
       document.body.appendChild(coordinatesBox);
       return coordinatesBox;
     }
-    
-    // 更新坐标信息
+
+    function parsePx(el, key) {
+      var v = parseFloat(el.style[key]);
+      return isNaN(v) ? 0 : v;
+    }
+
+    function getBoxRect() {
+      if (!selectionRoot) return null;
+      return {
+        left: parsePx(selectionRoot, 'left'),
+        top: parsePx(selectionRoot, 'top'),
+        width: parsePx(selectionRoot, 'width'),
+        height: parsePx(selectionRoot, 'height')
+      };
+    }
+
+    /** 仅 .selection-face 的几何（不含选框外确认按钮），用于命中与光标 */
+    function getFaceClientRect() {
+      if (!selectionRoot) return null;
+      var face = selectionRoot.querySelector('.selection-face');
+      var b = face ? face.getBoundingClientRect() : selectionRoot.getBoundingClientRect();
+      return { left: b.left, top: b.top, width: b.width, height: b.height };
+    }
+
     function updateCoordinates(left, top, width, height) {
-      if (!coordinatesBox) {
-        coordinatesBox = createCoordinatesBox();
-      }
-      
-      // 计算绝对坐标
-      const absX = left + displayBounds.x;
-      const absY = top + displayBounds.y;
-      
-      coordinatesBox.innerHTML = "X:" + absX + " Y:" + absY + " | W:" + width + " H:" + height;
-      
-      // 信息框放在截图框上方
-      const infoHeight = 22; // 估计信息框高度
+      if (!coordinatesBox) createCoordinatesBox();
+      var absX = left + displayBounds.x;
+      var absY = top + displayBounds.y;
+      coordinatesBox.innerHTML = 'X:' + absX + ' Y:' + absY + ' | W:' + width + ' H:' + height;
+      var infoHeight = 22;
       coordinatesBox.style.top = (top - infoHeight) + 'px';
       coordinatesBox.style.left = left + 'px';
       coordinatesBox.style.right = 'auto';
-      
-      // 如果太靠近顶部，改为放在截图框内部顶部
-      if (top < infoHeight + 5) {
-        coordinatesBox.style.top = top + 'px';
-      }
+      if (top < infoHeight + 5) coordinatesBox.style.top = top + 'px';
     }
-    
-    document.addEventListener('mousedown', (e) => {
-      isSelecting = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      
-      if (selectionBox) selectionBox.remove();
-      if (coordinatesBox) coordinatesBox.remove();
-      
-      selectionBox = document.createElement('div');
-      selectionBox.className = 'selection-box';
-      selectionBox.style.left = startX + 'px';
-      selectionBox.style.top = startY + 'px';
-      document.body.appendChild(selectionBox);
-      
-      e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-      if (!isSelecting || !selectionBox) return;
-      
-      const left = Math.min(startX, e.clientX);
-      const top = Math.min(startY, e.clientY);
-      const width = Math.abs(e.clientX - startX);
-      const height = Math.abs(e.clientY - startY);
-      
-      selectionBox.style.left = left + 'px';
-      selectionBox.style.top = top + 'px';
-      selectionBox.style.width = width + 'px';
-      selectionBox.style.height = height + 'px';
-      
-      // 更新坐标信息显示
-      updateCoordinates(left, top, width, height);
-    });
-    
-    document.addEventListener('mouseup', async (e) => {
-      if (!isSelecting || !selectionBox) return;
-      
-      const left = Math.min(startX, e.clientX);
-      const top = Math.min(startY, e.clientY);
-      const width = Math.abs(e.clientX - startX);
-      const height = Math.abs(e.clientY - startY);
-      
-      // 清理选择框和坐标信息框
-      if (selectionBox) {
-        selectionBox.remove();
-        selectionBox = null;
+
+    function setBoxRectDraw(l, t, w, h) {
+      if (!selectionRoot) return;
+      var vw = window.innerWidth, vh = window.innerHeight;
+      w = Math.max(0, w);
+      h = Math.max(0, h);
+      l = Math.max(0, Math.min(l, vw - w));
+      t = Math.max(0, Math.min(t, vh - h));
+      selectionRoot.style.left = l + 'px';
+      selectionRoot.style.top = t + 'px';
+      selectionRoot.style.width = w + 'px';
+      selectionRoot.style.height = h + 'px';
+      updateCoordinates(l, t, w, h);
+    }
+
+    function setBoxRect(l, t, w, h) {
+      if (!selectionRoot) return;
+      var vw = window.innerWidth, vh = window.innerHeight;
+      w = Math.max(MIN_SIZE, w);
+      h = Math.max(MIN_SIZE, h);
+      l = Math.max(0, Math.min(l, vw - w));
+      t = Math.max(0, Math.min(t, vh - h));
+      selectionRoot.style.left = l + 'px';
+      selectionRoot.style.top = t + 'px';
+      selectionRoot.style.width = w + 'px';
+      selectionRoot.style.height = h + 'px';
+      updateCoordinates(l, t, w, h);
+    }
+
+    function removeSelection() {
+      if (selectionRoot) {
+        selectionRoot.remove();
+        selectionRoot = null;
       }
       if (coordinatesBox) {
         coordinatesBox.remove();
         coordinatesBox = null;
       }
-      isSelecting = false;
-      
-      if (width > 10 && height > 10) {
-        // 转换为绝对屏幕坐标
-        const absoluteArea = {
-          x: left + displayBounds.x,
-          y: top + displayBounds.y,
-          width: width,
-          height: height
-        };
-        
-        try {
-          await window.screenshotAPI.takeSimpleScreenshot(absoluteArea);
-        } catch (error) {
-          // 截图失败处理
-        }
+      mode = 'none';
+      document.body.style.cursor = 'crosshair';
+      hintDraw();
+    }
+
+    function hitTestResize(clientX, clientY, r) {
+      var relX = clientX - r.left;
+      var relY = clientY - r.top;
+      if (relX < 0 || relY < 0 || relX > r.width || relY > r.height) return '';
+      var dir = '';
+      if (relY < EDGE) dir += 'n';
+      else if (relY > r.height - EDGE) dir += 's';
+      if (relX < EDGE) dir += 'w';
+      else if (relX > r.width - EDGE) dir += 'e';
+      return dir;
+    }
+
+    function beginDraw(clientX, clientY) {
+      removeSelection();
+      mode = 'draw';
+      drawStartX = clientX;
+      drawStartY = clientY;
+      selectionRoot = document.createElement('div');
+      selectionRoot.className = 'selection-root';
+      selectionRoot.style.left = drawStartX + 'px';
+      selectionRoot.style.top = drawStartY + 'px';
+      selectionRoot.style.width = '0px';
+      selectionRoot.style.height = '0px';
+      var face = document.createElement('div');
+      face.className = 'selection-face';
+      selectionRoot.appendChild(face);
+      document.body.appendChild(selectionRoot);
+      createCoordinatesBox();
+    }
+
+    document.addEventListener('mousedown', function(e) {
+      if (e.button !== 0) return;
+      if (e.target && e.target.closest && e.target.closest('.selection-confirm-wrap')) {
+        return;
       }
-      
-      await window.screenshotAPI.closeScreenshotWindow();
+
+      if (mode === 'move' || mode === 'resize') return;
+
+      if (mode === 'adjust') {
+        var mx = e.clientX, my = e.clientY;
+        var r = getFaceClientRect();
+        if (!r) return;
+        var inside = mx >= r.left && mx <= r.left + r.width && my >= r.top && my <= r.top + r.height;
+        if (!inside) {
+          return;
+        }
+        var dir = hitTestResize(mx, my, r);
+        dragStartX = mx;
+        dragStartY = my;
+        rectAtDragStart = { left: r.left, top: r.top, width: r.width, height: r.height };
+        if (dir) {
+          mode = 'resize';
+          resizeDir = dir;
+        } else {
+          mode = 'move';
+          moveOffsetX = mx - r.left;
+          moveOffsetY = my - r.top;
+        }
+        e.preventDefault();
+        return;
+      }
+
+      if (mode === 'none') {
+        beginDraw(e.clientX, e.clientY);
+        e.preventDefault();
+      }
     });
-    
-    document.addEventListener('keydown', (e) => {
+
+    document.addEventListener('mousemove', function(e) {
+      if (mode === 'draw' && selectionRoot) {
+        var left = Math.min(drawStartX, e.clientX);
+        var top = Math.min(drawStartY, e.clientY);
+        var width = Math.abs(e.clientX - drawStartX);
+        var height = Math.abs(e.clientY - drawStartY);
+        setBoxRectDraw(left, top, width, height);
+        return;
+      }
+      if (mode === 'move' && selectionRoot && rectAtDragStart) {
+        setBoxRect(e.clientX - moveOffsetX, e.clientY - moveOffsetY, rectAtDragStart.width, rectAtDragStart.height);
+        return;
+      }
+      if (mode === 'resize' && selectionRoot && rectAtDragStart) {
+        var dx = e.clientX - dragStartX;
+        var dy = e.clientY - dragStartY;
+        var L = rectAtDragStart.left, T = rectAtDragStart.top, W = rectAtDragStart.width, H = rectAtDragStart.height;
+        var nL = L, nT = T, nW = W, nH = H;
+        if (resizeDir.indexOf('w') >= 0) {
+          nL = L + dx;
+          nW = W - dx;
+        }
+        if (resizeDir.indexOf('e') >= 0) nW = W + dx;
+        if (resizeDir.indexOf('n') >= 0) {
+          nT = T + dy;
+          nH = H - dy;
+        }
+        if (resizeDir.indexOf('s') >= 0) nH = H + dy;
+        if (nW < MIN_SIZE) {
+          if (resizeDir.indexOf('w') >= 0) nL = L + W - MIN_SIZE;
+          nW = MIN_SIZE;
+        }
+        if (nH < MIN_SIZE) {
+          if (resizeDir.indexOf('n') >= 0) nT = T + H - MIN_SIZE;
+          nH = MIN_SIZE;
+        }
+        setBoxRect(nL, nT, nW, nH);
+        return;
+      }
+      if (mode === 'adjust' && selectionRoot) {
+        if (e.target && e.target.closest && e.target.closest('.selection-confirm-wrap')) {
+          document.body.style.cursor = 'pointer';
+          return;
+        }
+        var br = getFaceClientRect();
+        if (!br) return;
+        var d = hitTestResize(e.clientX, e.clientY, br);
+        var c = 'crosshair';
+        if (d === 'n' || d === 's') c = 'ns-resize';
+        else if (d === 'e' || d === 'w') c = 'ew-resize';
+        else if (d === 'nw' || d === 'se') c = 'nwse-resize';
+        else if (d === 'ne' || d === 'sw') c = 'nesw-resize';
+        else if (e.clientX >= br.left && e.clientX <= br.left + br.width && e.clientY >= br.top && e.clientY <= br.top + br.height) c = 'move';
+        else c = 'default';
+        document.body.style.cursor = c;
+      }
+    });
+
+    document.addEventListener('mouseup', function(e) {
+      if (e.button !== 0) return;
+      if (mode === 'draw') {
+        var r = getBoxRect();
+        if (!r || r.width <= MIN_SIZE || r.height <= MIN_SIZE) {
+          removeSelection();
+          return;
+        }
+        mode = 'adjust';
+        hintAdjust();
+        attachConfirmButton();
+        return;
+      }
+      if (mode === 'move' || mode === 'resize') {
+        mode = 'adjust';
+        rectAtDragStart = null;
+        resizeDir = '';
+      }
+    });
+
+    async function confirmScreenshot() {
+      if (mode !== 'adjust') return;
+      var r = getBoxRect();
+      if (!r || r.width <= MIN_SIZE || r.height <= MIN_SIZE) return;
+      var absoluteArea = {
+        x: r.left + displayBounds.x,
+        y: r.top + displayBounds.y,
+        width: r.width,
+        height: r.height
+      };
+      try {
+        await window.screenshotAPI.takeSimpleScreenshot(absoluteArea);
+      } catch (err) {}
+      await window.screenshotAPI.closeScreenshotWindow();
+    }
+
+    document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         try {
           window.screenshotAPI.closeScreenshotWindow();
-        } catch (error) {
-          // 关闭窗口错误处理
-        }
+        } catch (err) {}
       }
     });
   </script>
