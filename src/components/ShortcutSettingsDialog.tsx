@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { electronShortcutFromKeydown } from '../utils/keyboardShortcut';
 import styled from 'styled-components';
 import MaterialIcon from './MaterialIcon';
 
@@ -233,7 +234,6 @@ const ShortcutSettingsDialog: React.FC<ShortcutSettingsDialogProps> = ({
   const [formData, setFormData] = useState(shortcuts);
   const [isDragging, setIsDragging] = useState(false);
   const [listeningFor, setListeningFor] = useState<'capture' | 'upload' | null>(null);
-  const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
   const [showSuccess, setShowSuccess] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -247,100 +247,37 @@ const ShortcutSettingsDialog: React.FC<ShortcutSettingsDialogProps> = ({
     }, 2000);
   };
 
-  // 将按键转换为Electron格式
-  const formatShortcut = (keys: Set<string>): string => {
-    const modifiers: string[] = [];
-    const regularKeys: string[] = [];
-
-    Array.from(keys).forEach(key => {
-      switch (key.toLowerCase()) {
-        case 'control':
-        case 'ctrl':
-          modifiers.push('Ctrl');
-          break;
-        case 'alt':
-          modifiers.push('Alt');
-          break;
-        case 'shift':
-          modifiers.push('Shift');
-          break;
-        case 'meta':
-        case 'cmd':
-          modifiers.push('Cmd');
-          break;
-        default:
-          if (key.length === 1) {
-            regularKeys.push(key.toUpperCase());
-          } else {
-            // 处理功能键
-            regularKeys.push(key);
-          }
-          break;
-      }
-    });
-
-    // 按照 Electron 的格式组合快捷键
-    return [...modifiers, ...regularKeys].join('+');
-  };
-
-  // 处理按键按下
-  const handleKeyDown = (e: KeyboardEvent) => {
+  const handleShortcutKeyDown = (e: KeyboardEvent) => {
     if (!listeningFor) return;
-
     e.preventDefault();
     e.stopPropagation();
 
-    const key = e.key;
-    setPressedKeys(prev => new Set([...Array.from(prev), key]));
+    const shortcut = electronShortcutFromKeydown(e);
+    if (!shortcut) return;
+
+    setFormData(prev => ({ ...prev, [listeningFor]: shortcut }));
+    setListeningFor(null);
   };
 
-  // 处理按键释放
-  const handleKeyUp = (e: KeyboardEvent) => {
-    if (!listeningFor) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    // 如果所有修饰键都释放了，并且有实际的按键被按下，就保存快捷键
-    if (!e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey && pressedKeys.size > 0) {
-      const shortcut = formatShortcut(pressedKeys);
-      
-      if (shortcut && shortcut !== '' && pressedKeys.size > 1) { // 至少需要一个修饰键 + 一个普通键
-        setFormData(prev => ({ ...prev, [listeningFor]: shortcut }));
-        setListeningFor(null);
-        setPressedKeys(new Set());
-      }
-    }
-  };
-
-  // 监听键盘事件
   useEffect(() => {
     if (listeningFor) {
-      document.addEventListener('keydown', handleKeyDown, true);
-      document.addEventListener('keyup', handleKeyUp, true);
-      
+      document.addEventListener('keydown', handleShortcutKeyDown, true);
       return () => {
-        document.removeEventListener('keydown', handleKeyDown, true);
-        document.removeEventListener('keyup', handleKeyUp, true);
+        document.removeEventListener('keydown', handleShortcutKeyDown, true);
       };
     }
-  }, [listeningFor, pressedKeys]);
+  }, [listeningFor]);
 
   // 开始监听快捷键
   const startListening = (field: 'capture' | 'upload') => {
     setListeningFor(field);
-    setPressedKeys(new Set());
-    
-    // 聚焦到对话框以确保能接收键盘事件
     if (dialogRef.current) {
       dialogRef.current.focus();
     }
   };
 
-  // 停止监听
   const stopListening = () => {
     setListeningFor(null);
-    setPressedKeys(new Set());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -394,9 +331,6 @@ const ShortcutSettingsDialog: React.FC<ShortcutSettingsDialogProps> = ({
   // 按键显示文本
   const getShortcutDisplay = (field: 'capture' | 'upload') => {
     if (listeningFor === field) {
-      if (pressedKeys.size > 0) {
-        return formatShortcut(pressedKeys);
-      }
       return '按住快捷键...';
     }
     return formData[field] || '点击设置快捷键';
@@ -424,7 +358,7 @@ const ShortcutSettingsDialog: React.FC<ShortcutSettingsDialogProps> = ({
           </SuccessMessage>
         ) : (
           <Description>
-            点击下方按钮，然后按住您想要设置的快捷键组合（不要设置为Alt+其他键）。
+            点击下方按钮，再按下目标组合键（截图默认 Alt+A；请避免与系统或其它软件冲突）。
           </Description>
         )}
 

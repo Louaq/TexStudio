@@ -4,7 +4,7 @@ import ImageDisplay from '../components/ImageDisplay';
 import LatexEditor from '../components/LatexEditor';
 import FormulaPreview from '../components/FormulaPreview';
 import { ApiConfig } from '../types';
-import { glassCard, glassPageHeader, glassViewRoot } from '../theme/themes';
+import { glassPageHeader, glassViewRoot } from '../theme/themes';
 
 const HomeContainer = styled.div`
   flex: 1;
@@ -58,6 +58,7 @@ const BottomSection = styled.div`
   overflow: hidden;
 `;
 
+/** 仅铺底与圆角，不画外框；每块区域的唯一描边由内层（上传虚线框 / 编辑器 / 预览区）承担 */
 const PanelCard = styled.div`
   flex: 1;
   display: flex;
@@ -65,7 +66,8 @@ const PanelCard = styled.div`
   border-radius: 12px;
   padding: 12px;
   overflow: hidden;
-  ${glassCard}
+  background: var(--glass-bg-card);
+  border: none;
 `;
 
 interface HomeViewProps {

@@ -44,48 +44,44 @@ const formalTheme: Theme = {
   id: THEME_ID,
   name: '青花',
   colors: {
-    /** 经典钴蓝 */
-    primary: '#1E3F66',
-    primaryLight: '#275983',
-    primaryDark: '#152d4a',
+    primary: '#5E81F4',
+    primaryLight: '#4C6FED',
+    primaryDark: '#3B5DE6',
 
-    /** 瓷白底 F2F7FF / F7FBFF */
-    background: '#F2F7FF',
-    backgroundPattern: 'rgba(30, 63, 102, 0.045)',
+    background: '#F5F7FA',
+    backgroundPattern: 'rgba(94, 129, 244, 0.05)',
 
-    surface: '#F7FBFF',
-    surfaceLight: '#E6F0FF',
+    surface: '#FFFFFF',
+    surfaceLight: '#EEF2F7',
 
-    /** 深钴蓝文字 #102349 */
-    text: '#102349',
-    textSecondary: 'rgba(16, 35, 73, 0.62)',
-    textMuted: 'rgba(16, 35, 73, 0.42)',
-    /** 次要点缀：略偏灰蓝，与钴蓝协调 */
-    accentSecondary: '#5c7a9e',
+    text: '#000000',
+    textSecondary: '#5F6C84',
+    textMuted: '#8A94A6',
+    accentSecondary: '#7C8594',
 
-    border: 'rgba(16, 35, 73, 0.12)',
-    borderLight: 'rgba(16, 35, 73, 0.06)',
+    border: '#D8E0EB',
+    borderLight: 'rgba(216, 224, 235, 0.55)',
 
-    buttonGradientStart: '#1E3F66',
-    buttonGradientEnd: '#152d4a',
-    buttonHoverStart: '#275983',
-    buttonHoverEnd: '#1E3F66',
+    buttonGradientStart: '#5E81F4',
+    buttonGradientEnd: '#3B5DE6',
+    buttonHoverStart: '#4C6FED',
+    buttonHoverEnd: '#5E81F4',
 
-    inputBackground: '#F7FBFF',
-    inputBorder: 'rgba(16, 35, 73, 0.14)',
-    inputFocus: '#1E3F66',
+    inputBackground: 'rgba(255, 255, 255, 0.96)',
+    inputBorder: '#D8E0EB',
+    inputFocus: '#5E81F4',
 
     success: '#0d9488',
     error: '#be123c',
     warning: '#c2410c',
-    info: '#1E3F66',
+    info: '#5E81F4',
 
-    menuBackground: '#E6F0FF',
-    menuBorder: 'rgba(16, 35, 73, 0.10)',
-    menuHover: '#1E3F66',
+    menuBackground: '#FFFFFF',
+    menuBorder: 'rgba(216, 224, 235, 0.85)',
+    menuHover: '#5E81F4',
 
-    dialogBackground: '#F2F7FF',
-    dialogOverlay: 'rgba(16, 35, 73, 0.45)',
+    dialogBackground: '#FFFFFF',
+    dialogOverlay: 'rgba(26, 28, 35, 0.45)',
   },
 };
 
@@ -108,19 +104,20 @@ export const applyTheme = (theme: Theme) => {
     root.style.setProperty(`--color-${key}`, value);
   });
 
-  const appBg = `radial-gradient(ellipse 95% 75% at 0% -8%, rgba(30, 63, 102, 0.14), transparent 52%),
-    radial-gradient(ellipse 80% 60% at 100% 108%, rgba(185, 215, 255, 0.35), transparent 48%),
-    linear-gradient(168deg, #D4E5FF 0%, ${theme.colors.background} 45%, #E6F0FF 100%)`;
+  const appBg = `radial-gradient(ellipse 95% 75% at 0% -8%, rgba(94, 129, 244, 0.08), transparent 52%),
+    radial-gradient(ellipse 80% 60% at 100% 108%, rgba(94, 129, 244, 0.05), transparent 48%),
+    linear-gradient(168deg, #EEF2FA 0%, ${theme.colors.background} 50%, #F2F5F9 100%)`;
   root.style.setProperty('--app-bg-gradient', appBg);
 
-  root.style.setProperty('--glass-bg', 'rgba(247, 251, 255, 0.52)');
-  root.style.setProperty('--glass-bg-strong', 'rgba(255, 255, 255, 0.78)');
-  root.style.setProperty('--glass-bg-elevated', 'rgba(230, 240, 255, 0.68)');
-  root.style.setProperty('--glass-bg-card', 'rgba(247, 251, 255, 0.78)');
-  root.style.setProperty('--glass-border-soft', 'rgba(16, 35, 73, 0.08)');
-  root.style.setProperty('--glass-edge', 'rgba(16, 35, 73, 0.10)');
+  root.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.45)');
+  root.style.setProperty('--glass-bg-strong', 'rgba(255, 255, 255, 0.94)');
+  root.style.setProperty('--glass-bg-elevated', 'rgba(255, 255, 255, 0.88)');
+  root.style.setProperty('--glass-bg-card', 'rgba(255, 255, 255, 0.96)');
+  root.style.setProperty('--glass-border-soft', 'rgba(26, 28, 35, 0.06)');
+  root.style.setProperty('--glass-edge', 'rgba(216, 224, 235, 0.95)');
 
   document.body.style.background = appBg;
+  document.body.setAttribute('theme-mode', 'light');
 
   if (window.electronAPI && window.electronAPI.updateWindowTheme) {
     const backgroundColor = theme.colors.background;
@@ -141,47 +138,47 @@ export const applyTheme = (theme: Theme) => {
 
 /** 上传区等局部：纯色底，无 backdrop-filter */
 export const glassBackdrop = css`
-  background: var(--glass-bg-card, rgba(247, 251, 255, 0.96));
+  background: var(--glass-bg-card, rgba(255, 255, 255, 0.96));
 `;
 
-/** 顶栏（青花：E6F0FF 系） */
+/** 顶栏（与图1 白底侧栏一致） */
 export const glassTitleBar = css`
-  background: rgba(230, 240, 255, 0.88);
-  border-bottom: 1px solid rgba(16, 35, 73, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid rgba(216, 224, 235, 0.9);
   transform: translateZ(0);
 `;
 
-/** 侧栏 */
+/** 侧栏：纯白 + 细线分割 */
 export const glassSidebar = css`
-  background: rgba(230, 240, 255, 0.48);
+  background: #ffffff;
   border-right: 1px solid var(--glass-edge);
   transform: translateZ(0);
 `;
 
 /** 主内容区 */
 export const glassMain = css`
-  background: var(--glass-bg, rgba(247, 251, 255, 0.4));
+  background: var(--glass-bg, rgba(245, 247, 250, 0.35));
   border-left: 1px solid transparent;
   transform: translateZ(0);
 `;
 
 /** 卡片 / 面板 */
 export const glassCard = css`
-  background: var(--glass-bg-card, rgba(247, 251, 255, 0.78));
+  background: var(--glass-bg-card, rgba(255, 255, 255, 0.96));
   border: 1px solid var(--glass-edge);
   transform: translateZ(0);
 `;
 
 /** 各页顶栏 */
 export const glassPageHeader = css`
-  background: rgba(230, 240, 255, 0.68);
-  border-bottom: 1px solid rgba(16, 35, 73, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid rgba(216, 224, 235, 0.8);
   transform: translateZ(0);
 `;
 
 /** 底栏 / 分页条 */
 export const glassFooterBar = css`
-  background: rgba(247, 251, 255, 0.55);
+  background: rgba(255, 255, 255, 0.72);
   border-top: 1px solid var(--glass-edge);
   transform: translateZ(0);
 `;

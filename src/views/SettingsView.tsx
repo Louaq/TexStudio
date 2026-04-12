@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled from 'styled-components';
 import { ApiConfig, SidebarConfig, SidebarItem } from '../types';
 import MaterialIcon from '../components/MaterialIcon';
 import { DataConfirmDialog, DataAlertDialog } from '../components/DataDialog';
 import { getDefaultSidebarConfig } from '../components/Sidebar';
 import { glassCard, glassViewRoot } from '../theme/themes';
+import { electronShortcutFromKeydown } from '../utils/keyboardShortcut';
 
 const SettingsContainer = styled.div`
   flex: 1;
@@ -334,23 +335,6 @@ const UpdateCheckLabel = styled.span`
   line-height: 1.4;
 `;
 
-const updateBtnSpin = keyframes`
-  to {
-    transform: rotate(360deg);
-  }
-`;
-
-const UpdateCheckSpinnerRing = styled.span`
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid color-mix(in srgb, var(--color-text) 12%, transparent);
-  border-top-color: color-mix(in srgb, var(--color-text) 45%, transparent);
-  border-radius: 50%;
-  animation: ${updateBtnSpin} 0.75s linear infinite;
-  flex-shrink: 0;
-`;
-
 /** 与 SmallButton 默认样式一致（白底、浅灰边、深色字） */
 const UpdateCheckActionButton = styled.button<{ $isLoading?: boolean }>`
   display: inline-flex;
@@ -641,7 +625,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   const [apiFormData, setApiFormData] = useState<ApiConfig>(apiConfig);
   const [shortcutFormData, setShortcutFormData] = useState(shortcuts);
   const [listeningFor, setListeningFor] = useState<'capture' | 'upload' | null>(null);
-  const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
   const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>(
     sidebarConfig?.items || getDefaultSidebarConfig().items
   );
@@ -701,99 +684,46 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     onSaveApi(apiFormRef.current);
   };
 
-  // 快捷键设置相关函数
-  const formatShortcut = (keys: Set<string>): string => {
-    const modifiers: string[] = [];
-    const regularKeys: string[] = [];
+  // 快捷键：用 keydown 上的修饰键标志生成字符串，避免 Windows 下误记为 Ctrl+A
+  const handleShortcutKeyDown = (e: KeyboardEvent) => {
+    if (!listeningFor) return;
+    e.preventDefault();
+    e.stopPropagation();
 
-    Array.from(keys).forEach(key => {
-      switch (key.toLowerCase()) {
-        case 'control':
-        case 'ctrl':
-          modifiers.push('Ctrl');
-          break;
-        case 'alt':
-          modifiers.push('Alt');
-          break;
-        case 'shift':
-          modifiers.push('Shift');
-          break;
-        case 'meta':
-        case 'cmd':
-          modifiers.push('Cmd');
-          break;
-        default:
-          if (key.length === 1) {
-            regularKeys.push(key.toUpperCase());
-          } else {
-            regularKeys.push(key);
-          }
-          break;
+    const shortcut = electronShortcutFromKeydown(e);
+    if (!shortcut) return;
+
+    const field = listeningFor;
+    setShortcutFormData(prev => {
+      const next = { ...prev, [field]: shortcut };
+      const ok = !!(next.capture?.trim() && next.upload?.trim());
+      if (ok) {
+        queueMicrotask(() => onSaveShortcuts(next));
       }
+      return next;
     });
-
-    return [...modifiers, ...regularKeys].join('+');
-  };
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (!listeningFor) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const key = e.key;
-    setPressedKeys(prev => new Set([...Array.from(prev), key]));
-  };
-
-  const handleKeyUp = (e: KeyboardEvent) => {
-    if (!listeningFor) return;
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey && pressedKeys.size > 0) {
-      const shortcut = formatShortcut(pressedKeys);
-
-      if (shortcut && shortcut !== '' && pressedKeys.size > 1 && listeningFor) {
-        const field = listeningFor;
-        setShortcutFormData(prev => {
-          const next = { ...prev, [field]: shortcut };
-          const ok = !!(next.capture?.trim() && next.upload?.trim());
-          if (ok) {
-            queueMicrotask(() => onSaveShortcuts(next));
-          }
-          return next;
-        });
-        setListeningFor(null);
-        setPressedKeys(new Set());
-      }
-    }
+    setListeningFor(null);
   };
 
   React.useEffect(() => {
     if (listeningFor) {
-      document.addEventListener('keydown', handleKeyDown, true);
-      document.addEventListener('keyup', handleKeyUp, true);
-      
+      document.addEventListener('keydown', handleShortcutKeyDown, true);
       return () => {
-        document.removeEventListener('keydown', handleKeyDown, true);
-        document.removeEventListener('keyup', handleKeyUp, true);
+        document.removeEventListener('keydown', handleShortcutKeyDown, true);
       };
     }
-  }, [listeningFor, pressedKeys]);
+  }, [listeningFor]);
 
   const startListening = (field: 'capture' | 'upload') => {
     setListeningFor(field);
-    setPressedKeys(new Set());
   };
 
   const stopListening = () => {
     setListeningFor(null);
-    setPressedKeys(new Set());
   };
 
   const getShortcutDisplay = (field: 'capture' | 'upload') => {
     if (listeningFor === field) {
-      if (pressedKeys.size > 0) {
-        return formatShortcut(pressedKeys);
-      }
       return '按住快捷键...';
     }
     return shortcutFormData[field] || '点击设置快捷键';
@@ -1263,11 +1193,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     onCheckForUpdates?.();
                   }}
                 >
-                  {isCheckingForUpdates ? (
-                    <UpdateCheckSpinnerRing aria-hidden />
-                  ) : (
+                  {!isCheckingForUpdates ? (
                     <MaterialIcon name="update" size={16} />
-                  )}
+                  ) : null}
                   检查更新
                 </UpdateCheckActionButton>
               </UpdateCheckRow>

@@ -25,7 +25,7 @@ const AppContainer = styled.div`
   height: 100%;
   width: 100%;
   background: var(--app-bg-gradient, var(--color-background));
-  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-sans), "Segoe UI", "Microsoft YaHei", sans-serif;
   color: var(--color-text);
   overflow: hidden;
 `;
@@ -150,7 +150,7 @@ function App() {
               endpoint: 'https://server.simpletex.cn/api/latex_ocr',
             },
             shortcuts: {
-              capture: 'Alt+C',
+              capture: 'Alt+A',
               upload: 'Alt+U'
             }
           };

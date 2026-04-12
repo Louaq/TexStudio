@@ -88,15 +88,6 @@ const IconBadge = styled.div<{ $variant: 'checking' | 'success' | 'info' | 'erro
   }}
 `;
 
-const SpinnerRing = styled.div`
-  width: 22px;
-  height: 22px;
-  border: 2px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: ${spin} 0.7s linear infinite;
-`;
-
 const Title = styled.h2`
   margin: 0;
   font-size: 17px;
@@ -193,9 +184,72 @@ const Btn = styled.button<{ $primary?: boolean }>`
   }
 `;
 
-const CircleProgressContainer = styled.div`
-  width: 100px;
-  height: 100px;
+const LOGO_SRC = `${process.env.PUBLIC_URL}/logo512.png`;
+
+/** 检查中：Logo 居中，外圈旋转弧 */
+const CheckingLogoWrap = styled.div`
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+`;
+
+const CheckingLogoSvg = styled.svg`
+  position: absolute;
+  inset: 0;
+  width: 44px;
+  height: 44px;
+`;
+
+const CheckingTrackCircle = styled.circle`
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  stroke-width: 2.5;
+`;
+
+const CheckingSpinGroup = styled.g`
+  animation: ${spin} 0.9s linear infinite;
+  transform-origin: 0px 0px;
+`;
+
+const CheckingArcCircle = styled.circle`
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2.75;
+  stroke-linecap: round;
+  stroke-dasharray: 30 92;
+`;
+
+const CheckingLogoImg = styled.img`
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  object-fit: contain;
+  z-index: 1;
+  pointer-events: none;
+`;
+
+const CheckingLogoRing: React.FC = () => (
+  <CheckingLogoWrap>
+    <CheckingLogoSvg viewBox="0 0 44 44" aria-hidden>
+      <CheckingTrackCircle cx="22" cy="22" r="19" />
+      <g transform="translate(22 22)">
+        <CheckingSpinGroup>
+          <CheckingArcCircle cx="0" cy="0" r="19" transform="rotate(-90)" />
+        </CheckingSpinGroup>
+      </g>
+    </CheckingLogoSvg>
+    <CheckingLogoImg src={LOGO_SRC} alt="" />
+  </CheckingLogoWrap>
+);
+
+const LogoProgressOuter = styled.div`
+  width: 112px;
+  height: 112px;
   position: relative;
   margin: 8px auto 14px;
   display: flex;
@@ -203,58 +257,79 @@ const CircleProgressContainer = styled.div`
   justify-content: center;
 `;
 
-const CircleProgressSVG = styled.svg`
-  width: 100px;
-  height: 100px;
-  transform: rotate(-90deg);
+const LogoProgressSvg = styled.svg`
   position: absolute;
+  inset: 0;
+  width: 112px;
+  height: 112px;
+  transform: rotate(-90deg);
 `;
 
-const CircleProgressBg = styled.circle`
+const LogoProgressBg = styled.circle`
   fill: none;
   stroke: var(--color-borderLight);
   stroke-width: 5;
 `;
 
-const CircleProgressBar = styled.circle<{ progress: number; circumference: number }>`
+const LogoProgressBar = styled.circle<{ $dashoffset: number; $circumference: number }>`
   fill: none;
   stroke: var(--color-primary);
   stroke-width: 5;
   stroke-linecap: round;
-  stroke-dasharray: ${props => props.circumference};
-  stroke-dashoffset: ${props =>
-    props.circumference - (props.progress / 100) * props.circumference};
+  stroke-dasharray: ${props => props.$circumference};
+  stroke-dashoffset: ${props => props.$dashoffset};
   transition: stroke-dashoffset 0.25s ease;
 `;
 
-const ProgressText = styled.div`
+const LogoProgressCenter = styled.div`
   position: relative;
-  font-size: 19px;
-  font-weight: 600;
-  color: var(--color-text);
   z-index: 1;
-  letter-spacing: -0.02em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  pointer-events: none;
 `;
 
-const CircleProgress: React.FC<{ progress: number }> = ({ progress }) => {
-  const radius = 44;
+const LogoProgressImg = styled.img`
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: contain;
+`;
+
+const LogoProgressPercent = styled.div`
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+  line-height: 1;
+`;
+
+const LogoCircularProgress: React.FC<{ progress: number }> = ({ progress }) => {
+  const radius = 48;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.max(0, Math.min(100, progress));
+  const dashOffset = circumference - (clamped / 100) * circumference;
 
   return (
-    <CircleProgressContainer>
-      <CircleProgressSVG viewBox="0 0 100 100">
-        <CircleProgressBg cx="50" cy="50" r={radius} />
-        <CircleProgressBar
-          cx="50"
-          cy="50"
+    <LogoProgressOuter>
+      <LogoProgressSvg viewBox="0 0 112 112" aria-hidden>
+        <LogoProgressBg cx="56" cy="56" r={radius} />
+        <LogoProgressBar
+          cx="56"
+          cy="56"
           r={radius}
-          progress={clamped}
-          circumference={circumference}
+          $circumference={circumference}
+          $dashoffset={dashOffset}
         />
-      </CircleProgressSVG>
-      <ProgressText>{clamped.toFixed(0)}%</ProgressText>
-    </CircleProgressContainer>
+      </LogoProgressSvg>
+      <LogoProgressCenter>
+        <LogoProgressImg src={LOGO_SRC} alt="" />
+        <LogoProgressPercent>{clamped.toFixed(0)}%</LogoProgressPercent>
+      </LogoProgressCenter>
+    </LogoProgressOuter>
   );
 };
 
@@ -290,7 +365,7 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
           <>
             <HeaderRow>
               <IconBadge $variant="checking">
-                <SpinnerRing />
+                <CheckingLogoRing />
               </IconBadge>
               <Title>检查更新</Title>
               <CloseGhost type="button" onClick={onClose} title="关闭" aria-label="关闭">
@@ -376,7 +451,7 @@ const UpdateDialog: React.FC<UpdateDialogProps> = ({
                 <MaterialIcon name="close" size={20} />
               </CloseGhost>
             </HeaderRow>
-            <CircleProgress progress={progress} />
+            <LogoCircularProgress progress={progress} />
             <Body>
               <Message>更新包下载中，请保持网络畅通。也可选择后台下载并关闭此窗口。</Message>
             </Body>

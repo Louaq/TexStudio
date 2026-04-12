@@ -626,8 +626,8 @@ const store = new Store<AppSettings>({
   defaults: {
     apiConfig: DEFAULT_API_CONFIG,
     shortcuts: {
-      capture: 'Alt+C',
-      upload: 'Alt+S' 
+      capture: 'Alt+A',
+      upload: 'Alt+S'
     },
     history: [],
     theme: 'formal', // 默认青花（瓷白底 + 钴蓝主色）
@@ -667,7 +667,7 @@ async function createMainWindow(): Promise<void> {
     title: 'TexStudio OCR',
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#F2F7FF' // 与「青花」主题背景一致
+    backgroundColor: '#F5F7FA' // 与主界面冷灰白底一致
   });
 
   // 完全禁用菜单栏
@@ -812,8 +812,8 @@ function createSplashWindow(): void {
     * { box-sizing: border-box; }
     html, body { width: 100%; height: 100%; margin: 0; }
     body {
-      background: #F2F7FF;
-      color: #102349;
+      background: #F5F7FA;
+      color: #000000;
       font-family: "Segoe UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
       align-items: center;
@@ -1783,6 +1783,13 @@ ipcMain.handle('copy-to-clipboard', (event, text: string) => {
 });
 
 ipcMain.handle('get-settings', () => {
+  /** 旧版录制逻辑曾把 Alt+A 记成 Ctrl+A；与当前默认 Alt+A 对齐并修正全局注册 */
+  const shortcuts = store.get('shortcuts') as AppSettings['shortcuts'] | undefined;
+  if (shortcuts?.capture === 'Ctrl+A') {
+    store.set('shortcuts', { ...shortcuts, capture: 'Alt+A' });
+    registerGlobalShortcuts();
+    updateTrayMenu();
+  }
   return store.store;
 });
 ipcMain.handle('save-settings', async (event, settings: Partial<AppSettings>) => {
