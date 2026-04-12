@@ -6,7 +6,7 @@ import FormData from 'form-data';
 import Store from 'electron-store';
 import { ScreenshotArea } from '../types';
 import { getCurrentTimestamp } from '../utils/api';
-import { THEME_ACCENT_HEX, THEME_ACCENT_SELECTION_FILL } from '../utils/themeAccent';
+import { THEME_ACCENT_SELECTION_FILL } from '../utils/themeAccent';
 import * as crypto from 'crypto';
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
 const officegen = require('officegen');
@@ -348,6 +348,50 @@ let DEFAULT_API_CONFIG: ApiConfig = {
 
 const TEMP_FILE_PREFIX = 'simpletex-';
 const SCREENSHOT_PREFIX = 'screenshot-';
+
+/** 关掉全屏选区层后等待合成一帧再 grab，否则 desktopCapturer 仍可能带上选框 */
+const SCREENSHOT_CAPTURE_DELAY_MS = 160;
+
+/**
+ * 仅销毁截图叠加窗口，不唤起主窗口（截图前必须用它，避免主窗挡在桌面上）。
+ */
+function destroyScreenshotOverlayWindows(): void {
+  screenshotWindows.forEach((window) => {
+    if (!window.isDestroyed()) {
+      window.removeAllListeners();
+      window.webContents.removeAllListeners();
+      window.webContents.session.clearCache().catch(() => { });
+      window.close();
+      window.destroy();
+    }
+  });
+  screenshotWindows.length = 0;
+}
+
+/**
+ * 选区为 DIP，缩略图为物理像素。对起点用 ceil、对终点用 floor，减少缩放取整误差。
+ */
+function dipRectToThumbnailCrop(
+  leftDip: number,
+  topDip: number,
+  widthDip: number,
+  heightDip: number,
+  scaleX: number,
+  scaleY: number
+): { x: number; y: number; width: number; height: number } {
+  const rightDip = leftDip + widthDip;
+  const bottomDip = topDip + heightDip;
+  const x = Math.ceil(leftDip * scaleX - 1e-9);
+  const y = Math.ceil(topDip * scaleY - 1e-9);
+  const x2 = Math.floor(rightDip * scaleX + 1e-9);
+  const y2 = Math.floor(bottomDip * scaleY + 1e-9);
+  return {
+    x,
+    y,
+    width: Math.max(1, x2 - x),
+    height: Math.max(1, y2 - y)
+  };
+}
 
 /** OCR 上传前限制长边（仅影响识别管线，降低 sharp 与上传 Buffer 峰值） */
 const OCR_IMAGE_MAX_EDGE = 1280;
@@ -1087,7 +1131,7 @@ function createSimpleScreenshotWindow(): void {
     .selection-face {
       position: absolute;
       inset: 0;
-      border: 2px solid ${THEME_ACCENT_HEX};
+      border: 2px solid #000000;
       background: ${THEME_ACCENT_SELECTION_FILL};
       pointer-events: none;
     }
@@ -1780,9 +1824,13 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
   let sources: Electron.DesktopCapturerSource[] = [];
 
   try {
+    // 必须先关掉选区叠加层再抓屏，否则会拍到半透明底、黑边框等辅助 UI（裁切无法可靠去掉）
+    destroyScreenshotOverlayWindows();
+    await new Promise((resolve) => setTimeout(resolve, SCREENSHOT_CAPTURE_DELAY_MS));
+
     // 获取所有显示器信息
     const displays = screen.getAllDisplays();
-    
+
     // 获取屏幕捕获源
     sources = await desktopCapturer.getSources({
       types: ['screen'],
@@ -1865,17 +1913,19 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
     let cropArea: { x: number; y: number; width: number; height: number };
 
     if (displays.length === 1) {
-      // 单屏幕情况
+      // 单屏幕情况（与多屏分支一致：相对当前显示器 bounds，再映射到缩略图）
       const scaleX = sourceSize.width / targetDisplay.bounds.width;
       const scaleY = sourceSize.height / targetDisplay.bounds.height;
-
-      cropArea = {
-        x: Math.round(area.x * scaleX),
-        y: Math.round(area.y * scaleY),
-        width: Math.round(area.width * scaleX),
-        height: Math.round(area.height * scaleY)
-      };
-
+      const relativeX = area.x - targetDisplay.bounds.x;
+      const relativeY = area.y - targetDisplay.bounds.y;
+      cropArea = dipRectToThumbnailCrop(
+        relativeX,
+        relativeY,
+        area.width,
+        area.height,
+        scaleX,
+        scaleY
+      );
     } else {
       // 多屏幕情况
       if (selectedSource.display_id === targetDisplay.id.toString()) {
@@ -1886,12 +1936,14 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
         const scaleX = sourceSize.width / targetDisplay.bounds.width;
         const scaleY = sourceSize.height / targetDisplay.bounds.height;
 
-        cropArea = {
-          x: Math.round(relativeX * scaleX),
-          y: Math.round(relativeY * scaleY),
-          width: Math.round(area.width * scaleX),
-          height: Math.round(area.height * scaleY)
-        };
+        cropArea = dipRectToThumbnailCrop(
+          relativeX,
+          relativeY,
+          area.width,
+          area.height,
+          scaleX,
+          scaleY
+        );
       } else {
         // 未直接匹配的显示器，使用绝对坐标
         let minX = Math.min(...displays.map(d => d.bounds.x));
@@ -1905,12 +1957,14 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
         const scaleX = sourceSize.width / totalWidth;
         const scaleY = sourceSize.height / totalHeight;
 
-        cropArea = {
-          x: Math.round((area.x - minX) * scaleX),
-          y: Math.round((area.y - minY) * scaleY),
-          width: Math.round(area.width * scaleX),
-          height: Math.round(area.height * scaleY)
-        };
+        cropArea = dipRectToThumbnailCrop(
+          area.x - minX,
+          area.y - minY,
+          area.width,
+          area.height,
+          scaleX,
+          scaleY
+        );
       }
     }
     cropArea.x = Math.max(0, Math.min(cropArea.x, sourceSize.width - 1));
@@ -1937,13 +1991,10 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
       croppedImage = null;
 
       closeScreenshotWindow();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       if (fs.existsSync(tempPath)) {
         if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.show();
-          mainWindow.focus();
-
           mainWindow.webContents.send('screenshot-complete', tempPath);
         }
 
@@ -1977,16 +2028,7 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
 
 
 function closeScreenshotWindow(): void {
-  screenshotWindows.forEach((window, index) => {
-    if (!window.isDestroyed()) {
-      window.removeAllListeners();
-      window.webContents.removeAllListeners();
-      window.webContents.session.clearCache().catch(() => { });
-      window.close();
-      window.destroy();
-    }
-  });
-  screenshotWindows.length = 0;
+  destroyScreenshotOverlayWindows();
   setTimeout(() => {
     forceGarbageCollection();
   }, 100);
