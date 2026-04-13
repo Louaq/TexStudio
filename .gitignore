@@ -1,7 +1,7 @@
-"settings.json"
+settings.json
 release
 node_modules
 build
 dist
-"release/*.exe" 
-"release/win-unpacked/*.exe" 
+release/*.exe
+release/win-unpacked/*.exe

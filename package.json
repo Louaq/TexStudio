@@ -81,8 +81,7 @@
     "files": [
       "build/**/*",
       "dist/**/*",
-      "node_modules/**/*",
-      "settings.json"
+      "node_modules/**/*"
     ],
     "extraMetadata": {
       "main": "dist/electron/electron/main.js"
