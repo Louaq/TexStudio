@@ -461,14 +461,9 @@ function App() {
         const taskId = Date.now();
         console.log(`开始识别任务 ID: ${taskId}`);
 
-        setAppState(prev => ({ 
-          ...prev, 
-          currentImage: `file://${imagePath}`
-        }));
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        setAppState(prev => ({ 
-          ...prev, 
+        setAppState(prev => ({
+          ...prev,
+          currentImage: `file://${imagePath}`,
           latexCode: '',
           statusMessage: '🔄 准备自动识别...'
         }));

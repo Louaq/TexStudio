@@ -349,8 +349,43 @@ let DEFAULT_API_CONFIG: ApiConfig = {
 const TEMP_FILE_PREFIX = 'simpletex-';
 const SCREENSHOT_PREFIX = 'screenshot-';
 
-/** 关掉全屏选区层后等待合成一帧再 grab，否则 desktopCapturer 仍可能带上选框 */
-const SCREENSHOT_CAPTURE_DELAY_MS = 160;
+/** 关掉全屏选区层后等待合成一帧再 grab，否则 desktopCapturer 仍可能带上选框（过短易残影，过长体感卡顿） */
+const SCREENSHOT_CAPTURE_DELAY_MS = 90;
+
+/**
+ * 16384² 会让 getSources 在 Windows 上常耗时数秒；按各屏物理像素上限请求即可。
+ */
+const CAPTURER_THUMBNAIL_MAX_EDGE = 8192;
+
+function getCapturerThumbnailSizeForDisplays(displays: Electron.Display[]): { width: number; height: number } {
+  let maxW = 0;
+  let maxH = 0;
+  for (const d of displays) {
+    const w = Math.ceil(d.bounds.width * d.scaleFactor);
+    const h = Math.ceil(d.bounds.height * d.scaleFactor);
+    maxW = Math.max(maxW, w);
+    maxH = Math.max(maxH, h);
+  }
+  const fbW = 1920;
+  const fbH = 1080;
+  return {
+    width: Math.max(1, Math.min(maxW > 0 ? maxW : fbW, CAPTURER_THUMBNAIL_MAX_EDGE)),
+    height: Math.max(1, Math.min(maxH > 0 ? maxH : fbH, CAPTURER_THUMBNAIL_MAX_EDGE))
+  };
+}
+
+/** 截图热路径禁止调用 forceGarbageCollection（内含 session.clearCache，易阻塞数秒） */
+function scheduleLightMemoryCleanup(): void {
+  setTimeout(() => {
+    try {
+      if (global.gc) {
+        global.gc();
+      }
+    } catch {
+      /* ignore */
+    }
+  }, 2000);
+}
 
 /**
  * 仅销毁截图叠加窗口，不唤起主窗口（截图前必须用它，避免主窗挡在桌面上）。
@@ -1503,8 +1538,11 @@ function createSimpleScreenshotWindow(): void {
       };
       try {
         await window.screenshotAPI.takeSimpleScreenshot(absoluteArea);
-      } catch (err) {}
-      await window.screenshotAPI.closeScreenshotWindow();
+      } catch (err) {
+        try {
+          await window.screenshotAPI.closeScreenshotWindow();
+        } catch (e2) {}
+      }
     }
 
     document.addEventListener('keydown', function(e) {
@@ -1828,13 +1866,12 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
     destroyScreenshotOverlayWindows();
     await new Promise((resolve) => setTimeout(resolve, SCREENSHOT_CAPTURE_DELAY_MS));
 
-    // 获取所有显示器信息
     const displays = screen.getAllDisplays();
+    const thumbnailSize = getCapturerThumbnailSizeForDisplays(displays);
 
-    // 获取屏幕捕获源
     sources = await desktopCapturer.getSources({
       types: ['screen'],
-      thumbnailSize: { width: 16384, height: 16384 }
+      thumbnailSize
     });
 
     if (sources.length === 0) {
@@ -1990,29 +2027,25 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
       }
       croppedImage = null;
 
-      closeScreenshotWindow();
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
       if (fs.existsSync(tempPath)) {
         if (mainWindow && !mainWindow.isDestroyed()) {
+          // 先发事件让渲染进程更新预览，再显示主窗，减少「窗已出图未至」的空窗感
           mainWindow.webContents.send('screenshot-complete', tempPath);
         }
+        closeScreenshotWindow();
 
         return tempPath;
       } else {
         throw new Error('截图文件未能正确保存');
       }
     } finally {
-      // 确保资源被释放
       selectedSource = null;
       croppedImage = null;
       sources = [];
-      forceGarbageCollection();
     }
 
   } catch (error) {
     closeScreenshotWindow();
-    forceGarbageCollection();
     throw error;
   }
 }
@@ -2029,13 +2062,11 @@ async function takeSimpleScreenshot(area: { x: number; y: number; width: number;
 
 function closeScreenshotWindow(): void {
   destroyScreenshotOverlayWindows();
-  setTimeout(() => {
-    forceGarbageCollection();
-  }, 100);
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.show();
     mainWindow.focus();
   }
+  scheduleLightMemoryCleanup();
 }
 ipcMain.handle('take-simple-screenshot', async (event, area: { x: number; y: number; width: number; height: number }) => {
   try {
