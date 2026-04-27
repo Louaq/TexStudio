@@ -23,7 +23,7 @@ const Header = styled.div`
 const Label = styled.h3`
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-textSecondary);
+  color: var(--color-text);
   margin: 0;
   display: flex;
   align-items: center;
@@ -62,7 +62,7 @@ const TextArea = styled.textarea<{ $readOnly: boolean }>`
   box-sizing: border-box;
 
   &::placeholder {
-    color: var(--color-textSecondary);
+    color: var(--ui-placeholder, rgba(0, 0, 0, 0.5));
     font-style: italic;
     font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
   }

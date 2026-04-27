@@ -37,7 +37,7 @@ const Dialog = styled.div`
 
 const Title = styled.h2`
   margin: 0 0 24px 0;
-  color: #2c3e50;
+  color: var(--color-text);
   font-size: 21px;
   font-weight: 600;
   text-align: center;
@@ -60,7 +60,7 @@ const FormGroup = styled.div`
 `;
 
 const Label = styled.label`
-  color: #34495e;
+  color: var(--color-text);
   font-weight: 600;
   font-size: 15px;
 `;
@@ -82,7 +82,7 @@ const ShortcutButton = styled.button<{
   font-size: 15px;
   color: ${props => 
     props.$isListening ? '#e74c3c' : 
-    props.$isSet ? '#27ae60' : '#2c3e50'
+    props.$isSet ? '#27ae60' : 'var(--color-text)'
   };
   transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
   font-family: "Cascadia Code", "Consolas", monospace;

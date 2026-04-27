@@ -81,7 +81,7 @@ const HintBar = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: var(--color-primary);
+  color: var(--color-text);
   font-size: 14px;
 `;
 
@@ -99,18 +99,18 @@ const ClearAllButton = styled.button`
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+  border: 1px solid color-mix(in srgb, var(--color-text) 22%, var(--color-border));
   border-radius: 8px;
   background: transparent;
-  color: var(--color-primary);
+  color: var(--color-text);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease;
 
   &:hover {
-    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-    border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border));
+    background: color-mix(in srgb, var(--color-text) 8%, transparent);
+    border-color: color-mix(in srgb, var(--color-text) 35%, var(--color-border));
   }
 `;
 
@@ -188,7 +188,7 @@ const HistoryDate = styled.div`
 
 const FormulaTag = styled.span`
   background: rgba(0, 0, 0, 0.05);
-  color: var(--color-primary);
+  color: var(--color-text);
   padding: 3px 10px;
   border-radius: 4px;
   font-size: 12px;
@@ -273,7 +273,7 @@ const FormulaError = styled.div`
 
 const NoMoreText = styled.div`
   text-align: center;
-  color: #adb5bd;
+  color: var(--color-text);
   font-size: 14px;
   padding: 32px 0;
   margin-top: 20px;
@@ -435,7 +435,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({
                 <MaterialIcon name="history" size={80} />
               </EmptyIcon>
               <EmptyText>暂无历史记录</EmptyText>
-              <p style={{ fontSize: '15px', color: '#95a5a6' }}>
+              <p style={{ fontSize: '15px', color: 'var(--color-text)' }}>
                 识别或输入的公式会自动保存到这里
               </p>
             </EmptyState>

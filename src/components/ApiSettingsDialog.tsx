@@ -100,7 +100,7 @@ const Input = styled.input`
   }
 
   &::placeholder {
-    color: var(--color-textSecondary);
+    color: var(--ui-placeholder, rgba(0, 0, 0, 0.5));
   }
 `;
 

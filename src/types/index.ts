@@ -39,9 +39,10 @@ export interface AppSettings {
   apiConfig: ApiConfig;
   shortcuts: ShortcutConfig;
   history: HistoryItem[];
-  theme?: string; 
-  sidebarConfig?: SidebarConfig; 
-  minimizeToTray?: boolean; 
+  theme?: string;
+  themeMode?: 'light' | 'dark';
+  sidebarConfig?: SidebarConfig;
+  minimizeToTray?: boolean;
 }
 export interface ShortcutConfig {
   capture: string;

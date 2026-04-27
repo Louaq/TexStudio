@@ -90,6 +90,7 @@ function App() {
     apiConfig: ApiConfig;
     shortcuts: { capture: string; upload: string };
     theme?: string;
+    themeMode?: 'light' | 'dark';
     sidebarConfig?: SidebarConfig;
     minimizeToTray?: boolean;
   } | null>(null);
@@ -126,8 +127,9 @@ function App() {
         if (window.electronAPI) {
           const appSettings = await window.electronAPI.getSettings();
           console.log('从Electron加载的设置:', appSettings);
-          const { getTheme, applyTheme, normalizeThemeId, THEME_ID } = await import('./theme/themes');
+          const { getTheme, applyTheme, normalizeThemeId, normalizeThemeMode, THEME_ID } = await import('./theme/themes');
           const selectedTheme = normalizeThemeId(appSettings.theme);
+          const selectedMode = normalizeThemeMode(appSettings.themeMode);
           if (appSettings.theme !== THEME_ID) {
             await window.electronAPI.saveSettings({ theme: THEME_ID });
           }
@@ -135,13 +137,14 @@ function App() {
             apiConfig: appSettings.apiConfig,
             shortcuts: appSettings.shortcuts,
             theme: selectedTheme,
+            themeMode: selectedMode,
             sidebarConfig: appSettings.sidebarConfig || getDefaultSidebarConfig(),
             minimizeToTray: appSettings.minimizeToTray !== undefined ? appSettings.minimizeToTray : true
           });
           setAppState(prev => ({ ...prev, history: appSettings.history }));
-          
-          const theme = getTheme();
-          applyTheme(theme);
+
+          applyTheme(getTheme(selectedMode), selectedMode);
+          try { localStorage.setItem('themeMode', selectedMode); } catch {}
         } else {
           const defaultSettings = {
             apiConfig: {
@@ -177,12 +180,12 @@ function App() {
           setSettings({
             ...defaultSettings,
             theme: browserThemeId,
+            themeMode: 'light',
             sidebarConfig: getDefaultSidebarConfig()
           });
           console.warn('运行在浏览器模式下，使用默认设置');
 
-          const theme = getTheme();
-          applyTheme(theme);
+          applyTheme(getTheme('light'), 'light');
         }
       } catch (error) {
         console.error('加载设置失败:', error);
@@ -1016,6 +1019,20 @@ function App() {
     }
   };
 
+  const handleSaveThemeMode = async (mode: 'light' | 'dark') => {
+    try {
+      const { applyTheme, getTheme } = await import('./theme/themes');
+      applyTheme(getTheme(mode), mode);
+      try { localStorage.setItem('themeMode', mode); } catch {}
+      setSettings(prev => prev ? { ...prev, themeMode: mode } : prev);
+      if (window.electronAPI) {
+        await window.electronAPI.saveSettings({ themeMode: mode });
+      }
+    } catch (error) {
+      console.error('保存主题模式失败:', error);
+    }
+  };
+
   const handleSaveMinimizeToTray = async (minimizeToTray: boolean) => {
     if (window.electronAPI) {
       try {
@@ -1240,12 +1257,14 @@ function App() {
             shortcuts={settings?.shortcuts || { capture: '', upload: '' }}
             sidebarConfig={settings?.sidebarConfig}
             minimizeToTray={settings?.minimizeToTray !== undefined ? settings.minimizeToTray : true}
+            themeMode={settings?.themeMode || 'light'}
             onSaveApi={handleSaveApiSettings}
             onSaveShortcuts={handleSaveShortcutSettings}
             onCheckForUpdates={handleCheckForUpdates}
             isCheckingForUpdates={updateInfo.status === 'checking'}
             onSaveSidebarConfig={handleSaveSidebarConfig}
             onSaveMinimizeToTray={handleSaveMinimizeToTray}
+            onSaveThemeMode={handleSaveThemeMode}
           />
         )}
 

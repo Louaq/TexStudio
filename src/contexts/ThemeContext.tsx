@@ -27,12 +27,13 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children, 
   initialThemeId = THEME_ID
 }) => {
-  const [currentTheme, setCurrentTheme] = useState<Theme>(() => getTheme(initialThemeId));
+  void initialThemeId;
+  const [currentTheme, setCurrentTheme] = useState<Theme>(() => getTheme('light'));
 
   const setTheme = (_themeId?: string) => {
-    const theme = getTheme();
+    const theme = getTheme('light');
     setCurrentTheme(theme);
-    applyTheme(theme);
+    applyTheme(theme, 'light');
     localStorage.setItem('selectedTheme', THEME_ID);
     if (window.electronAPI) {
       window.electronAPI.saveSettings({ theme: THEME_ID }).catch(console.error);
@@ -40,8 +41,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   };
 
   useEffect(() => {
-    // 应用初始主题
-    applyTheme(currentTheme);
+    applyTheme(currentTheme, 'light');
   }, []);
 
   return (

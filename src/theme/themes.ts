@@ -37,10 +37,13 @@ export interface Theme {
   };
 }
 
+/** 主题模式 */
+export type ThemeMode = 'light' | 'dark';
+
 /** 唯一主题 ID（青花 Qing-hua：钴蓝 + 瓷白） */
 export const THEME_ID = 'formal' as const;
 
-const formalTheme: Theme = {
+const lightTheme: Theme = {
   id: THEME_ID,
   name: '青花',
   colors: {
@@ -55,9 +58,9 @@ const formalTheme: Theme = {
     surfaceLight: '#EEF2F7',
 
     text: '#000000',
-    textSecondary: '#5F6C84',
-    textMuted: '#8A94A6',
-    accentSecondary: '#7C8594',
+    textSecondary: '#000000',
+    textMuted: '#000000',
+    accentSecondary: '#000000',
 
     border: '#D8E0EB',
     borderLight: 'rgba(216, 224, 235, 0.55)',
@@ -85,39 +88,120 @@ const formalTheme: Theme = {
   },
 };
 
-/** 仅含「青花」 */
-export const themes: Theme[] = [formalTheme];
+const darkTheme: Theme = {
+  id: THEME_ID,
+  name: '青花·夜',
+  colors: {
+    primary: '#7B91FF',
+    primaryLight: '#8C9EFF',
+    primaryDark: '#6A81FF',
+
+    background: '#121218',
+    backgroundPattern: 'rgba(123, 145, 255, 0.06)',
+
+    surface: '#1E1E28',
+    surfaceLight: '#2A2A38',
+
+    text: '#F0F4FF',
+    textSecondary: '#F0F4FF',
+    textMuted: '#F0F4FF',
+    accentSecondary: '#F0F4FF',
+
+    border: '#3A3A4D',
+    borderLight: 'rgba(58, 58, 77, 0.55)',
+
+    buttonGradientStart: '#7B91FF',
+    buttonGradientEnd: '#6A81FF',
+    buttonHoverStart: '#8C9EFF',
+    buttonHoverEnd: '#7B91FF',
+
+    inputBackground: 'rgba(35, 35, 48, 0.96)',
+    inputBorder: '#3A3A4D',
+    inputFocus: '#7B91FF',
+
+    success: '#10b981',
+    error: '#f43f5e',
+    warning: '#f59e0b',
+    info: '#7B91FF',
+
+    menuBackground: '#1E1E28',
+    menuBorder: 'rgba(58, 58, 77, 0.85)',
+    menuHover: '#7B91FF',
+
+    dialogBackground: '#1E1E28',
+    dialogOverlay: 'rgba(0, 0, 0, 0.55)',
+  },
+};
+
+export const themes: Theme[] = [lightTheme, darkTheme];
 
 /** 任意历史 theme 字段均归一为唯一主题 */
 export function normalizeThemeId(themeId: string | undefined | null): string {
   return THEME_ID;
 }
 
-// 获取主题（仅青花）
-export const getTheme = (_themeId?: string): Theme => formalTheme;
+/** 归一化主题模式（兼容历史值） */
+export function normalizeThemeMode(mode: string | undefined | null): ThemeMode {
+  return mode === 'dark' ? 'dark' : 'light';
+}
+
+/** 获取主题（按模式选择） */
+export const getTheme = (mode: ThemeMode = 'light'): Theme =>
+  mode === 'dark' ? darkTheme : lightTheme;
 
 /** 应用主题色与页面背景渐变（不使用背景模糊） */
-export const applyTheme = (theme: Theme) => {
+export const applyTheme = (theme: Theme, mode: ThemeMode = 'light') => {
   const root = document.documentElement;
 
   Object.entries(theme.colors).forEach(([key, value]) => {
     root.style.setProperty(`--color-${key}`, value);
   });
 
-  const appBg = `radial-gradient(ellipse 95% 75% at 0% -8%, rgba(94, 129, 244, 0.08), transparent 52%),
+  const isDark = mode === 'dark';
+
+  const appBg = isDark
+    ? `radial-gradient(ellipse 95% 75% at 0% -8%, rgba(123, 145, 255, 0.10), transparent 52%),
+    radial-gradient(ellipse 80% 60% at 100% 108%, rgba(123, 145, 255, 0.06), transparent 48%),
+    linear-gradient(168deg, #16161E 0%, ${theme.colors.background} 50%, #14141A 100%)`
+    : `radial-gradient(ellipse 95% 75% at 0% -8%, rgba(94, 129, 244, 0.08), transparent 52%),
     radial-gradient(ellipse 80% 60% at 100% 108%, rgba(94, 129, 244, 0.05), transparent 48%),
     linear-gradient(168deg, #EEF2FA 0%, ${theme.colors.background} 50%, #F2F5F9 100%)`;
   root.style.setProperty('--app-bg-gradient', appBg);
 
-  root.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.45)');
-  root.style.setProperty('--glass-bg-strong', 'rgba(255, 255, 255, 0.94)');
-  root.style.setProperty('--glass-bg-elevated', 'rgba(255, 255, 255, 0.88)');
-  root.style.setProperty('--glass-bg-card', 'rgba(255, 255, 255, 0.96)');
-  root.style.setProperty('--glass-border-soft', 'rgba(26, 28, 35, 0.06)');
-  root.style.setProperty('--glass-edge', 'rgba(216, 224, 235, 0.95)');
+  if (isDark) {
+    root.style.setProperty('--glass-bg', 'rgba(30, 30, 40, 0.45)');
+    root.style.setProperty('--glass-bg-strong', 'rgba(30, 30, 40, 0.94)');
+    root.style.setProperty('--glass-bg-elevated', 'rgba(30, 30, 40, 0.88)');
+    root.style.setProperty('--glass-bg-card', 'rgba(30, 30, 40, 0.96)');
+    root.style.setProperty('--glass-border-soft', 'rgba(255, 255, 255, 0.06)');
+    root.style.setProperty('--glass-edge', 'rgba(58, 58, 77, 0.95)');
+
+    root.style.setProperty('--ui-titlebar-bg', 'rgba(30, 30, 40, 0.96)');
+    root.style.setProperty('--ui-titlebar-border', 'rgba(58, 58, 77, 0.9)');
+    root.style.setProperty('--ui-pageheader-bg', 'rgba(30, 30, 40, 0.92)');
+    root.style.setProperty('--ui-pageheader-border', 'rgba(58, 58, 77, 0.8)');
+    root.style.setProperty('--ui-footerbar-bg', 'rgba(30, 30, 40, 0.72)');
+    root.style.setProperty('--ui-sidebar-bg', '#1E1E28');
+    root.style.setProperty('--ui-placeholder', 'rgba(240, 244, 255, 0.5)');
+  } else {
+    root.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.45)');
+    root.style.setProperty('--glass-bg-strong', 'rgba(255, 255, 255, 0.94)');
+    root.style.setProperty('--glass-bg-elevated', 'rgba(255, 255, 255, 0.88)');
+    root.style.setProperty('--glass-bg-card', 'rgba(255, 255, 255, 0.96)');
+    root.style.setProperty('--glass-border-soft', 'rgba(26, 28, 35, 0.06)');
+    root.style.setProperty('--glass-edge', 'rgba(216, 224, 235, 0.95)');
+
+    root.style.setProperty('--ui-titlebar-bg', 'rgba(255, 255, 255, 0.96)');
+    root.style.setProperty('--ui-titlebar-border', 'rgba(216, 224, 235, 0.9)');
+    root.style.setProperty('--ui-pageheader-bg', 'rgba(255, 255, 255, 0.92)');
+    root.style.setProperty('--ui-pageheader-border', 'rgba(216, 224, 235, 0.8)');
+    root.style.setProperty('--ui-footerbar-bg', 'rgba(255, 255, 255, 0.72)');
+    root.style.setProperty('--ui-sidebar-bg', '#ffffff');
+    root.style.setProperty('--ui-placeholder', 'rgba(0, 0, 0, 0.5)');
+  }
 
   document.body.style.background = appBg;
-  document.body.setAttribute('theme-mode', 'light');
+  document.body.setAttribute('theme-mode', isDark ? 'dark' : 'light');
 
   if (window.electronAPI && window.electronAPI.updateWindowTheme) {
     const backgroundColor = theme.colors.background;
@@ -133,7 +217,7 @@ export const applyTheme = (theme: Theme) => {
       });
   }
 
-  console.log(`✅ 主题 "${theme.name}" 已立即应用`);
+  console.log(`✅ 主题 "${theme.name}" 已立即应用 (mode=${mode})`);
 };
 
 /** 上传区等局部：纯色底，无 backdrop-filter */
@@ -143,14 +227,14 @@ export const glassBackdrop = css`
 
 /** 顶栏（与图1 白底侧栏一致） */
 export const glassTitleBar = css`
-  background: rgba(255, 255, 255, 0.96);
-  border-bottom: 1px solid rgba(216, 224, 235, 0.9);
+  background: var(--ui-titlebar-bg, rgba(255, 255, 255, 0.96));
+  border-bottom: 1px solid var(--ui-titlebar-border, rgba(216, 224, 235, 0.9));
   transform: translateZ(0);
 `;
 
-/** 侧栏：纯白 + 细线分割 */
+/** 侧栏：纯色 + 细线分割（随主题切换） */
 export const glassSidebar = css`
-  background: #ffffff;
+  background: var(--ui-sidebar-bg, #ffffff);
   border-right: 1px solid var(--glass-edge);
   transform: translateZ(0);
 `;
@@ -171,14 +255,14 @@ export const glassCard = css`
 
 /** 各页顶栏 */
 export const glassPageHeader = css`
-  background: rgba(255, 255, 255, 0.92);
-  border-bottom: 1px solid rgba(216, 224, 235, 0.8);
+  background: var(--ui-pageheader-bg, rgba(255, 255, 255, 0.92));
+  border-bottom: 1px solid var(--ui-pageheader-border, rgba(216, 224, 235, 0.8));
   transform: translateZ(0);
 `;
 
 /** 底栏 / 分页条 */
 export const glassFooterBar = css`
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--ui-footerbar-bg, rgba(255, 255, 255, 0.72));
   border-top: 1px solid var(--glass-edge);
   transform: translateZ(0);
 `;

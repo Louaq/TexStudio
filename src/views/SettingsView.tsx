@@ -136,7 +136,7 @@ const Input = styled.input`
   }
 
   &::placeholder {
-    color: var(--color-textSecondary);
+    color: var(--ui-placeholder, rgba(0, 0, 0, 0.5));
   }
 
   &:disabled {
@@ -275,14 +275,14 @@ const UpdateCard = styled.div`
 
 const UpdateCardTitle = styled.h3`
   margin: 0;
-  color: #2c3e50;
+  color: var(--color-text);
   font-size: 15px;
   font-weight: 600;
 `;
 
 const UpdateCardText = styled.p`
   margin: 0;
-  color: #6c757d;
+  color: var(--color-text);
   font-size: 13px;
   line-height: 1.6;
 `;
@@ -404,7 +404,7 @@ const DataDescription = styled.span`
 
 const DataPath = styled.span`
   font-size: 13px;
-  color: var(--color-textSecondary);
+  color: var(--color-text);
   font-family: "Cascadia Code", "Consolas", monospace;
   word-break: break-all;
 `;
@@ -562,7 +562,7 @@ const SidebarItemName = styled.span`
 
 const SidebarItemId = styled.span`
   font-size: 13px;
-  color: var(--color-textSecondary);
+  color: var(--color-text);
   font-family: "Cascadia Code", "Consolas", monospace;
 `;
 
@@ -601,6 +601,7 @@ interface SettingsViewProps {
   shortcuts: { capture: string; upload: string };
   sidebarConfig?: SidebarConfig;
   minimizeToTray?: boolean;
+  themeMode?: 'light' | 'dark';
   onSaveApi: (config: ApiConfig) => void;
   onSaveShortcuts: (shortcuts: { capture: string; upload: string }) => void;
   onCheckForUpdates?: () => void;
@@ -608,6 +609,7 @@ interface SettingsViewProps {
   isCheckingForUpdates?: boolean;
   onSaveSidebarConfig?: (config: SidebarConfig) => void;
   onSaveMinimizeToTray?: (minimizeToTray: boolean) => void;
+  onSaveThemeMode?: (mode: 'light' | 'dark') => void;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({
@@ -615,12 +617,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   shortcuts,
   sidebarConfig,
   minimizeToTray = true,
+  themeMode = 'light',
   onSaveApi,
   onSaveShortcuts,
   onCheckForUpdates,
   isCheckingForUpdates = false,
   onSaveSidebarConfig,
-  onSaveMinimizeToTray
+  onSaveMinimizeToTray,
+  onSaveThemeMode
 }) => {
   const [apiFormData, setApiFormData] = useState<ApiConfig>(apiConfig);
   const [shortcutFormData, setShortcutFormData] = useState(shortcuts);
@@ -1045,7 +1049,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
             <SettingsRow>
               <RowLabelCol>
                 <RowLabelWithIcon>
-                  <MaterialIcon name="keyboard" size={18} />
                   快捷键
                 </RowLabelWithIcon>
               </RowLabelCol>
@@ -1102,6 +1105,25 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 <MaterialIcon name="restore" size={16} />
                 恢复
               </SmallButton>
+            </DataActions>
+          </DataRow>
+
+          <DataRow>
+            <DataLabel>
+              <DataTitle>深色模式</DataTitle>
+              <DataDescription>开启后界面切换为深色主题</DataDescription>
+            </DataLabel>
+            <DataActions>
+              <Toggle>
+                <input
+                  type="checkbox"
+                  checked={themeMode === 'dark'}
+                  onChange={(e) => {
+                    onSaveThemeMode?.(e.target.checked ? 'dark' : 'light');
+                  }}
+                />
+                <span></span>
+              </Toggle>
             </DataActions>
           </DataRow>
 

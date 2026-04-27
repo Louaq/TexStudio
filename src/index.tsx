@@ -5,8 +5,15 @@ import "@fontsource/material-symbols-outlined";
 import { createGlobalStyle } from 'styled-components';
 import { applyTheme, getTheme } from './theme/themes';
 
-/* 首屏即写入主题变量 */
-applyTheme(getTheme());
+/* 首屏即写入主题变量（从 localStorage 缓存读取模式，避免深色用户看到一闪的浅色） */
+const cachedMode: 'light' | 'dark' = (() => {
+  try {
+    return localStorage.getItem('themeMode') === 'dark' ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
+})();
+applyTheme(getTheme(cachedMode), cachedMode);
 
 // 全局样式
 const GlobalStyle = createGlobalStyle`
@@ -25,8 +32,8 @@ const GlobalStyle = createGlobalStyle`
     --bg-secondary: #FFFFFF;
     --bg-tertiary: #EEF2F7;
     --text-primary: #000000;
-    --text-secondary: #5F6C84;
-    --text-muted: #8A94A6;
+    --text-secondary: #000000;
+    --text-muted: #000000;
     --accent-primary: #5E81F4;
     --accent-hover: #4C6FED;
     --accent-active: #3B5DE6;
@@ -212,6 +219,7 @@ const GlobalStyle = createGlobalStyle`
 
   pre, code {
     font-family: var(--font-mono) !important;
+    color: var(--color-text);
     background: var(--current-card) !important;
     border-radius: 8px !important;
     padding: 1px 4px !important;
