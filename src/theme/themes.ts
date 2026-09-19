@@ -34,6 +34,14 @@ export interface Theme {
     menuHover: string;
     dialogBackground: string;
     dialogOverlay: string;
+    /** 多彩分区色：侧栏菜单项 / 面板标题图标 */
+    accentBlue: string;
+    accentOrange: string;
+    accentViolet: string;
+    accentTeal: string;
+    accentAmber: string;
+    accentGreen: string;
+    accentPink: string;
   };
 }
 
@@ -85,6 +93,15 @@ const lightTheme: Theme = {
 
     dialogBackground: '#FFFFFF',
     dialogOverlay: 'rgba(26, 28, 35, 0.45)',
+
+    // 浅底用 600 级，保证图标对比度
+    accentBlue: '#2563EB',
+    accentOrange: '#EA580C',
+    accentViolet: '#7C3AED',
+    accentTeal: '#0D9488',
+    accentAmber: '#D97706',
+    accentGreen: '#16A34A',
+    accentPink: '#DB2777',
   },
 };
 
@@ -130,6 +147,15 @@ const darkTheme: Theme = {
 
     dialogBackground: '#1E1E28',
     dialogOverlay: 'rgba(0, 0, 0, 0.55)',
+
+    // 深底用 400 级，保证图标对比度
+    accentBlue: '#60A5FA',
+    accentOrange: '#FB923C',
+    accentViolet: '#A78BFA',
+    accentTeal: '#2DD4BF',
+    accentAmber: '#FBBF24',
+    accentGreen: '#4ADE80',
+    accentPink: '#F472B6',
   },
 };
 

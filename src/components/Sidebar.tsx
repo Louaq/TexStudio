@@ -89,7 +89,18 @@ const Divider = styled.div`
   flex-shrink: 0;
 `;
 
-const NavItem = styled.div<{ $active?: boolean; disabled?: boolean }>`
+/** 每个菜单项的分区色；自定义或未知项回退主色 */
+const ITEM_COLORS: Record<string, string> = {
+  home: 'var(--color-accentBlue)',
+  capture: 'var(--color-accentOrange)',
+  copy: 'var(--color-accentViolet)',
+  export: 'var(--color-accentTeal)',
+  history: 'var(--color-accentAmber)',
+  settings: 'var(--color-accentGreen)',
+  about: 'var(--color-accentPink)',
+};
+
+const NavItem = styled.div<{ $active?: boolean; disabled?: boolean; $color: string }>`
   display: flex;
   align-items: center;
   gap: 9px;
@@ -98,9 +109,9 @@ const NavItem = styled.div<{ $active?: boolean; disabled?: boolean }>`
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   transition: color 0.1s ease, background 0.1s ease;
   opacity: ${props => props.disabled ? 0.38 : 1};
-  color: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-textSecondary)'};
+  color: ${props => props.$active ? props.$color : 'var(--color-textSecondary)'};
   background: ${props => props.$active
-    ? 'color-mix(in srgb, var(--color-primary) 14%, transparent)'
+    ? `color-mix(in srgb, ${props.$color} 14%, transparent)`
     : 'transparent'
   };
   font-weight: ${props => props.$active ? '600' : '400'};
@@ -114,30 +125,21 @@ const NavItem = styled.div<{ $active?: boolean; disabled?: boolean }>`
     transform: translateY(-50%);
     width: 3px;
     height: ${props => props.$active ? '18px' : '0px'};
-    background: var(--color-primary);
+    background: ${props => props.$color};
     border-radius: 0 2px 2px 0;
     transition: height 0.1s ease;
   }
 
-  &:hover {
-    ${props => !props.disabled && !props.$active && `
-      color: var(--color-text);
-      background: color-mix(in srgb, var(--color-text) 5%, transparent);
-    `}
-    ${props => !props.disabled && props.$active && `
-      background: color-mix(in srgb, var(--color-primary) 20%, transparent);
-    `}
-  }
-
 `;
 
-const NavIcon = styled.div`
+const NavIcon = styled.div<{ $color: string }>`
   display: flex;
   align-items: center;
   justify-content: center;
   width: 20px;
   height: 20px;
   flex-shrink: 0;
+  color: ${props => props.$color};
 `;
 
 const NavLabel = styled.span`
@@ -148,19 +150,40 @@ const NavLabel = styled.span`
   letter-spacing: 0.1px;
 `;
 
-const SidebarCopyright = styled.div`
+const REPO_URL = 'https://github.com/Louaq/TexStudio';
+
+const SidebarFooter = styled.div`
   flex-shrink: 0;
-  padding: 10px 10px 12px;
-  text-align: center;
+  padding: 8px 10px 12px;
+  display: flex;
+  justify-content: center;
 `;
 
-const SidebarCopyrightText = styled.p`
-  margin: 0;
-  font-size: 11px;
-  line-height: 1.45;
+const RepoLink = styled.a`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   color: var(--color-textSecondary);
-  word-break: break-word;
+  cursor: pointer;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+  }
 `;
+
+/** 用系统浏览器打开，避免在应用窗口内跳转 */
+const openRepo = (e: React.MouseEvent) => {
+  e.preventDefault();
+  if (window.electronAPI?.openExternal) {
+    window.electronAPI.openExternal(REPO_URL);
+  } else {
+    window.open(REPO_URL, '_blank', 'noopener');
+  }
+};
 
 type ViewType = 'home' | 'settings' | 'history' | 'about';
 
@@ -212,19 +235,20 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 
   const renderNavItem = (item: typeof sortedItems[0]) => {
+    const color = ITEM_COLORS[item.id] ?? 'var(--color-primary)';
     switch (item.id) {
       case 'home':
         return (
-          <NavItem key={item.id} $active={currentView === 'home'} onClick={() => onViewChange('home')}>
-            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
+          <NavItem key={item.id} $color={color} $active={currentView === 'home'} onClick={() => onViewChange('home')}>
+            <NavIcon $color={color}><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{item.label}</NavLabel>
           </NavItem>
         );
 
       case 'capture':
         return (
-          <NavItem key={item.id} onClick={onCapture}>
-            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
+          <NavItem key={item.id} $color={color} onClick={onCapture}>
+            <NavIcon $color={color}><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{item.label}</NavLabel>
           </NavItem>
         );
@@ -233,10 +257,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         return (
           <NavItem
             key={item.id}
+            $color={color}
             onClick={copyDisabled ? undefined : onCopy}
             disabled={copyDisabled}
           >
-            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
+            <NavIcon $color={color}><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{copyDisabled ? '复制 LaTeX' : item.label}</NavLabel>
           </NavItem>
         );
@@ -245,34 +270,35 @@ const Sidebar: React.FC<SidebarProps> = ({
         return (
           <NavItem
             key={item.id}
+            $color={color}
             onClick={exportDisabled ? undefined : onExport}
             disabled={exportDisabled}
           >
-            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
+            <NavIcon $color={color}><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{exportDisabled ? '导出图片' : item.label}</NavLabel>
           </NavItem>
         );
 
       case 'history':
         return (
-          <NavItem key={item.id} $active={currentView === 'history'} onClick={() => onViewChange('history')}>
-            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
+          <NavItem key={item.id} $color={color} $active={currentView === 'history'} onClick={() => onViewChange('history')}>
+            <NavIcon $color={color}><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{item.label}</NavLabel>
           </NavItem>
         );
 
       case 'settings':
         return (
-          <NavItem key={item.id} $active={currentView === 'settings'} onClick={() => onViewChange('settings')}>
-            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
+          <NavItem key={item.id} $color={color} $active={currentView === 'settings'} onClick={() => onViewChange('settings')}>
+            <NavIcon $color={color}><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{item.label}</NavLabel>
           </NavItem>
         );
 
       case 'about':
         return (
-          <NavItem key={item.id} $active={currentView === 'about'} onClick={() => onViewChange('about')}>
-            <NavIcon><MaterialIcon name={item.icon} size={20} /></NavIcon>
+          <NavItem key={item.id} $color={color} $active={currentView === 'about'} onClick={() => onViewChange('about')}>
+            <NavIcon $color={color}><MaterialIcon name={item.icon} size={20} /></NavIcon>
             <NavLabel>{item.label}</NavLabel>
           </NavItem>
         );
@@ -303,9 +329,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
         {bottomItems.map(item => renderNavItem(item))}
       </NavSection>
-      <SidebarCopyright>
-        <SidebarCopyrightText>Powered by Louaq</SidebarCopyrightText>
-      </SidebarCopyright>
+      <SidebarFooter>
+        <RepoLink href={REPO_URL} onClick={openRepo} title="GitHub 地址" aria-label="GitHub 地址">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+          </svg>
+        </RepoLink>
+      </SidebarFooter>
     </SidebarContainer>
   );
 };

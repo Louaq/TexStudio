@@ -25,7 +25,7 @@ const AppContainer = styled.div`
   height: 100%;
   width: 100%;
   background: var(--app-bg-gradient, var(--color-background));
-  font-family: var(--font-sans), "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-sans);
   color: var(--color-text);
   overflow: hidden;
 `;

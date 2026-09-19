@@ -64,7 +64,7 @@ const TextArea = styled.textarea<{ $readOnly: boolean }>`
   &::placeholder {
     color: var(--ui-placeholder, rgba(0, 0, 0, 0.5));
     font-style: italic;
-    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-family: var(--font-sans);
   }
 
   &::-webkit-scrollbar {
@@ -137,7 +137,7 @@ const LatexEditor: React.FC<LatexEditorProps> = ({
     <Container>
       <Header>
         <Label>
-          <MaterialIcon name="code" size={14} /> LaTeX 代码
+          <MaterialIcon name="code" size={14} color="var(--color-accentViolet)" /> LaTeX 代码
         </Label>
       </Header>
       <EditorWrapper>

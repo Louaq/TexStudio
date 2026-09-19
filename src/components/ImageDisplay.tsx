@@ -64,18 +64,30 @@ const PlaceholderContent = styled.div`
   text-align: center;
 `;
 
+/** 上传区相机图标（相机.svg） */
+const CameraIcon: React.FC = () => (
+  <svg viewBox="0 0 1024 1024" width={26} height={26} aria-hidden="true">
+    <path
+      fill="#1296db"
+      d="M659.592533 136.533333H364.373333a68.266667 68.266667 0 0 0-61.371733 38.365867l-50.619733 103.970133-122.4704 53.1456A102.4 102.4 0 0 0 68.266667 425.949867v399.3088a68.266667 68.266667 0 0 0 68.266666 68.266666l750.933334 0.017067a68.266667 68.266667 0 0 0 68.266666-68.266667V425.949867a102.4 102.4 0 0 0-61.6448-93.934934L771.584 278.869333l-50.602667-103.953066A68.266667 68.266667 0 0 0 659.592533 136.533333zM313.7536 308.753067L364.373333 204.8h295.2192l50.619734 103.936a68.266667 68.266667 0 0 0 34.2016 32.768l122.504533 53.128533A34.133333 34.133333 0 0 1 887.466667 425.949867v399.325866l-750.933334-0.017066V425.949867a34.133333 34.133333 0 0 1 20.548267-31.317334l122.4704-53.1456a68.266667 68.266667 0 0 0 34.2016-32.733866z"
+    />
+    <path
+      fill="#1296db"
+      d="M512 378.504533c-94.2592 0-170.666667 76.407467-170.666667 170.666667s76.407467 170.666667 170.666667 170.666667 170.666667-76.407467 170.666667-170.666667-76.407467-170.666667-170.666667-170.666667z m0 68.266667a102.4 102.4 0 1 1 0 204.8 102.4 102.4 0 0 1 0-204.8z"
+    />
+  </svg>
+);
+
 const IconWrapper = styled.div<{ $isDragActive: boolean }>`
   width: 52px;
   height: 52px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-primary);
   animation: ${props =>
     props.$isDragActive ? css`${pulse} 0.8s ease-in-out infinite` : 'none'};
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: color 0.12s ease;
 `;
 
 const PlaceholderTitle = styled.div`
@@ -144,7 +156,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
   return (
     <Container>
       <Label>
-        <MaterialIcon name="image" size={14} /> 识别图片
+        <MaterialIcon name="image" size={14} color="var(--color-accentBlue)" /> 识别图片
       </Label>
       <ImageContainer
         $isDragActive={isDragActive}
@@ -156,7 +168,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
         ) : (
           <PlaceholderContent>
             <IconWrapper $isDragActive={isDragActive}>
-              <MaterialIcon name={isDragActive ? 'drive_folder_upload' : 'photo_camera'} size={26} />
+              {isDragActive ? <MaterialIcon name="drive_folder_upload" size={26} /> : <CameraIcon />}
             </IconWrapper>
             <PlaceholderTitle>
               {isDragActive ? '释放以开始识别' : '拖拽图片或点击上传'}

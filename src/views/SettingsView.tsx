@@ -226,7 +226,7 @@ const ShortcutButton = styled.button<{ $isListening?: boolean; $isSet?: boolean 
       ? 'var(--color-primary)'
       : 'var(--color-text)'};
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-  font-family: "Cascadia Code", "Consolas", monospace;
+  font-family: var(--font-sans);
   cursor: pointer;
   min-height: 36px;
   min-width: 168px;
@@ -405,7 +405,7 @@ const DataDescription = styled.span`
 const DataPath = styled.span`
   font-size: 13px;
   color: var(--color-text);
-  font-family: "Cascadia Code", "Consolas", monospace;
+  font-family: var(--font-sans);
   word-break: break-all;
 `;
 
@@ -563,7 +563,7 @@ const SidebarItemName = styled.span`
 const SidebarItemId = styled.span`
   font-size: 13px;
   color: var(--color-text);
-  font-family: "Cascadia Code", "Consolas", monospace;
+  font-family: var(--font-sans);
 `;
 
 const SidebarItemControls = styled.div`

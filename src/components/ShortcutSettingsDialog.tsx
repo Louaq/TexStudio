@@ -85,7 +85,7 @@ const ShortcutButton = styled.button<{
     props.$isSet ? '#27ae60' : 'var(--color-text)'
   };
   transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
-  font-family: "Cascadia Code", "Consolas", monospace;
+  font-family: var(--font-sans);
   cursor: pointer;
   min-height: 52px;
   display: flex;

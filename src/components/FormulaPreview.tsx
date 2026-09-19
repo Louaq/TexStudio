@@ -102,7 +102,7 @@ const FormulaPreview: React.FC<FormulaPreviewProps> = ({
   return (
     <Container>
       <Label>
-        <MaterialIcon name="functions" size={14} /> 公式预览
+        <MaterialIcon name="functions" size={14} color="var(--color-accentTeal)" /> 公式预览
       </Label>
       <PreviewArea>
         {renderContent()}

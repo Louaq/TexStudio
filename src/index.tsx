@@ -20,7 +20,7 @@ const GlobalStyle = createGlobalStyle`
   :root {
     --base-radius: 12px;
     --base-spacing: 16px;
-    --font-sans: 'MISAN VF', 'MiSans VF', 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    --font-sans: 'Microsoft YaHei', '微软雅黑', sans-serif;
     --font-mono: 'Maple Mono NF CN', 'Consolas', 'Courier New', monospace;
 
     --bounce-in: cubic-bezier(0.5, 1.8, 0.5, 1);
@@ -89,8 +89,15 @@ const GlobalStyle = createGlobalStyle`
       box-shadow 0.25s var(--smooth-out);
   }
 
-  body {
+  body,
+  button,
+  input,
+  textarea,
+  select {
     font-family: var(--font-sans);
+  }
+
+  body {
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

@@ -9,9 +9,9 @@ import { getCurrentTimestamp } from '../utils/api';
 import { THEME_ACCENT_SELECTION_FILL } from '../utils/themeAccent';
 import * as crypto from 'crypto';
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
+import JSZip from 'jszip';
 const officegen = require('officegen');
 const mammoth = require('mammoth');
-import * as mathjax from 'mathjax-node';
 const sharp = require('sharp');
 try {
   sharp.cache(false);
@@ -614,15 +614,6 @@ function cleanupAllTempFiles(): { success: boolean; count: number } {
   };
 }
 
-// 在文件顶部添加全局类型声明
-declare global {
-  namespace NodeJS {
-    interface Global {
-      MathJaxSubscriptions?: any;
-    }
-  }
-}
-
 // 将forceGarbageCollection函数中的代码修改为
 function forceGarbageCollection(): void {
   try {
@@ -646,17 +637,6 @@ function forceGarbageCollection(): void {
         }
       }
     });
-
-    // 清空可能占用内存的大型变量
-    try {
-      // 使用类型断言
-      const globalAny = global as any;
-      if (globalAny.MathJaxSubscriptions) {
-        globalAny.MathJaxSubscriptions = undefined;
-      }
-    } catch (e) {
-      // 忽略清理过程中的错误
-    }
 
     // 强制V8垃圾回收
     if (global.gc) {
@@ -894,7 +874,7 @@ function createSplashWindow(): void {
     body {
       background: #F5F7FA;
       color: #000000;
-      font-family: "Segoe UI", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1179,7 +1159,7 @@ function createSimpleScreenshotWindow(): void {
       color: white;
       padding: 10px 20px;
       border-radius: 5px;
-      font-family: Arial, sans-serif;
+      font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
       z-index: 9999;
       pointer-events: none;
     }
@@ -1189,7 +1169,7 @@ function createSimpleScreenshotWindow(): void {
       color: white;
       padding: 5px 6px 5px 6px;
       border-radius: 3px;
-      font-family: monospace;
+      font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
       font-size: 12px;
       pointer-events: none;
       z-index: 10000;
@@ -1199,44 +1179,6 @@ function createSimpleScreenshotWindow(): void {
       box-sizing: border-box;
       margin: 0;
       line-height: 1;
-    }
-    .selection-confirm-wrap {
-      position: absolute;
-      left: auto;
-      right: 0;
-      top: 100%;
-      bottom: auto;
-      margin-top: 6px;
-      transform: none;
-      z-index: 10002;
-      pointer-events: auto;
-    }
-    .confirm-btn {
-      appearance: none;
-      -webkit-appearance: none;
-      border: 1px solid rgba(0, 0, 0, 0.18);
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      background: #ffffff;
-      color: #141414;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-    }
-    .confirm-btn svg {
-      display: block;
-      width: 14px;
-      height: 14px;
-    }
-    .confirm-btn:hover {
-      background: #f3f3f3;
-    }
-    .confirm-btn:active {
-      background: #e8e8e8;
     }
   </style>
 </head>
@@ -1249,52 +1191,12 @@ function createSimpleScreenshotWindow(): void {
       width: ${display.bounds.width},
       height: ${display.bounds.height}
     };
-    var SCREEN_N = ${index + 1};
     var MIN_SIZE = 11;
-    var EDGE = 6;
+    // none：等待按下；draw：拖拽选区中；capturing：松开即提交截图，忽略后续操作
     var mode = 'none';
     var drawStartX = 0, drawStartY = 0;
     var selectionRoot = null;
     var coordinatesBox = null;
-    var resizeDir = '';
-    var moveOffsetX = 0, moveOffsetY = 0;
-    var dragStartX = 0, dragStartY = 0;
-    var rectAtDragStart = null;
-
-    function updateHint(text) {
-      var el = document.getElementById('hint');
-      if (el) el.textContent = text;
-    }
-    function hintDraw() {
-      updateHint('ESC 取消 | 显示器 ' + SCREEN_N);
-    }
-    function hintAdjust() {
-      updateHint('ESC 取消 | 显示器 ' + SCREEN_N);
-    }
-
-    var CONFIRM_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>';
-
-    function attachConfirmButton() {
-      if (!selectionRoot || selectionRoot.querySelector('.selection-confirm-wrap')) return;
-      var wrap = document.createElement('div');
-      wrap.className = 'selection-confirm-wrap';
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'confirm-btn';
-      btn.setAttribute('aria-label', '开始识别公式');
-      btn.title = '开始识别公式';
-      btn.innerHTML = CONFIRM_SVG;
-      btn.addEventListener('mousedown', function(ev) {
-        ev.stopPropagation();
-      });
-      btn.addEventListener('click', function(ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        confirmScreenshot();
-      });
-      wrap.appendChild(btn);
-      selectionRoot.appendChild(wrap);
-    }
 
     function createCoordinatesBox() {
       coordinatesBox = document.createElement('div');
@@ -1316,14 +1218,6 @@ function createSimpleScreenshotWindow(): void {
         width: parsePx(selectionRoot, 'width'),
         height: parsePx(selectionRoot, 'height')
       };
-    }
-
-    /** 仅 .selection-face 的几何（不含选框外确认按钮），用于命中与光标 */
-    function getFaceClientRect() {
-      if (!selectionRoot) return null;
-      var face = selectionRoot.querySelector('.selection-face');
-      var b = face ? face.getBoundingClientRect() : selectionRoot.getBoundingClientRect();
-      return { left: b.left, top: b.top, width: b.width, height: b.height };
     }
 
     function updateCoordinates(left, top, width, height) {
@@ -1352,20 +1246,6 @@ function createSimpleScreenshotWindow(): void {
       updateCoordinates(l, t, w, h);
     }
 
-    function setBoxRect(l, t, w, h) {
-      if (!selectionRoot) return;
-      var vw = window.innerWidth, vh = window.innerHeight;
-      w = Math.max(MIN_SIZE, w);
-      h = Math.max(MIN_SIZE, h);
-      l = Math.max(0, Math.min(l, vw - w));
-      t = Math.max(0, Math.min(t, vh - h));
-      selectionRoot.style.left = l + 'px';
-      selectionRoot.style.top = t + 'px';
-      selectionRoot.style.width = w + 'px';
-      selectionRoot.style.height = h + 'px';
-      updateCoordinates(l, t, w, h);
-    }
-
     function removeSelection() {
       if (selectionRoot) {
         selectionRoot.remove();
@@ -1376,20 +1256,6 @@ function createSimpleScreenshotWindow(): void {
         coordinatesBox = null;
       }
       mode = 'none';
-      document.body.style.cursor = 'crosshair';
-      hintDraw();
-    }
-
-    function hitTestResize(clientX, clientY, r) {
-      var relX = clientX - r.left;
-      var relY = clientY - r.top;
-      if (relX < 0 || relY < 0 || relX > r.width || relY > r.height) return '';
-      var dir = '';
-      if (relY < EDGE) dir += 'n';
-      else if (relY > r.height - EDGE) dir += 's';
-      if (relX < EDGE) dir += 'w';
-      else if (relX > r.width - EDGE) dir += 'e';
-      return dir;
     }
 
     function beginDraw(clientX, clientY) {
@@ -1411,125 +1277,33 @@ function createSimpleScreenshotWindow(): void {
     }
 
     document.addEventListener('mousedown', function(e) {
-      if (e.button !== 0) return;
-      if (e.target && e.target.closest && e.target.closest('.selection-confirm-wrap')) {
-        return;
-      }
-
-      if (mode === 'move' || mode === 'resize') return;
-
-      if (mode === 'adjust') {
-        var mx = e.clientX, my = e.clientY;
-        var r = getFaceClientRect();
-        if (!r) return;
-        var inside = mx >= r.left && mx <= r.left + r.width && my >= r.top && my <= r.top + r.height;
-        if (!inside) {
-          return;
-        }
-        var dir = hitTestResize(mx, my, r);
-        dragStartX = mx;
-        dragStartY = my;
-        rectAtDragStart = { left: r.left, top: r.top, width: r.width, height: r.height };
-        if (dir) {
-          mode = 'resize';
-          resizeDir = dir;
-        } else {
-          mode = 'move';
-          moveOffsetX = mx - r.left;
-          moveOffsetY = my - r.top;
-        }
-        e.preventDefault();
-        return;
-      }
-
-      if (mode === 'none') {
-        beginDraw(e.clientX, e.clientY);
-        e.preventDefault();
-      }
+      if (e.button !== 0 || mode !== 'none') return;
+      beginDraw(e.clientX, e.clientY);
+      e.preventDefault();
     });
 
     document.addEventListener('mousemove', function(e) {
-      if (mode === 'draw' && selectionRoot) {
-        var left = Math.min(drawStartX, e.clientX);
-        var top = Math.min(drawStartY, e.clientY);
-        var width = Math.abs(e.clientX - drawStartX);
-        var height = Math.abs(e.clientY - drawStartY);
-        setBoxRectDraw(left, top, width, height);
-        return;
-      }
-      if (mode === 'move' && selectionRoot && rectAtDragStart) {
-        setBoxRect(e.clientX - moveOffsetX, e.clientY - moveOffsetY, rectAtDragStart.width, rectAtDragStart.height);
-        return;
-      }
-      if (mode === 'resize' && selectionRoot && rectAtDragStart) {
-        var dx = e.clientX - dragStartX;
-        var dy = e.clientY - dragStartY;
-        var L = rectAtDragStart.left, T = rectAtDragStart.top, W = rectAtDragStart.width, H = rectAtDragStart.height;
-        var nL = L, nT = T, nW = W, nH = H;
-        if (resizeDir.indexOf('w') >= 0) {
-          nL = L + dx;
-          nW = W - dx;
-        }
-        if (resizeDir.indexOf('e') >= 0) nW = W + dx;
-        if (resizeDir.indexOf('n') >= 0) {
-          nT = T + dy;
-          nH = H - dy;
-        }
-        if (resizeDir.indexOf('s') >= 0) nH = H + dy;
-        if (nW < MIN_SIZE) {
-          if (resizeDir.indexOf('w') >= 0) nL = L + W - MIN_SIZE;
-          nW = MIN_SIZE;
-        }
-        if (nH < MIN_SIZE) {
-          if (resizeDir.indexOf('n') >= 0) nT = T + H - MIN_SIZE;
-          nH = MIN_SIZE;
-        }
-        setBoxRect(nL, nT, nW, nH);
-        return;
-      }
-      if (mode === 'adjust' && selectionRoot) {
-        if (e.target && e.target.closest && e.target.closest('.selection-confirm-wrap')) {
-          document.body.style.cursor = 'pointer';
-          return;
-        }
-        var br = getFaceClientRect();
-        if (!br) return;
-        var d = hitTestResize(e.clientX, e.clientY, br);
-        var c = 'crosshair';
-        if (d === 'n' || d === 's') c = 'ns-resize';
-        else if (d === 'e' || d === 'w') c = 'ew-resize';
-        else if (d === 'nw' || d === 'se') c = 'nwse-resize';
-        else if (d === 'ne' || d === 'sw') c = 'nesw-resize';
-        else if (e.clientX >= br.left && e.clientX <= br.left + br.width && e.clientY >= br.top && e.clientY <= br.top + br.height) c = 'move';
-        else c = 'default';
-        document.body.style.cursor = c;
-      }
+      if (mode !== 'draw' || !selectionRoot) return;
+      var left = Math.min(drawStartX, e.clientX);
+      var top = Math.min(drawStartY, e.clientY);
+      var width = Math.abs(e.clientX - drawStartX);
+      var height = Math.abs(e.clientY - drawStartY);
+      setBoxRectDraw(left, top, width, height);
     });
 
     document.addEventListener('mouseup', function(e) {
-      if (e.button !== 0) return;
-      if (mode === 'draw') {
-        var r = getBoxRect();
-        if (!r || r.width <= MIN_SIZE || r.height <= MIN_SIZE) {
-          removeSelection();
-          return;
-        }
-        mode = 'adjust';
-        hintAdjust();
-        attachConfirmButton();
+      if (e.button !== 0 || mode !== 'draw') return;
+      var r = getBoxRect();
+      if (!r || r.width <= MIN_SIZE || r.height <= MIN_SIZE) {
+        removeSelection();
         return;
       }
-      if (mode === 'move' || mode === 'resize') {
-        mode = 'adjust';
-        rectAtDragStart = null;
-        resizeDir = '';
-      }
+      // 松开即截图，截图完成后主窗口自动开始识别
+      captureSelection(r);
     });
 
-    async function confirmScreenshot() {
-      if (mode !== 'adjust') return;
-      var r = getBoxRect();
-      if (!r || r.width <= MIN_SIZE || r.height <= MIN_SIZE) return;
+    async function captureSelection(r) {
+      mode = 'capturing';
       var absoluteArea = {
         x: r.left + displayBounds.x,
         y: r.top + displayBounds.y,
@@ -2772,7 +2546,7 @@ ipcMain.handle('update-window-theme', async (event, backgroundColor: string, tex
   try {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.setBackgroundColor(backgroundColor);
-      
+
       // 更新 Windows 标题栏颜色
       if (process.platform === 'win32') {
         mainWindow.setTitleBarOverlay({
@@ -2780,7 +2554,7 @@ ipcMain.handle('update-window-theme', async (event, backgroundColor: string, tex
           symbolColor: textColor
         });
       }
-      
+
       logger.log(`窗口主题颜色已更新: 背景=${backgroundColor}, 文字=${textColor}`);
       return { success: true };
     } else {
@@ -2888,22 +2662,31 @@ ipcMain.handle('quit-and-install', async (event) => {
   }
 });
 
+// MathJax 4 首次使用时初始化；传入 CommonJS require，绕开其 ESM 加载器在 Windows 盘符路径上的问题
+let mathJaxReady: Promise<any> | null = null;
+function getMathJax(): Promise<any> {
+  if (!mathJaxReady) {
+    mathJaxReady = require('@mathjax/src').init({
+      loader: { load: ['input/tex', 'output/svg'], require },
+      output: { fontCache: 'none' },
+      tex: { formatError: (_jax: unknown, err: Error) => { throw err; } }
+    }).catch((err: Error) => {
+      mathJaxReady = null;
+      throw err;
+    });
+  }
+  return mathJaxReady!;
+}
+
+// 去掉 data-latex 等属性：SVG 序列化时其中的 '<' 未转义，会导致 XML 无效（sharp 解析失败）
+function stripMathJaxDataAttrs(markup: string): string {
+  return markup.replace(/ data-[\w-]+="[^"]*"/g, '');
+}
+
 ipcMain.handle('save-docx-file', async (event, latexContent: string, filename: string) => {
   try {
-    mathjax.config({
-      MathJax: {}
-    });
-    await mathjax.start();
-    const mjResult = await mathjax.typeset({
-      math: latexContent,
-      format: 'TeX',
-      mml: true
-    });
-
-    if (!mjResult.mml) {
-      throw new Error('LaTeX到MathML转换失败');
-    }
-    let mathML = mjResult.mml;
+    const MathJax = await getMathJax();
+    const mathML = stripMathJaxDataAttrs(await MathJax.tex2mmlPromise(latexContent, { display: true }));
 
     clipboard.writeText(mathML);
     logger.log('MathML格式公式已复制到剪贴板');
@@ -2919,19 +2702,6 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
   try {
     logger.log(`开始导出数学公式为${format.toUpperCase()}格式`);
     forceGarbageCollection();
-    mathjaxExt.config({
-      MathJax: {
-        SVG: {
-          scale: 1,
-          font: 'TeX',
-          useFontCache: true,
-          useGlobalCache: false,
-          minScaleAdjust: 0.5
-        }
-      }
-    });
-
-    await mathjaxExt.start();
     let svgContent: string;
     try {
       const maxLength = 5000;
@@ -2940,20 +2710,10 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
         logger.log(`LaTeX内容过长，已截断至${maxLength}字符`);
       }
 
-      const mjResult: any = await mathjaxExt.typeset({
-        math: latexContent,
-        format: 'TeX',
-        svg: true
-      });
-
-      if (!mjResult.svg) {
-        throw new Error('LaTeX到SVG转换失败');
-      }
-      svgContent = mjResult.svg;
+      const MathJax = await getMathJax();
+      const node = await MathJax.tex2svgPromise(latexContent, { display: true });
+      svgContent = stripMathJaxDataAttrs(MathJax.startup.adaptor.innerHTML(node));
       logger.log('MathJax SVG生成成功，长度:', svgContent.length);
-      if (mathjaxExt.typesetClear) {
-        mathjaxExt.typesetClear();
-      }
       const svgTagCount = (svgContent.match(/<svg/g) || []).length;
       const svgCloseTagCount = (svgContent.match(/<\/svg>/g) || []).length;
       if (svgTagCount !== svgCloseTagCount) {
@@ -2972,7 +2732,7 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="100" viewBox="0 0 400 100">
   <rect width="100%" height="100%" fill="white" stroke="#ddd" stroke-width="1"/>
   <text x="200" y="50" text-anchor="middle" dominant-baseline="central" 
-        font-family="Times, serif" font-size="18" fill="black">
+        font-family="Microsoft YaHei, sans-serif" font-size="18" fill="black">
     ${latexContent.replace(/[<>&"']/g, function (match) {
         switch (match) {
           case '<': return '&lt;';
@@ -2988,9 +2748,6 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
 
       logger.log('使用备用SVG，长度:', svgContent.length);
     } finally {
-      if (mathjaxExt.typesetClear) {
-        mathjaxExt.typesetClear();
-      }
       forceGarbageCollection();
     }
 
@@ -3069,7 +2826,7 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
           const simplifiedSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200">
   ${format === 'jpg' ? '<rect width="100%" height="100%" fill="white"/>' : ''}
-  <text x="200" y="100" text-anchor="middle" dominant-baseline="central" font-family="serif" font-size="16">
+  <text x="200" y="100" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="16">
     无法渲染公式: ${latexContent.substring(0, 50)}${latexContent.length > 50 ? '...' : ''}
   </text>
 </svg>`;
@@ -3126,36 +2883,9 @@ ipcMain.handle('export-formula-image', async (event, latexContent: string, forma
       message: `导出失败: ${error instanceof Error ? error.message : '未知错误'}`
     };
   } finally {
-    if (mathjaxExt.typesetClear) {
-      mathjaxExt.typesetClear();
-    }
     forceGarbageCollection();
   }
 });
-
-interface ExtendedMathJax {
-  config: Function;
-  start: Function;
-  typeset: Function;
-  typesetClear?: Function; // 我们自定义的方法
-}
-
-const mathjaxExt: ExtendedMathJax = mathjax as any;
-
-if (typeof mathjaxExt.typesetClear !== 'function') {
-  mathjaxExt.typesetClear = function () {
-    try {
-      if (mathjaxExt.start) {
-        mathjaxExt.start();
-      }
-      if (global.gc) {
-        global.gc();
-      }
-    } catch (error) {
-      logger.error('清理MathJax资源失败:', error);
-    }
-  };
-}
 
 // ==================== 数据管理 IPC 处理器 ====================
 
@@ -3318,60 +3048,41 @@ ipcMain.handle('restore-data', async () => {
 
     logger.log('开始恢复数据，备份文件:', filePaths[0]);
 
-    const extract = require('extract-zip');
     const userData = app.getPath('userData');
-    const tempExtractDir = path.join(app.getPath('temp'), `texstudio-restore-${Date.now()}`);
-
-    // 解压备份文件
-    logger.log('正在解压备份文件到:', tempExtractDir);
-    await extract(filePaths[0], { dir: tempExtractDir });
-    logger.log('备份文件解压完成');
+    // 只在内存中读取需要的条目，不整包解压：备份文件不可信，避免符号链接/路径穿越写到任意位置
+    // ponytail: 整个 zip 读入内存，备份很大时再改为流式读取
+    const zip = await JSZip.loadAsync(fs.readFileSync(filePaths[0]));
+    logger.log('备份文件读取完成');
 
     let restoredCount = 0;
 
     // 恢复配置文件
-    const configSrc = path.join(tempExtractDir, 'config.json');
-    const historySrc = path.join(tempExtractDir, 'history.json');
-    
-    if (fs.existsSync(configSrc)) {
-      const configDest = path.join(userData, 'config.json');
-      fs.copyFileSync(configSrc, configDest);
-      restoredCount++;
-      logger.log('已恢复 config.json');
-    } else {
-      logger.warn('备份中不包含 config.json');
-    }
-    
-    if (fs.existsSync(historySrc)) {
-      const historyDest = path.join(userData, 'history.json');
-      fs.copyFileSync(historySrc, historyDest);
-      restoredCount++;
-      logger.log('已恢复 history.json');
-    } else {
-      logger.warn('备份中不包含 history.json');
+    for (const name of ['config.json', 'history.json']) {
+      const entry = zip.file(name);
+      if (entry) {
+        fs.writeFileSync(path.join(userData, name), await entry.async('nodebuffer'));
+        restoredCount++;
+        logger.log(`已恢复 ${name}`);
+      } else {
+        logger.warn(`备份中不包含 ${name}`);
+      }
     }
 
     // 恢复临时文件（如果备份中包含）
-    const tempBackupDir = path.join(tempExtractDir, 'temp');
-    if (fs.existsSync(tempBackupDir)) {
+    const tempEntries = zip.file(/^temp\/[^/]+$/);
+    if (tempEntries.length > 0) {
       const tempDir = app.getPath('temp');
-      const tempFiles = fs.readdirSync(tempBackupDir);
       let tempFileCount = 0;
-      
-      logger.log(`发现 ${tempFiles.length} 个临时文件，开始恢复...`);
-      
-      for (const file of tempFiles) {
+
+      logger.log(`发现 ${tempEntries.length} 个临时文件，开始恢复...`);
+
+      for (const entry of tempEntries) {
+        const file = path.basename(entry.name);
         try {
-          const srcPath = path.join(tempBackupDir, file);
-          const destPath = path.join(tempDir, file);
-          
           // 只恢复应用相关的临时文件
           if (file.startsWith(TEMP_FILE_PREFIX) || file.startsWith(SCREENSHOT_PREFIX)) {
-            const stats = fs.statSync(srcPath);
-            if (stats.isFile()) {
-              fs.copyFileSync(srcPath, destPath);
-              tempFileCount++;
-            }
+            fs.writeFileSync(path.join(tempDir, file), await entry.async('nodebuffer'));
+            tempFileCount++;
           }
         } catch (error) {
           // 忽略单个文件的错误，继续恢复其他文件
@@ -3379,20 +3090,11 @@ ipcMain.handle('restore-data', async () => {
           continue;
         }
       }
-      
+
       restoredCount += tempFileCount;
       logger.log(`已恢复 ${tempFileCount} 个临时文件`);
     } else {
       logger.log('备份中不包含临时文件（可能是精简备份）');
-    }
-
-    // 清理临时解压目录
-    try {
-      fs.rmSync(tempExtractDir, { recursive: true, force: true });
-      logger.log('已清理临时解压目录');
-    } catch (error) {
-      // 清理失败不影响恢复结果
-      logger.error('清理临时目录失败:', error);
     }
 
     logger.log(`数据恢复完成，共恢复 ${restoredCount} 个文件`);
