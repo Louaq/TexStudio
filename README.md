@@ -1,6 +1,6 @@
 # LaTeX公式识别工具
 
-一个基于 Electron + React + TypeScript 的现代化 LaTeX 公式识别桌面应用程序。[![自动发布](https://github.com/Louaq/TexStudio/actions/workflows/auto-release.yml/badge.svg)](https://github.com/Louaq/TexStudio/actions/workflows/auto-release.yml)
+一个基于 Electron + React + TypeScript 的现代化 LaTeX 公式识别桌面应用程序。[![Build](https://github.com/Louaq/TexStudio/actions/workflows/auto-release.yml/badge.svg?branch=main)](https://github.com/Louaq/TexStudio/actions/workflows/auto-release.yml)
 
 ## 📦 安装和运行
 
